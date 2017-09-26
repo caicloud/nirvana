@@ -33,7 +33,7 @@ are general ones while some are specific to Caicloud. Note this is not an exhaus
 
 **Validation**
 
-- Provide default validation on api types with json tags
+- Provide default validation on api types with struct tags
 - Support custom validations defined by developers on api types
 - Support validation on all parameters (path, query, etc)
 
