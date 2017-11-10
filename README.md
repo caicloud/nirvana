@@ -1,5 +1,7 @@
 # nirvana
 
+[![Build Status](https://travis-ci.org/caicloud/nirvana.svg?branch=master)](https://travis-ci.org/caicloud/nirvana)
+
 ## Introduction
 
 nirvana is a golang http framework designed with productivity and usability in mind. It aims to be
