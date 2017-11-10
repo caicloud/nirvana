@@ -1,5 +1,7 @@
 # nirvana
 
+[![GoDoc](http://godoc.org/github.com/caicloud/nirvana?status.svg)](http://godoc.org/github.com/caicloud/nirvana)
+
 ## Introduction
 
 nirvana is a golang http framework designed with productivity and usability in mind. It aims to be
