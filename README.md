@@ -29,7 +29,7 @@ are general ones while some are specific to Caicloud. Note this is not an exhaus
 - Request/Response API object marshal/unmarshal
 - General middleware support with sane default (logging, recovery, tracing)
 - Contextual process chain and parameter injection
-- Enforcing [API error convention](https://github.com/caicloud/engineering/blob/master/docs/api_conventions.md)
+- Enforcing API error convention
 
 **Instrumentation**
 
@@ -48,6 +48,6 @@ are general ones while some are specific to Caicloud. Note this is not an exhaus
 - A working project should be brought up with few lines using the framework
 - Framework must automatically follow engineering conventions to help developers focus on business logic
 - OpenAPI (swagger 2.0) specification can be generated automatically with no extra work
-- Provides a well-established layout conforming to [golang project layout](https://github.com/caicloud/engineering/tree/master/templates/golang-project)
+- Provides a well-established layout conforming to golang project layout
 - Easy and standard configuration management
 - A reasonable support for websocket
