@@ -194,7 +194,9 @@ func Split(path string) ([]string, error) {
 		case '{':
 			braceCounter++
 			if braceCounter == 1 {
-				result = append(result, path[lastElementPos:i])
+				if i > lastElementPos {
+					result = append(result, path[lastElementPos:i])
+				}
 				lastElementPos = i
 			}
 		case '}':
