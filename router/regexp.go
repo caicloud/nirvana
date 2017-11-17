@@ -16,7 +16,7 @@ type Index struct {
 	Pos int
 }
 
-// RegexpNode contains infomation for matching a regexp segment.
+// RegexpNode contains information for matching a regexp segment.
 type RegexpNode struct {
 	Handler
 	Progeny

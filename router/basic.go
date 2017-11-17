@@ -208,7 +208,7 @@ func (p *Progeny) AddRouter(router Router) {
 			p.PathRouter = router
 		}
 	default:
-		panic(fmt.Sprintf("unknwon router kind: %s", router.Kind()))
+		panic(fmt.Sprintf("unknown router kind: %s", router.Kind()))
 	}
 }
 

@@ -216,7 +216,7 @@ func Split(path string) ([]string, error) {
 	return result, nil
 }
 
-// Segment contains infomation to construct a router.
+// Segment contains information to construct a router.
 type Segment struct {
 	// Match is the target string.
 	Match string
