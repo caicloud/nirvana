@@ -1,0 +1,19 @@
+{
+    "Vendor": false,
+    "DisableAll": true,
+    "Enable": [
+        "vet",
+        "gotype",
+        "safesql",
+        "staticcheck",
+        "errcheck",
+        "goconst",
+        "goimports",
+        "varcheck",
+        "gas",
+        "unconvert",
+        "misspell",
+        "deadcode",
+        "unconvert"
+    ]
+}
