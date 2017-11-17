@@ -11,5 +11,5 @@ before_install:
   - gometalinter --install
 
 script:
-  - gometalinter --config=config.json ./...
+  - gometalinter --config=config.json --line-length=150 ./...
   - goveralls -service=travis-ci
