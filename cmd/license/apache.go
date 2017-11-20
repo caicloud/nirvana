@@ -91,7 +91,7 @@ func Run() {
 			i := bytes.Index(allFile, []byte("package"))
 
 			if !cli.Viper.GetBool("dryRun") {
-				ioutil.WriteFile(path, append(license, allFile[i:]...), 0655)
+				_ = ioutil.WriteFile(path, append(license, allFile[i:]...), 0655)
 			}
 			return nil
 		}
@@ -108,7 +108,7 @@ func Run() {
 
 func main() {
 	pflag.CommandLine.AddGoFlagSet(goflag.CommandLine)
-	goflag.CommandLine.Parse(nil)
+	_ = goflag.CommandLine.Parse(nil)
 
 	cmd := cli.NewCommand(&cobra.Command{
 		Use:  "license",
@@ -118,7 +118,7 @@ func main() {
 		},
 	})
 
-	cmd.AddFlag(
+	_ = cmd.AddFlag(
 		cli.BoolFlag{
 			Name:      "dryRun",
 			Shorthand: "d",
