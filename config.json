@@ -2,18 +2,23 @@
     "Vendor": true,
     "DisableAll": true,
     "Enable": [
-        "vet",
-        "gotype",
-        "safesql",
-        "staticcheck",
+        "deadcode",
         "errcheck",
+        "gas",
         "goconst",
         "goimports",
-        "varcheck",
-        "gas",
-        "unconvert",
+        "gosimple",
+        "gotype",
+        "ineffassign",
+        "interfacer",
+        "lll",
         "misspell",
-        "deadcode",
-        "unconvert"
+        "nakedret",
+        "safesql",
+        "staticcheck",
+        "unconvert",
+        "unparam",
+        "varcheck",
+        "vet"
     ]
 }
