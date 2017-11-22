@@ -1,5 +1,5 @@
 {
-    "Vendor": false,
+    "Vendor": true,
     "DisableAll": true,
     "Enable": [
         "deadcode",

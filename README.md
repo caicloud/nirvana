@@ -1,7 +1,7 @@
 # nirvana
 
 [![Build Status](https://travis-ci.org/caicloud/nirvana.svg?branch=master)](https://travis-ci.org/caicloud/nirvana)
-[![Coverage Status](https://coveralls.io/repos/github/caicloud/nirvana/badge.svg)](https://coveralls.io/github/caicloud/nirvana)
+[![Coverage Status](https://coveralls.io/repos/github/caicloud/nirvana/badge.svg?branch=master)](https://coveralls.io/github/caicloud/nirvana?branch=master)
 [![GoDoc](http://godoc.org/github.com/caicloud/nirvana?status.svg)](http://godoc.org/github.com/caicloud/nirvana)
 [![Go Report Card](https://goreportcard.com/badge/github.com/caicloud/nirvana)](https://goreportcard.com/report/github.com/caicloud/nirvana)
 [![Code Health](https://landscape.io/github/caicloud/nirvana/master/landscape.svg?style=flat)](https://landscape.io/github/caicloud/nirvana/master)
