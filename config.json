@@ -15,5 +15,8 @@
         "misspell",
         "deadcode",
         "unconvert"
+    ],
+    "Exclude": [
+        "examples"
     ]
 }

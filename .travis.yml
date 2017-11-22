@@ -9,6 +9,7 @@ before_install:
   - go get github.com/mattn/goveralls
   - go get -u github.com/alecthomas/gometalinter
   - gometalinter --install
+  - go test -i $(go list ./... | grep -v /vendor | grep -v /tests)
 
 script:
   - gometalinter --config=config.json ./...
