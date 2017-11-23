@@ -1,16 +1,16 @@
 # Cli - Mamba
 
-The CLI pkg also named Mamba.
+The CLI pkg is also named Mamba.
 
 ## About the project
 
-Mamba provide a higher level and more friendly interfaces to build modern command line interfaces and manage configurations for Go applications.
+Mamba provides a higher level and more friendly interfaces to build modern command line interfaces and manage configurations for Go applications.
 
-It bases on
+It is based on
 
 -   [spf13/pflag](https://github.com/spf13/pflag): to provide POSIX/GNU-style flags
 -   [spf13/cobra](https://github.com/spf13/cobra): to provide a simple interface to create powerful modern CLI interfaces
--   [spf13/viper](https://github.com/spf13/viper): to provide a complete configuration sulution for [12-Factor](https://12factor.net/zh_cn/) apps
+-   [spf13/viper](https://github.com/spf13/viper): to provide a complete configuration sulution for [12-Factor](https://12factor.net) apps
 
 ## Status
 
@@ -18,7 +18,7 @@ It bases on
 
 ## Concepts
 
-A cli is composed of commands, argumetns & flags.
+A cli is composed of commands, arguments and flags.
 
 **Commands** represent actions, **Args** are things and **Flags** are modifiers for those actions.
 
@@ -32,7 +32,7 @@ The flag is compatible with the [GNU extensions to the POSIX recommendations for
 
 You can migrate your cobra commands to mamba easily.
 
-the `cli.NewCommand` receive a `*cobra.Command` to build the whole CLI.
+the `cli.NewCommand` receives a `*cobra.Command` to build the whole CLI.
 
 ```go
 import (
@@ -55,11 +55,11 @@ func main() {
 
 ### Flags
 
-Flag, different from `pflag.Flag`, is an interface implementing the following functions in Mamba.
+Flag, different from `pflag.Flag`, is an interface containing the following methods in Mamba.
 
-And it is declarative in Mamba not imperative like Cobra. That makes the flags **more readable**.
+And it is declarative in Mamba, unlike in Cobra where it is imperative which makes the flags **more readable**.
 
-Mamba will bind `viper` and `flags` automatically. That means you can get all your flag value from a configuration center.
+Mamba will bind `viper` and `flags` automatically. That means you can get all your flag values from `viper`.
 
 ```go
 // Flag describes a flag interface
@@ -103,16 +103,16 @@ type StringFlag struct {
 }
 ```
 
-#### Bind flag with ENV
+#### Binding flag with ENV
 
-Mamba supports the ability to bind your flags with env.
+Mamba supports the ability to bind your flags with ENV variables.
 
-Mamba use the following precedence order. Each item takes precedence over the item bellow it.
+Mamba uses the following precedence order. Each item takes precedence over the item below it.
 
--   explicit call to set
+-   explicit calls to set
 -   flag
 -   env
--   default
+-   default value
 
 ```go
 f := cli.StringFlag{
@@ -126,19 +126,19 @@ f := cli.StringFlag{
 
 Mamba supports the ability to bind you flags with ENV and add prefix automatically
 
-The following functions exist to aid working with ENV
+The following methods exist to aid working with ENV
 
 -   `AutomaticEnv()`
 -   `SetEnvPrefix(string)`
 -   `SetEnvKeyReplacer(*strings.Replacer)`
 
-*When working with ENV variables, it’s important to recognize that Mamba treats ENV variables as case insensitive. All ENV variables are treated as UPPER case*
+*When working with ENV variables, it’s important to recognize that Mamba treats ENV variables case insensitively. All ENV variables are treated as UPPER case*
 
-By using `AutomaticEnv` , you tell mamba to bind all flags with ENV automatically. 
+By using `AutomaticEnv`, you tell mamba to bind all flags with ENV automatically. 
 
 `SetEnvPrefix` is **always** working with `AutomaticEnv` . It makes mamba add a prefix while reading from env variables.
 
-By using  `SetEnvKeyReplacer` , you make mamba change the ENV by key replacer. For example, you can set a `UnderlineReplacer` to replace all `-` with `_` .
+By using  `SetEnvKeyReplacer`, you make mamba change the ENV by key replacer. For example, you can set a `UnderlineReplacer` to replace all `-` with `_` .
 
 >   **Note: If EnvKey is set, it will override the automatic env and does not automatically add the prefix.**
 
@@ -162,7 +162,7 @@ cmd.AddFlag(f)
 // *log is TEST
 ```
 
-#### Hidden,Deprecated, ShorthandDeprecated 
+#### Hidden, Deprecated, ShorthandDeprecated 
 
 -   `Hidden` and `Deprecated` hide the whole flag in help information.
 -   `ShorthandDeprecated` hides the shorhand flag.
