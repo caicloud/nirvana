@@ -1,22 +1,22 @@
 {
-    "Vendor": true,
-    "DisableAll": true,
-    "Enable": [
-        "vet",
-        "gotype",
-        "safesql",
-        "staticcheck",
-        "errcheck",
-        "goconst",
-        "goimports",
-        "varcheck",
-        "gas",
-        "unconvert",
-        "misspell",
-        "deadcode",
-        "unconvert"
-    ],
-    "Exclude": [
-        "examples"
-    ]
+  "Vendor": true,
+  "DisableAll": true,
+  "Enable": [
+    "vet",
+    "gotype",
+    "safesql",
+    "staticcheck",
+    "errcheck",
+    "goconst",
+    "goimports",
+    "varcheck",
+    "gas",
+    "lll",
+    "unconvert",
+    "misspell",
+    "deadcode",
+    "unconvert"
+  ],
+  "LineLength": 160,
+  "Exclude": ["examples", "docs", "website"]
 }
