@@ -19,11 +19,12 @@ package main
 import (
 	"bytes"
 	goflag "flag"
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/caicloud/nirvana/cli"
 	"github.com/golang/glog"
@@ -37,17 +38,28 @@ var sentinels = []string{
 	`Licensed under the Apache License, Version 2.0 (the "License");`,
 }
 
+// LoadGoBoilerplate loads the boilerplate file passed to --go-header-file.
+func loadGoBoilerplate(filepath string) ([]byte, error) {
+	b, err := ioutil.ReadFile(filepath)
+	if err != nil {
+		return nil, err
+	}
+	b = bytes.Replace(b, []byte("YEAR"), []byte(strconv.Itoa(time.Now().Year())), -1)
+	return b, nil
+}
+
 // Run ...
 func Run() {
 	root := cli.Viper.GetString("root")
 
-	licenseBytes, err := ioutil.ReadFile(root + "/LICENSE")
+	boilerplate, err := loadGoBoilerplate(cli.Viper.GetString("go-header-file"))
 	if err != nil {
 		glog.Fatal(err)
 		return
 	}
-
-	license := []byte(fmt.Sprintf("/*\n%s*/\n\n", licenseBytes))
+	boilerplate = bytes.TrimSpace(boilerplate)
+	// add one empty line
+	license := append(boilerplate, '\n', '\n')
 
 	err = filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -131,6 +143,9 @@ func main() {
 			Name:      "root",
 			Shorthand: "r",
 			DefValue:  "./",
+		},
+		cli.StringFlag{
+			Name: "go-header-file",
 		},
 	); err != nil {
 		panic(err)

@@ -14,5 +14,5 @@ flag-gen:
 
 .PHONY: license
 license: 
-	go run ./cmd/license/apache.go --logtostderr
+	go run ./cmd/license/apache.go --go-header-file boilerplate/boilerplate.go.txt --logtostderr
 
