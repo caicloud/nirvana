@@ -16,23 +16,84 @@ limitations under the License.
 
 package errors
 
-// StatusReason is an enumeration of possible failure causes. Each StatusReason
+import (
+	"fmt"
+	"net/http"
+)
+
+type Error interface {
+	Reason() Reason
+	Error() string
+}
+
+// Reason is an enumeration of possible failure causes. Each Reason
 // must map to a single HTTP status code, but multiple reasons may map to the
 // same HTTP status code.
-type StatusReason string
+type Reason string
 
-// Error is an error intended to be used by all caicloud components to return
-// error to clients.
-type Error struct {
-	// Suggested HTTP return code for this error, 0 if not set. This field is optional.
-	// Caller can choose to use this code or choose to use another error code for client.
-	statusCode int32
-
+type message struct {
 	// Required, a machine-readable description of the error.
-	Reason StatusReason `json:"reason"`
+	Reason Reason `json:"reason"`
+	// Required when template is used in message or i18nMessage.
+	Data []interface{} `json:"data,omitempty"`
 	// Required for 4xx but optional for 5xx. Message is a human-readable description
 	// of the error. Message can be golang template.
 	Message string `json:"message"`
-	// Required when template is used in message or i18nMessage.
-	Data map[string]string `json:"data,omitempty"`
+}
+
+// err is an error intended to be used by all APIs to return error to clients.
+type err struct {
+	// Suggested HTTP return code for this error, 0 if not set. This field is optional.
+	// Caller can choose to use this code or choose to use another error code for client.
+	code int
+	// Format is used to generate message.
+	format string
+	// Useful message.
+	message message
+}
+
+func (e *err) Code() int {
+	return e.code
+}
+
+func (e *err) Message() interface{} {
+	return &e.message
+}
+
+func (e *err) Reason() Reason {
+	return e.message.Reason
+}
+
+func (e *err) Error() string {
+	return e.message.Message
+}
+
+type formatter struct {
+	code   int
+	reason Reason
+	// It should like
+	// 1. something named {0} is not found
+	// 2. something named {name} is not found
+	// Which one will win the battle?
+	format string
+}
+
+func (f *formatter) Format(a ...interface{}) Error {
+	return &err{
+		code:   f.code,
+		format: f.format,
+		message: message{
+			Reason:  f.reason,
+			Data:    a,
+			Message: fmt.Sprintf(f.format, a...),
+		},
+	}
+}
+
+func ResourceNotFound(resource string) Error {
+	return (&formatter{
+		code:   http.StatusNotFound,
+		reason: Reason(http.StatusText(http.StatusNotFound)),
+		format: "%s is not found",
+	}).Format(resource)
 }
