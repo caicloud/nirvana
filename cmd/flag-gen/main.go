@@ -35,9 +35,13 @@ func main() {
 	}
 	arguments.AddFlags(pflag.CommandLine)
 	pflag.CommandLine.AddGoFlagSet(goflag.CommandLine)
-	_ = pflag.Set("logtostderr", "true")
+	if err := pflag.Set("logtostderr", "true"); err != nil {
+		panic(err)
+	}
 	pflag.Parse()
-	_ = goflag.CommandLine.Parse(nil)
+	if err := goflag.CommandLine.Parse(nil); err != nil {
+		panic(err)
+	}
 
 	// Run it
 	if err := arguments.Execute(

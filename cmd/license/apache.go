@@ -19,11 +19,12 @@ package main
 import (
 	"bytes"
 	goflag "flag"
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/caicloud/nirvana/cli"
 	"github.com/golang/glog"
@@ -37,17 +38,28 @@ var sentinels = []string{
 	`Licensed under the Apache License, Version 2.0 (the "License");`,
 }
 
+// LoadGoBoilerplate loads the boilerplate file passed to --go-header-file.
+func loadGoBoilerplate(filepath string) ([]byte, error) {
+	b, err := ioutil.ReadFile(filepath)
+	if err != nil {
+		return nil, err
+	}
+	b = bytes.Replace(b, []byte("YEAR"), []byte(strconv.Itoa(time.Now().Year())), -1)
+	return b, nil
+}
+
 // Run ...
 func Run() {
 	root := cli.Viper.GetString("root")
 
-	licenseBytes, err := ioutil.ReadFile(root + "/LICENSE")
+	boilerplate, err := loadGoBoilerplate(cli.Viper.GetString("go-header-file"))
 	if err != nil {
 		glog.Fatal(err)
 		return
 	}
-
-	license := []byte(fmt.Sprintf("/*\n%s*/\n\n", licenseBytes))
+	boilerplate = bytes.TrimSpace(boilerplate)
+	// add one empty line
+	license := append(boilerplate, '\n', '\n')
 
 	err = filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -91,7 +103,9 @@ func Run() {
 			i := bytes.Index(allFile, []byte("package"))
 
 			if !cli.Viper.GetBool("dryRun") {
-				_ = ioutil.WriteFile(path, append(license, allFile[i:]...), 0655)
+				if err := ioutil.WriteFile(path, append(license, allFile[i:]...), 0655); err != nil {
+					panic(err)
+				}
 			}
 			return nil
 		}
@@ -108,7 +122,9 @@ func Run() {
 
 func main() {
 	pflag.CommandLine.AddGoFlagSet(goflag.CommandLine)
-	_ = goflag.CommandLine.Parse(nil)
+	if err := goflag.CommandLine.Parse(nil); err != nil {
+		panic(err)
+	}
 
 	cmd := cli.NewCommand(&cobra.Command{
 		Use:  "license",
@@ -118,7 +134,7 @@ func main() {
 		},
 	})
 
-	_ = cmd.AddFlag(
+	if err := cmd.AddFlag(
 		cli.BoolFlag{
 			Name:      "dryRun",
 			Shorthand: "d",
@@ -128,7 +144,12 @@ func main() {
 			Shorthand: "r",
 			DefValue:  "./",
 		},
-	)
+		cli.StringFlag{
+			Name: "go-header-file",
+		},
+	); err != nil {
+		panic(err)
+	}
 
 	if err := cmd.Execute(); err != nil {
 		os.Exit(1)
