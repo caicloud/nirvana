@@ -20,13 +20,12 @@ import (
 	"testing"
 
 	"github.com/spf13/cobra"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestNewCommand(t *testing.T) {
 	cmd := NewCommand(nil)
-	if cmd.Command == nil {
-		t.Errorf("NewCommand() = nil")
-	}
+	assert.NotNil(t, cmd)
 }
 
 func TestCommand_AddFlag(t *testing.T) {
@@ -55,9 +54,7 @@ func TestCommand_Commands(t *testing.T) {
 
 	cmds := cmd.Commands()
 	for i, cc := range cmds {
-		if cc.Command != cs[i].Command {
-			t.Errorf("Commands() = %v, want %v", cc.Command, cs[i].Command)
-		}
+		assert.Equal(t, cs[i].Command, cc.Command)
 	}
 }
 
@@ -72,9 +69,7 @@ func TestCommand_CobraCommands(t *testing.T) {
 
 	cmds := cmd.CobraCommands()
 	for i, cc := range cmds {
-		if cc != cs[i] {
-			t.Errorf("CobraCommands() = %v, want %v", cc, cs[i])
-		}
+		assert.Equal(t, cs[i], cc)
 	}
 }
 
@@ -90,10 +85,7 @@ func TestCommand_RemoveCommand(t *testing.T) {
 	cmd.RemoveCommand(cs...)
 
 	cmds := cmd.Commands()
-	if len(cmds) != 0 {
-		t.Errorf("RemoveCommand() = %v, want %v", len(cmds), 0)
-
-	}
+	assert.Len(t, cmds, 0)
 }
 
 func TestCommand_RemoveCobraCommand(t *testing.T) {
@@ -107,8 +99,5 @@ func TestCommand_RemoveCobraCommand(t *testing.T) {
 	cmd.RemoveCobraCommand(cs...)
 
 	cmds := cmd.CobraCommands()
-	if len(cmds) != 0 {
-		t.Errorf("RemoveCobraCommand() = %v, want %v", len(cmds), 0)
-
-	}
+	assert.Len(t, cmds, 0)
 }

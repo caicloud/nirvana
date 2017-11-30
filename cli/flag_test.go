@@ -19,10 +19,13 @@ package cli
 import (
 	"testing"
 	time "time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 type testCase struct {
 	flag     string
+	value    interface{}
 	defValue interface{}
 	want     interface{}
 }
@@ -101,7 +104,7 @@ func Test_mergeWithEnvPrefix(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := mergeWithEnvPrefix(tt.key); got != tt.want {
-				t.Errorf("mergeWithEnvPrefix() = %v, want %v", got, tt.want)
+				assert.Equal(t, tt.want, got)
 			}
 		})
 	}
@@ -113,7 +116,7 @@ func Test_mergeWithEnvPrefix(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := mergeWithEnvPrefix(tt.key); got != tt.want {
-				t.Errorf("mergeWithEnvPrefix() = %v, want %v", got, tt.want)
+				assert.Equal(t, tt.want, got)
 			}
 		})
 	}
@@ -125,7 +128,7 @@ func Test_mergeWithEnvPrefix(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := mergeWithEnvPrefix(tt.key); got != tt.want {
-				t.Errorf("mergeWithEnvPrefix() = %v, want %v", got, tt.want)
+				assert.Equal(t, tt.want, got)
 			}
 		})
 	}
