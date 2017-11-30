@@ -50,9 +50,9 @@ func loadGoBoilerplate(filepath string) ([]byte, error) {
 
 // Run ...
 func Run() {
-	root := cli.Viper.GetString("root")
+	root := cli.GetString("root")
 
-	boilerplate, err := loadGoBoilerplate(cli.Viper.GetString("go-header-file"))
+	boilerplate, err := loadGoBoilerplate(cli.GetString("go-header-file"))
 	if err != nil {
 		glog.Fatal(err)
 		return
@@ -102,7 +102,7 @@ func Run() {
 
 			i := bytes.Index(allFile, []byte("package"))
 
-			if !cli.Viper.GetBool("dryRun") {
+			if !cli.GetBool("dryRun") {
 				if err := ioutil.WriteFile(path, append(license, allFile[i:]...), 0655); err != nil {
 					panic(err)
 				}
