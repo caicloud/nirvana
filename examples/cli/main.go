@@ -24,6 +24,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var (
+	// NeverStop may be passed to Until to make it never stop.
+	NeverStop <-chan struct{} = make(chan struct{})
+)
+
 func main() {
 
 	log := new(string)
@@ -32,30 +37,26 @@ func main() {
 		Use:  "example",
 		Long: "this is an cli example",
 		Run: func(cmd *cobra.Command, args []string) {
-			flog := cmd.PersistentFlags().Lookup("log")
+			flog := cmd.LocalFlags().Lookup("log")
 			fdev := cmd.PersistentFlags().Lookup("dev")
-			fmt.Println("hello world")
 			fmt.Printf("log: %v\n", *log)
 			fmt.Printf("flag.log: %v\n", flog.Value.String())
-			fmt.Printf("viper.log: %v\n", cli.Viper.GetString("log"))
+			fmt.Printf("viper.log: %v\n", cli.GetString("log"))
 
 			fmt.Printf("dev: %v\n", *dev)
 			fmt.Printf("flag.dev: %v\n", fdev.Value.String())
-			fmt.Printf("viper.dev: %v\n", cli.Viper.GetString("dev"))
+			fmt.Printf("viper.dev: %v\n", cli.GetString("dev"))
 		},
 	})
 
 	fs := []cli.Flag{
 		cli.StringFlag{
-			Name:                "log",
-			Shorthand:           "l",
-			EnvKey:              "LOG",
-			Persistent:          true,
-			Deprecated:          "move",
-			ShorthandDeprecated: "move2",
-			Hidden:              true,
-			Destination:         log,
+			Name:        "log",
+			Shorthand:   "l",
+			EnvKey:      "LOG",
+			Destination: log,
 		},
+		// hidden
 		cli.StringFlag{
 			Name:                "dev",
 			Shorthand:           "d",
@@ -66,6 +67,10 @@ func main() {
 			Hidden:              true,
 			DefValue:            "default value",
 			Destination:         dev,
+		},
+		cli.StringFlag{
+			Name:      "auto",
+			Shorthand: "a",
 		},
 	}
 
