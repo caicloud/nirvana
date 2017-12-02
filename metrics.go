@@ -14,25 +14,21 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package main
+package nirvana
 
 import (
-	"log"
-	"net/http"
-
-	"github.com/caicloud/nirvana/examples/api-basic/api/v1"
-	"github.com/caicloud/nirvana/examples/api-basic/api/v2"
 	"github.com/caicloud/nirvana/web"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
-func main() {
-	if err := web.RegisterDefaultEnvironment(); err != nil {
+// metrics installs the default prometheus metrics handler
+type metrics struct{}
+
+func (d metrics) Install(s web.Server, metricsPath string) {
+	if metricsPath == "" {
+		metricsPath = "/metrics"
+	}
+	if err := s.AddDescriptors(convertHandlerToDescriptor(metricsPath, promhttp.Handler())); err != nil {
 		panic(err)
 	}
-
-	s := web.NewDefaultServer()
-	v1.Install(s)
-	v2.Install(s)
-	log.Printf("Listening on 8080")
-	http.ListenAndServe(":8080", s)
 }

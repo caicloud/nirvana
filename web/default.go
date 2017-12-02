@@ -26,6 +26,12 @@ func RegisterDefaultEnvironment() error {
 	if !atomic.CompareAndSwapInt32(&registered, 0, 1) {
 		return nil
 	}
+	if err := RegisterProducer(nopProducer(MIME_TEXT)); err != nil {
+		return err
+	}
+	if err := RegisterProducer(nopProducer(MIME_OCTET)); err != nil {
+		return err
+	}
 	if err := registerJSONConsumerAndProducer(); err != nil {
 		return err
 	}

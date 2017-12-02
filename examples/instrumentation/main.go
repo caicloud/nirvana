@@ -20,19 +20,17 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/caicloud/nirvana/examples/api-basic/api/v1"
-	"github.com/caicloud/nirvana/examples/api-basic/api/v2"
-	"github.com/caicloud/nirvana/web"
+	"github.com/caicloud/nirvana"
 )
 
 func main() {
-	if err := web.RegisterDefaultEnvironment(); err != nil {
+	s, err := nirvana.New(&nirvana.Config{
+		EnableMetrics:   true,
+		EnableProfiling: true,
+	})
+	if err != nil {
 		panic(err)
 	}
-
-	s := web.NewDefaultServer()
-	v1.Install(s)
-	v2.Install(s)
 	log.Printf("Listening on 8080")
 	http.ListenAndServe(":8080", s)
 }
