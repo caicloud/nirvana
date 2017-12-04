@@ -92,6 +92,9 @@ func (g *viperTestGenerator) Imports(c *generator.Context) (imports []string) {
 	imports = append(imports, g.imports.ImportLines()...)
 	imports = append(imports, "testing")
 	imports = append(imports, "reflect")
+	imports = append(imports, "github.com/spf13/cast")
+	imports = append(imports, "github.com/stretchr/testify/assert")
+
 	return
 }
 

@@ -80,7 +80,7 @@ func Packages(_ *generator.Context, arguments *args.GeneratorArgs) generator.Pac
 					},
 					&viperGenerator{
 						DefaultGen: generator.DefaultGen{
-							OptionalName: "viper_generated",
+							OptionalName: "config_generated",
 						},
 						outputPackage: arguments.OutputPackagePath,
 						typeToMatch:   t,
@@ -88,7 +88,7 @@ func Packages(_ *generator.Context, arguments *args.GeneratorArgs) generator.Pac
 					},
 					&viperTestGenerator{
 						DefaultGen: generator.DefaultGen{
-							OptionalName: "viper_generated_test",
+							OptionalName: "config_generated_test",
 						},
 						outputPackage: arguments.OutputPackagePath,
 						typeToMatch:   t,
@@ -265,6 +265,7 @@ func (g *flagsTestGenerator) Imports(c *generator.Context) (imports []string) {
 	imports = append(imports, "github.com/spf13/viper")
 	imports = append(imports, "testing")
 	imports = append(imports, "reflect")
+	imports = append(imports, "github.com/stretchr/testify/assert")
 	return
 }
 

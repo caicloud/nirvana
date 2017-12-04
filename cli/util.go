@@ -16,6 +16,7 @@ limitations under the License.
 
 package cli
 
+// stringInSlice checks if the string exists in the list
 func stringInSlice(a string, list []string) bool {
 	for _, b := range list {
 		if b == a {
