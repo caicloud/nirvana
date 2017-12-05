@@ -18,12 +18,6 @@ package cli
 
 import (
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
-)
-
-var (
-	// Viper global viper
-	Viper = viper.New()
 )
 
 // Command contains a cobra.Command

@@ -78,6 +78,22 @@ func Packages(_ *generator.Context, arguments *args.GeneratorArgs) generator.Pac
 						typeToMatch:   t,
 						imports:       generator.NewImportTracker(),
 					},
+					&viperGenerator{
+						DefaultGen: generator.DefaultGen{
+							OptionalName: "config_generated",
+						},
+						outputPackage: arguments.OutputPackagePath,
+						typeToMatch:   t,
+						imports:       generator.NewImportTracker(),
+					},
+					&viperTestGenerator{
+						DefaultGen: generator.DefaultGen{
+							OptionalName: "config_generated_test",
+						},
+						outputPackage: arguments.OutputPackagePath,
+						typeToMatch:   t,
+						imports:       generator.NewImportTracker(),
+					},
 				)
 			}
 			return generators
@@ -221,7 +237,7 @@ func (f $.type|public$Flag) ApplyTo(fs *pflag.FlagSet) error {
 		}
 	}
 
-	return Viper.BindPFlag(f.Name, fs.Lookup(f.Name))
+	return v.BindPFlag(f.Name, fs.Lookup(f.Name))
 }
 `
 
@@ -249,6 +265,7 @@ func (g *flagsTestGenerator) Imports(c *generator.Context) (imports []string) {
 	imports = append(imports, "github.com/spf13/viper")
 	imports = append(imports, "testing")
 	imports = append(imports, "reflect")
+	imports = append(imports, "github.com/stretchr/testify/assert")
 	return
 }
 
@@ -265,6 +282,9 @@ func (g *flagsTestGenerator) GenerateType(c *generator.Context, t *types.Type, w
 
 var flagTestCode = `
 func Test$.type|public$Flag(t *testing.T) {
+	// reset viper
+	Reset()	
+
 	testcase := getTestCase("$.type|public$")
 	dest := new($.type|raw$)
 	f := $.type|public$Flag{
@@ -291,24 +311,14 @@ func Test$.type|public$Flag(t *testing.T) {
 	// test flag
 	fs.Parse([]string{"-t=" + testcase.flag})
 	want, err := cast.To$.type|public$E(testcase.want)
-	if err != nil {
-		t.Fatalf("Test$.type|public$Flag(): can't convert %v to $.type|raw$, %v", testcase.want, err)
-	}
-	if !reflect.DeepEqual(*dest, want) {
-		t.Fatalf("Test$.type|public$Flag() = %v, want %v", *dest, want)
-	}
+	assert.Nil(t, err)
+	assert.Equal(t, want, *dest)
 
 	// test viper
-	v := Viper.Get(f.Name)
+	v := v.Get(f.Name)
 	got, err := cast.To$.type|public$E(v)
-	if err != nil {
-		t.Fatalf("Test$.type|public$Flag(): can't convert %v to $.type|raw$, %v", v, err)
-	}
-	if !reflect.DeepEqual(got, want) {
-		t.Fatalf("Test$.type|public$Flag().Viper = %v, want %v", got, want)
-	}
-	// reset viper
-	Viper = viper.New()
+	assert.Nil(t, err)
+	assert.Equal(t, want, got)
 
 }
 `
