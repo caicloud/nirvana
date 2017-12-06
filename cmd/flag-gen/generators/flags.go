@@ -206,9 +206,13 @@ func (f $.type|public$Flag) ApplyTo(fs *pflag.FlagSet) error {
 		f.Destination = new($.type|raw$)
 	}
 
-	defValue := cast.To$.type|public$(getEnv(f.Name, f.EnvKey, f.DefValue))
+	realEnv, value := getEnv(f.Name, f.EnvKey, f.DefValue)
+	defValue := cast.To$.type|public$(value)
 
-	fs.$.type|public$VarP(f.Destination, f.Name, f.Shorthand, defValue, f.Usage)
+	// append env key to usage
+	usage := appendEnvToUsage(f.Usage, realEnv)
+
+	fs.$.type|public$VarP(f.Destination, f.Name, f.Shorthand, defValue, usage)
 
 	var err error
 
@@ -265,7 +269,6 @@ func (g *flagsTestGenerator) Imports(c *generator.Context) (imports []string) {
 	imports = append(imports, "github.com/spf13/viper")
 	imports = append(imports, "testing")
 	imports = append(imports, "reflect")
-	imports = append(imports, "github.com/stretchr/testify/assert")
 	return
 }
 
