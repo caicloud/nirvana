@@ -2,6 +2,18 @@
 
 
 [[projects]]
+  name = "github.com/apache/thrift"
+  packages = ["lib/go/thrift"]
+  revision = "b2a4d4ae21c789b689dd162deb819665567f481c"
+  version = "0.10.0"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/codahale/hdrhistogram"
+  packages = ["."]
+  revision = "3a0bb77429bd3a61596f5e8a3172445844342120"
+
+[[projects]]
   name = "github.com/davecgh/go-spew"
   packages = ["spew"]
   revision = "346938d642f2ec3594ed81d874461961cd0faa76"
@@ -54,6 +66,12 @@
   name = "github.com/mitchellh/mapstructure"
   packages = ["."]
   revision = "06020f85339e21b2478f756a78e295255ffa4d6a"
+
+[[projects]]
+  name = "github.com/opentracing/opentracing-go"
+  packages = [".","ext","log"]
+  revision = "1949ddbfd147afd4d964a9f00b24eb291e0e7c38"
+  version = "v1.0.2"
 
 [[projects]]
   name = "github.com/pelletier/go-toml"
@@ -110,6 +128,24 @@
   version = "v1.1.4"
 
 [[projects]]
+  name = "github.com/uber/jaeger-client-go"
+  packages = [".","config","internal/baggage","internal/baggage/remote","internal/spanlog","log","rpcmetrics","thrift-gen/agent","thrift-gen/baggage","thrift-gen/jaeger","thrift-gen/sampling","thrift-gen/zipkincore","utils"]
+  revision = "ff3efa227b65e419701a4f48985379ca106a89e7"
+  version = "v2.11.0"
+
+[[projects]]
+  name = "github.com/uber/jaeger-lib"
+  packages = ["metrics"]
+  revision = "c48167d9cae5887393dd5e61efd06a4a48b7fbb3"
+  version = "v1.2.1"
+
+[[projects]]
+  branch = "master"
+  name = "golang.org/x/net"
+  packages = ["context"]
+  revision = "a8b9294777976932365dabb6640cf1468d95c70f"
+
+[[projects]]
   branch = "master"
   name = "golang.org/x/sys"
   packages = ["unix"]
@@ -142,6 +178,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "92eebcfdf0be71fbe19620f5e5566efd1b216923e5ec67f5a3581049b101ad59"
+  inputs-digest = "1052c071c19bd2a49382f795aead787e1d8f88dce64bc4d6797cf502a78964de"
   solver-name = "gps-cdcl"
   solver-version = 1
