@@ -57,7 +57,10 @@ func (c *Config) New() func(context.Context, router.RoutingChain) error {
 		req := web.HTTPRequest(ctx)
 
 		// extract span context from HTTP Headers
-		spanContext, _ := c.Tracer.Extract(opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(req.Header)) // nolint: errcheck
+		spanContext, err := c.Tracer.Extract(opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(req.Header))
+		if err != nil {
+			glog.Error(err)
+		}
 
 		// TODO(yejiayu): abstract path
 		span := c.Tracer.StartSpan(req.URL.Path, ext.RPCServerOption(spanContext))
@@ -69,7 +72,7 @@ func (c *Config) New() func(context.Context, router.RoutingChain) error {
 		ext.Component.Set(span, "nirvana/middlewares/trace")
 		span.SetTag("Request-Id", req.Header.Get("Request-Id"))
 
-		req, err := c.logsRequest(span, req)
+		req, err = c.logsRequest(span, req)
 		if err != nil {
 			return err
 		}
