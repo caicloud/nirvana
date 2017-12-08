@@ -77,6 +77,7 @@ func Run() {
 		}
 
 		// skip not go file
+		// TODO: support bash and python file
 		if ext := filepath.Ext(path); ext != ".go" {
 			// log.Infof("Skip file: %s", path)
 			return nil
