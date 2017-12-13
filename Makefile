@@ -4,6 +4,9 @@ PKGS := $(shell go list ./... | grep -v /vendor | grep -v /tests)
 .PHONY: test
 test:
 	@go test -cover $(PKGS)
+	hack/verify_boilerplate.py	
+	hack/verify-govet.sh
+	hack/verify-gofmt.sh
 
 .PHONY: flag-gen 
 flag-gen: 
@@ -18,5 +21,4 @@ flag-gen:
 
 .PHONY: license
 license: 
-	go run ./cmd/license/apache.go --go-header-file boilerplate/boilerplate.go.txt --logtostderr
-
+	go run ./cmd/license/apache.go --go-header-file hack/boilerplate/boilerplate.go.txt --logtostderr
