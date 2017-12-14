@@ -44,7 +44,7 @@ func main() {
 	example := definition.Descriptor{
 		Path:        "/",
 		Description: "trace example",
-		Middlewares: []router.Middleware{cfg.New()},
+		Middlewares: []router.Middleware{trace.New(cfg)},
 		Definitions: []definition.Definition{
 			{
 				Method: definition.Get,

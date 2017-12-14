@@ -1,11 +1,24 @@
+/*
+Copyright 2017 Caicloud Authors
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package trace
 
 import (
-	"bytes"
 	"context"
 	"io"
-	"io/ioutil"
-	"net/http"
 	"time"
 
 	"github.com/caicloud/nirvana/router"
@@ -20,39 +33,19 @@ import (
 type event string
 
 const (
-	eventRequest event = "request"
-	eventError   event = "error"
-	// eventResponse = "response"
+	eventRequest  event = "request"
+	eventResponse event = "response"
 )
-
-var defaultContentTypes = []string{"application/json"}
-
-// once the request is received, it'll be invoked before entering the next middleware.
-// You can customize here to record some of the span information.
-type OnRequest func(span opentracing.Span, req *http.Request)
-
-// type OnResponse func(span opentracing.Span, req *http.Request)
 
 // Config is trace middleware configuration.
 type Config struct {
 	// You Can call 'NewDefaultTracerClient' get a default configuration tracer client.
 	// Or use the 'github.com/uber/jaeger-client-go' custom configurations.
 	Tracer opentracing.Tracer
-	// The middleware will record the reqeust body and the response body by default.
-	// if Disable, the middleware will not record it.
-	DisableRecordFull bool
-	// Need to record the 'content type' of the full request. By default only 'application/json'
-	RecordContentTypes []string
-	OnRequest          OnRequest
-	// OnResponse         OnResponse
 }
 
 // New created trace middlewares.
-func (c *Config) New() func(context.Context, router.RoutingChain) error {
-	if len(c.RecordContentTypes) == 0 {
-		c.RecordContentTypes = defaultContentTypes
-	}
-
+func New(c *Config) func(context.Context, router.RoutingChain) error {
 	return func(ctx context.Context, next router.RoutingChain) error {
 		req := web.HTTPRequest(ctx)
 
@@ -72,22 +65,21 @@ func (c *Config) New() func(context.Context, router.RoutingChain) error {
 		ext.Component.Set(span, "nirvana/middlewares/trace")
 		span.SetTag("Request-Id", req.Header.Get("Request-Id"))
 
-		req, err = c.logsRequest(span, req)
-		if err != nil {
-			return err
-		}
-		if c.OnRequest != nil {
-			c.OnRequest(span, req)
-		}
+		span.LogFields(
+			log.String("event", string(eventRequest)),
+		)
 
 		ctx = opentracing.ContextWithSpan(ctx, span)
+
+		defer func() {
+			span.LogFields(
+				log.String("event", string(eventResponse)),
+			)
+		}()
 		if err := next.Continue(ctx); err != nil {
 			ext.HTTPStatusCode.Set(span, 500)
 			ext.Error.Set(span, true)
-			span.LogFields(
-				log.String("event", string(eventError)),
-				log.Error(err),
-			)
+			return err
 		}
 
 		resp := web.HTTPResponseWriter(ctx)
@@ -97,48 +89,8 @@ func (c *Config) New() func(context.Context, router.RoutingChain) error {
 			ext.Error.Set(span, true)
 		}
 
-		// TODO(yejiayu): logs response
-
 		return nil
 	}
-}
-
-func (c *Config) logsRequest(span opentracing.Span, req *http.Request) (*http.Request, error) {
-	if req.URL.Query().Encode() != "" {
-		span.LogFields(
-			log.String("event", string(eventRequest)),
-			log.String("query", req.URL.Query().Encode()),
-		)
-	}
-
-	if c.DisableRecordFull {
-		return req, nil
-	}
-
-	method := req.Method
-	if method != http.MethodPost && method != http.MethodPut && method != http.MethodPatch {
-		return req, nil
-	}
-
-	contentType := req.Header.Get("Content-Type")
-	for _, ct := range c.RecordContentTypes {
-		if contentType == ct {
-			defer req.Body.Close() // nolint: errcheck
-			b, err := ioutil.ReadAll(req.Body)
-			if err != nil {
-				return nil, err
-			}
-
-			span.LogFields(
-				log.String("event", string(eventRequest)),
-				log.String("body", string(b)),
-			)
-			req.Body = ioutil.NopCloser(bytes.NewReader(b))
-			break
-		}
-	}
-
-	return req, nil
 }
 
 // NewDefaultTracerClient created a default configuration tracer client.
