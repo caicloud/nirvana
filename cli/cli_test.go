@@ -60,8 +60,8 @@ func TestCommand_Commands(t *testing.T) {
 
 func TestCommand_CobraCommands(t *testing.T) {
 	cs := []*cobra.Command{
-		&cobra.Command{},
-		&cobra.Command{},
+		{},
+		{},
 	}
 	c := &cobra.Command{}
 	cmd := NewCommand(c)
@@ -90,8 +90,8 @@ func TestCommand_RemoveCommand(t *testing.T) {
 
 func TestCommand_RemoveCobraCommand(t *testing.T) {
 	cs := []*cobra.Command{
-		&cobra.Command{},
-		&cobra.Command{},
+		{},
+		{},
 	}
 	c := &cobra.Command{}
 	cmd := NewCommand(c)

@@ -1,4 +1,4 @@
-#!/bin/bash -euf -o pipefail
+#!/usr/bin/env bash
 # Copyright 2017 Caicloud Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,6 +13,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-gitbook build
-rm -rf ../docs
-mv _book ../docs
+set -o errexit
+set -o nounset
+set -o pipefail
+
+diff=$(find . -name "*.go" | grep -v "\/vendor\/" | xargs gofmt -s -d 2>&1)
+if [[ -n "${diff}" ]]; then
+  echo "${diff}"
+  echo
+  echo "Please run hack/update-gofmt.sh"
+  exit 
+fi

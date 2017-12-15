@@ -1,10 +1,8 @@
-# Cli - Mamba
-
-The CLI pkg is also named Mamba.
+# CLI
 
 ## About the project
 
-Mamba provides a higher level and more friendly interfaces to build modern command line interfaces and manage configurations for Go applications.
+CLI provides a higher level and more friendly interfaces to build modern command line interfaces and manage configurations for Go applications.
 
 It is based on
 
@@ -30,22 +28,20 @@ The flag is compatible with the [GNU extensions to the POSIX recommendations for
 
 ### Commands
 
-You can migrate your cobra commands to mamba easily.
-
-the `cli.NewCommand` receives a `*cobra.Command` to build the whole CLI.
+You can migrate your cobra commands to CLI easily. The `cli.NewCommand` receives a `*cobra.Command` to build the command line interface.
 
 ```go
 import (
-	mamba "github.com/caicloud/nirvana/cli"
+	"github.com/caicloud/nirvana/cli"
 	"github.com/spf13/cobra"
 )
 
 func main() {
-	cmd := mamba.NewCommand(&cobra.Command{
+	cmd := cli.NewCommand(&cobra.Command{
 		Use:  "example",
 		Long: "this is an cli example",
 		Run: func(cmd *cobra.Command, args []string) {
-			// you code
+			// your code
 		},
 	})
 }
@@ -55,11 +51,7 @@ func main() {
 
 ### Flags
 
-Flag, different from `pflag.Flag`, is an interface containing the following methods in Mamba.
-
-And it is declarative in Mamba, unlike in Cobra where it is imperative which makes the flags **more readable**.
-
-Mamba will bind `viper` and `flags` automatically. That means you can get all your flag values from `viper`.
+Flag, different from `pflag.Flag`, is an interface containing the following methods in CLI. And it is declarative in CLI, unlike in Cobra where it is imperative, which makes the flags **more readable**.
 
 ```go
 // Flag describes a flag interface
@@ -105,9 +97,9 @@ type StringFlag struct {
 
 #### Binding flag with ENV
 
-Mamba supports the ability to bind your flags with ENV variables.
+CLI supports the ability to bind your flags with ENV variables.
 
-Mamba uses the following precedence order. Each item takes precedence over the item below it.
+CLI uses the following precedence order. Each item takes precedence over the item below it.
 
 -   explicit calls to set
 -   flag
@@ -124,21 +116,15 @@ f := cli.StringFlag{
 
 #### Automatic ENV and Prefix
 
-Mamba supports the ability to bind you flags with ENV and add prefix automatically
+CLI supports the ability to bind you flags with ENV and add prefix automatically
 
-The following methods exist to aid working with ENV
+The following methods exist to aid working with ENV:
 
--   `AutomaticEnv()`
--   `SetEnvPrefix(string)`
--   `SetEnvKeyReplacer(*strings.Replacer)`
+-   `AutomaticEnv()`: It tells CLI to bind all flags with ENV automatically. 
+-   `SetEnvPrefix(string)`: It is **always** working with `AutomaticEnv` . It makes CLI add a prefix while reading from env variables.
+-   `SetEnvKeyReplacer(*strings.Replacer)`: It makes CLI change the ENV by key replacer. For example, you can set a `UnderlineReplacer` to replace all `-` with `_` .
 
-*When working with ENV variables, it’s important to recognize that Mamba treats ENV variables case insensitively. All ENV variables are treated as UPPER case*
-
-By using `AutomaticEnv`, you tell mamba to bind all flags with ENV automatically. 
-
-`SetEnvPrefix` is **always** working with `AutomaticEnv` . It makes mamba add a prefix while reading from env variables.
-
-By using  `SetEnvKeyReplacer`, you make mamba change the ENV by key replacer. For example, you can set a `UnderlineReplacer` to replace all `-` with `_` .
+*When working with ENV variables, it’s important to recognize that CLI treats ENV variables case insensitively. All ENV variables are treated as UPPER case*
 
 >   **Note: If EnvKey is set, it will override the automatic env and does not automatically add the prefix.**
 
@@ -172,18 +158,89 @@ You can set the flag as usual.
 -   `Hidden` just hide the flag
 -   `Deprecated` and `ShorthandDeprecated` will print a deprecated message to you if you use the flag
 
-### [WIP] Viper 
+#### Persistent
 
-You can get a flag value from viper easily.
+Persistent option makes the flag can be inherited by it children‘s commands
+
+### Configuration 
+
+CLI can be also treated as a configuration registry.
+
+*The flags are bound to registry automatically. That means all defined flags' values can be accessed by `Get()` function.*
 
 ```go
-cli.Viper.GetString("log")
+cmd.AddFlag(cli.StringFlag{Name: "log", DefValue: "test configuration"})
+cli.GetString("log") // test configuration
 ```
 
->   Need further integration
+#### Reading Config Files
 
+There are two ways for you to let CLI know where to look for config files.
 
+1.  `SetConfigFile(in string)`
+2.  `SetConfigPaths(noExtName string, paths …string)`
+
+`SetConfigFile` explicitly defines the path, name and extension of the config file. CLI will use this and not check any of the config paths.
+
+`SetConfigPaths` defines a config file name without the extension and paths where CLI search the config file in. 
+
+Then, use
+
+-   `ReadInConfig`
+-   `MergeInConfig`
+
+to load configuration files.
+
+The difference between `ReadInConfig` and `MergeInConfig` is that `ReadInConfig` discards all existing config but `MergeInConfig` merges the configuration with existing one.
+
+#### Watching and reloading config files
+
+After setting config file path, working with `WatchConfig(onChange func(in fsnotify.Event))` to watch the config file changes.
+
+If the watched config file is created/deleted/updated, CLI will read new values from config file automatically. Then the onChange callback function is invoked.
+
+```go
+cli.SetConfigFile("/etc/nirvana/config.json")
+cli.WatchConfig(func(e fsnotify.Event){
+	fmt.Println("Config file changed: ", e.Name)
+})
+```
+
+#### Reading Config from io.Reader
+
+CLI supports the ability to let you implement your own required configuration source and feed it to CLI.
+
+But the prerequisite is that CLI should known what type it is.
+
+Using `SetConfigType(in string)` to tell CLI the type of configuration. The following type are supported now:
+
+-   json
+-   toml
+-   yaml or yml
+-   hcl
+-   properties, props, prop
+
+#### Getting Values From CLI
+
+The following methods exist to aid getting values from CLI.
+
+-   `Get(key string) interface{}`
+-   `IsSet(key string) bool`
+-   `GetBool(key string) bool`
+-   `GetDuration(key string) time.Duration`
+-   `GetFloat32(key string) float32`
+-   `GetFloat64(key string) float64`
+-   `GetInt(key string) int`
+-   `GetInt32(key string) int32`
+-   `GetInt64(key string) int64`
+-   `GetString(key string) string`
+-   `GetStringSlice(key string) []string`
+-   `GetUint(key string) uint`
+-   `GetUint32(key string) uint32`
+-   `GetUint64(key string) uint64`
+
+>   Note that each Get function will return a zero value if it is not found. To check if a given key exists, please use `IsSet()`
 
 ## Thanks
 
-spf13 creates awesome tools to make it easier to build a beautiful modern CLI apps.
+Thanks spf13 for creating awesome tools to make it easier to build beautiful modern CLI apps.
