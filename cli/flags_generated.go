@@ -71,9 +71,13 @@ func (f BoolFlag) ApplyTo(fs *pflag.FlagSet) error {
 		f.Destination = new(bool)
 	}
 
-	defValue := cast.ToBool(getEnv(f.Name, f.EnvKey, f.DefValue))
+	realEnv, value := getEnv(f.Name, f.EnvKey, f.DefValue)
+	defValue := cast.ToBool(value)
 
-	fs.BoolVarP(f.Destination, f.Name, f.Shorthand, defValue, f.Usage)
+	// append env key to usage
+	usage := appendEnvToUsage(f.Usage, realEnv)
+
+	fs.BoolVarP(f.Destination, f.Name, f.Shorthand, defValue, usage)
 
 	var err error
 
@@ -151,9 +155,13 @@ func (f DurationFlag) ApplyTo(fs *pflag.FlagSet) error {
 		f.Destination = new(time.Duration)
 	}
 
-	defValue := cast.ToDuration(getEnv(f.Name, f.EnvKey, f.DefValue))
+	realEnv, value := getEnv(f.Name, f.EnvKey, f.DefValue)
+	defValue := cast.ToDuration(value)
 
-	fs.DurationVarP(f.Destination, f.Name, f.Shorthand, defValue, f.Usage)
+	// append env key to usage
+	usage := appendEnvToUsage(f.Usage, realEnv)
+
+	fs.DurationVarP(f.Destination, f.Name, f.Shorthand, defValue, usage)
 
 	var err error
 
@@ -231,9 +239,13 @@ func (f Float32Flag) ApplyTo(fs *pflag.FlagSet) error {
 		f.Destination = new(float32)
 	}
 
-	defValue := cast.ToFloat32(getEnv(f.Name, f.EnvKey, f.DefValue))
+	realEnv, value := getEnv(f.Name, f.EnvKey, f.DefValue)
+	defValue := cast.ToFloat32(value)
 
-	fs.Float32VarP(f.Destination, f.Name, f.Shorthand, defValue, f.Usage)
+	// append env key to usage
+	usage := appendEnvToUsage(f.Usage, realEnv)
+
+	fs.Float32VarP(f.Destination, f.Name, f.Shorthand, defValue, usage)
 
 	var err error
 
@@ -311,9 +323,13 @@ func (f Float64Flag) ApplyTo(fs *pflag.FlagSet) error {
 		f.Destination = new(float64)
 	}
 
-	defValue := cast.ToFloat64(getEnv(f.Name, f.EnvKey, f.DefValue))
+	realEnv, value := getEnv(f.Name, f.EnvKey, f.DefValue)
+	defValue := cast.ToFloat64(value)
 
-	fs.Float64VarP(f.Destination, f.Name, f.Shorthand, defValue, f.Usage)
+	// append env key to usage
+	usage := appendEnvToUsage(f.Usage, realEnv)
+
+	fs.Float64VarP(f.Destination, f.Name, f.Shorthand, defValue, usage)
 
 	var err error
 
@@ -391,9 +407,13 @@ func (f IntFlag) ApplyTo(fs *pflag.FlagSet) error {
 		f.Destination = new(int)
 	}
 
-	defValue := cast.ToInt(getEnv(f.Name, f.EnvKey, f.DefValue))
+	realEnv, value := getEnv(f.Name, f.EnvKey, f.DefValue)
+	defValue := cast.ToInt(value)
 
-	fs.IntVarP(f.Destination, f.Name, f.Shorthand, defValue, f.Usage)
+	// append env key to usage
+	usage := appendEnvToUsage(f.Usage, realEnv)
+
+	fs.IntVarP(f.Destination, f.Name, f.Shorthand, defValue, usage)
 
 	var err error
 
@@ -471,9 +491,13 @@ func (f Int32Flag) ApplyTo(fs *pflag.FlagSet) error {
 		f.Destination = new(int32)
 	}
 
-	defValue := cast.ToInt32(getEnv(f.Name, f.EnvKey, f.DefValue))
+	realEnv, value := getEnv(f.Name, f.EnvKey, f.DefValue)
+	defValue := cast.ToInt32(value)
 
-	fs.Int32VarP(f.Destination, f.Name, f.Shorthand, defValue, f.Usage)
+	// append env key to usage
+	usage := appendEnvToUsage(f.Usage, realEnv)
+
+	fs.Int32VarP(f.Destination, f.Name, f.Shorthand, defValue, usage)
 
 	var err error
 
@@ -551,9 +575,13 @@ func (f Int64Flag) ApplyTo(fs *pflag.FlagSet) error {
 		f.Destination = new(int64)
 	}
 
-	defValue := cast.ToInt64(getEnv(f.Name, f.EnvKey, f.DefValue))
+	realEnv, value := getEnv(f.Name, f.EnvKey, f.DefValue)
+	defValue := cast.ToInt64(value)
 
-	fs.Int64VarP(f.Destination, f.Name, f.Shorthand, defValue, f.Usage)
+	// append env key to usage
+	usage := appendEnvToUsage(f.Usage, realEnv)
+
+	fs.Int64VarP(f.Destination, f.Name, f.Shorthand, defValue, usage)
 
 	var err error
 
@@ -631,9 +659,13 @@ func (f StringFlag) ApplyTo(fs *pflag.FlagSet) error {
 		f.Destination = new(string)
 	}
 
-	defValue := cast.ToString(getEnv(f.Name, f.EnvKey, f.DefValue))
+	realEnv, value := getEnv(f.Name, f.EnvKey, f.DefValue)
+	defValue := cast.ToString(value)
 
-	fs.StringVarP(f.Destination, f.Name, f.Shorthand, defValue, f.Usage)
+	// append env key to usage
+	usage := appendEnvToUsage(f.Usage, realEnv)
+
+	fs.StringVarP(f.Destination, f.Name, f.Shorthand, defValue, usage)
 
 	var err error
 
@@ -711,9 +743,13 @@ func (f StringSliceFlag) ApplyTo(fs *pflag.FlagSet) error {
 		f.Destination = new([]string)
 	}
 
-	defValue := cast.ToStringSlice(getEnv(f.Name, f.EnvKey, f.DefValue))
+	realEnv, value := getEnv(f.Name, f.EnvKey, f.DefValue)
+	defValue := cast.ToStringSlice(value)
 
-	fs.StringSliceVarP(f.Destination, f.Name, f.Shorthand, defValue, f.Usage)
+	// append env key to usage
+	usage := appendEnvToUsage(f.Usage, realEnv)
+
+	fs.StringSliceVarP(f.Destination, f.Name, f.Shorthand, defValue, usage)
 
 	var err error
 
@@ -791,9 +827,13 @@ func (f UintFlag) ApplyTo(fs *pflag.FlagSet) error {
 		f.Destination = new(uint)
 	}
 
-	defValue := cast.ToUint(getEnv(f.Name, f.EnvKey, f.DefValue))
+	realEnv, value := getEnv(f.Name, f.EnvKey, f.DefValue)
+	defValue := cast.ToUint(value)
 
-	fs.UintVarP(f.Destination, f.Name, f.Shorthand, defValue, f.Usage)
+	// append env key to usage
+	usage := appendEnvToUsage(f.Usage, realEnv)
+
+	fs.UintVarP(f.Destination, f.Name, f.Shorthand, defValue, usage)
 
 	var err error
 
@@ -871,9 +911,13 @@ func (f Uint32Flag) ApplyTo(fs *pflag.FlagSet) error {
 		f.Destination = new(uint32)
 	}
 
-	defValue := cast.ToUint32(getEnv(f.Name, f.EnvKey, f.DefValue))
+	realEnv, value := getEnv(f.Name, f.EnvKey, f.DefValue)
+	defValue := cast.ToUint32(value)
 
-	fs.Uint32VarP(f.Destination, f.Name, f.Shorthand, defValue, f.Usage)
+	// append env key to usage
+	usage := appendEnvToUsage(f.Usage, realEnv)
+
+	fs.Uint32VarP(f.Destination, f.Name, f.Shorthand, defValue, usage)
 
 	var err error
 
@@ -951,9 +995,13 @@ func (f Uint64Flag) ApplyTo(fs *pflag.FlagSet) error {
 		f.Destination = new(uint64)
 	}
 
-	defValue := cast.ToUint64(getEnv(f.Name, f.EnvKey, f.DefValue))
+	realEnv, value := getEnv(f.Name, f.EnvKey, f.DefValue)
+	defValue := cast.ToUint64(value)
 
-	fs.Uint64VarP(f.Destination, f.Name, f.Shorthand, defValue, f.Usage)
+	// append env key to usage
+	usage := appendEnvToUsage(f.Usage, realEnv)
+
+	fs.Uint64VarP(f.Destination, f.Name, f.Shorthand, defValue, usage)
 
 	var err error
 
