@@ -17,14 +17,11 @@ limitations under the License.
 package cli
 
 import (
+	"fmt"
 	"os"
 	"strings"
 
 	"github.com/spf13/pflag"
-)
-
-const (
-	underline = "_"
 )
 
 var (
@@ -76,8 +73,8 @@ func mergeWithEnvPrefix(key string) string {
 	}
 
 	if envPrefix != "" {
-		connector := underline
-		if strings.HasSuffix(envPrefix, underline) {
+		connector := "_"
+		if strings.HasSuffix(envPrefix, "_") {
 			connector = ""
 		}
 		return strings.ToUpper(envPrefix + connector + key)
@@ -92,21 +89,34 @@ func mergeWithEnvPrefix(key string) string {
 // if env key is "", and AutomaticEnv is set, mamba will try to generate
 // env key by merging name with envPrefix.
 // finally, if the key is "" or key is not set in env, returns the defValue.
-func getEnv(name, envKey string, defValue interface{}) interface{} {
+func getEnv(name, envKey string, defValue interface{}) (string, interface{}) {
 
 	if envKey == "" && automaticEnvApplied {
 		envKey = mergeWithEnvPrefix(name)
 	}
 
 	if envKey == "" {
-		return defValue
+		return "", defValue
 	}
 
 	e, ok := os.LookupEnv(envKey)
 	if ok {
-		return e
+		return envKey, e
 	}
 
-	return defValue
+	return envKey, defValue
+
+}
+
+func appendEnvToUsage(usage, key string) string {
+	if key == "" {
+		return usage
+	}
+
+	if usage == "" {
+		return fmt.Sprintf("(env $%v)", key)
+	}
+
+	return fmt.Sprintf("%v (env $%v)", usage, key)
 
 }
