@@ -1,7 +1,6 @@
 language: go
 
 go:
-  - 1.7
   - 1.8
   - 1.9
 
@@ -12,7 +11,7 @@ before_install:
   - go test -i $(go list ./... | grep -v /vendor | grep -v /tests)
 
 script:
-  - gometalinter --config=config.json ./...
+  - gometalinter --config=config.json --deadline=300s ./...
   - goveralls -service=travis-ci
   - hack/verify-govet.sh
   - hack/verify-gofmt.sh
