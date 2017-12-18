@@ -26,7 +26,7 @@ import (
 
 func operater(f interface{}) definition.Operator {
 	value := reflect.ValueOf(f)
-	return func(ctx context.Context, i interface{}) (interface{}, error) {
+	return definition.OperatorFunc(func(ctx context.Context, i interface{}) (interface{}, error) {
 		params := []reflect.Value{reflect.ValueOf(ctx), reflect.ValueOf(i)}
 		results := value.Call(params)
 		err := results[1].Interface()
@@ -34,7 +34,7 @@ func operater(f interface{}) definition.Operator {
 			return nil, err.(error)
 		}
 		return results[0].Interface(), nil
-	}
+	})
 }
 
 func ConvertApplicationV1ToApplicationV2() definition.Operator {

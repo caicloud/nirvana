@@ -23,7 +23,15 @@ import (
 	"github.com/caicloud/nirvana/router"
 )
 
-type Operator func(ctx context.Context, object interface{}) (interface{}, error)
+type Operator interface {
+	Operate(ctx context.Context, object interface{}) (interface{}, error)
+}
+
+type OperatorFunc func(ctx context.Context, object interface{}) (interface{}, error)
+
+func (f OperatorFunc) Operate(ctx context.Context, object interface{}) (interface{}, error) {
+	return f(ctx, object)
+}
 
 // Method is an alternative of HTTP method. It's more clearer than HTTP method.
 // A definition method binds a certain HTTP method and a success status code.
