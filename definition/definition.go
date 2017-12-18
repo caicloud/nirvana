@@ -145,6 +145,9 @@ type Parameter struct {
 type Result struct {
 	// Type is the target for the result. Different types make different behavior.
 	Type Type
+	// Headers is a map from key used by result to http Header
+	// Only used when Type is Meta
+	Headers map[string]string
 	// Operators can modify the result value.
 	// Result value is passed to the first operator, then
 	// previous operator's result is as next operator's parameter.
