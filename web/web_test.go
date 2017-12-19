@@ -143,7 +143,7 @@ func TestServer(t *testing.T) {
 	if resp.header == nil || resp.header.Get("Content-Type") != "application/json" {
 		t.Fatalf("Content-Type should be application/json, but got: %s", resp.header.Get("Content-Type"))
 	}
-	result := string(resp.buf.Bytes())
+	result := resp.buf.String()
 	target := `{"name":"asdasd","namespace":"system","target":"nothing","target2":1,"target1":false}` + "\n"
 	if result != target {
 		t.Fatalf("Response does not match: %s", result)

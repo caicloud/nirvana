@@ -50,11 +50,7 @@ func registerJSONConsumerAndProducer() error {
 	if err != nil {
 		return err
 	}
-	err = RegisterProducer(&JSONSerializer{})
-	if err != nil {
-		return err
-	}
-	return nil
+	return RegisterProducer(&JSONSerializer{})
 }
 
 func registerXMLConsumerAndProducer() error {
@@ -63,11 +59,7 @@ func registerXMLConsumerAndProducer() error {
 	if err != nil {
 		return err
 	}
-	err = RegisterProducer(&XMLSerializer{})
-	if err != nil {
-		return err
-	}
-	return nil
+	return RegisterProducer(&XMLSerializer{})
 }
 
 func registerContextPrefab() error {

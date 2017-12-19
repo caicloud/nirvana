@@ -227,5 +227,4 @@ func (c *server) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 	if ctx.response.HeaderWritable() {
 		http.Error(&ctx.response, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 	}
-	return
 }
