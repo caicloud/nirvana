@@ -91,9 +91,10 @@ func TestIsSet(t *testing.T) {
 }
 
 func TestGet(t *testing.T) {
-	type args struct {
-		key string
-	}
+	// TODO: why not used?
+	// type args struct {
+	// 	key string
+	// }
 	tests := []struct {
 		name  string
 		key   string
