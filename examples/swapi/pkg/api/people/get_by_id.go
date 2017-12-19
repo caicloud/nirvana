@@ -2,11 +2,12 @@ package people
 
 import (
 	"context"
-	"github.com/caicloud/nirvana/examples/swapi/pkg/model"
-	"sort"
-	"github.com/caicloud/nirvana/definition"
-	"reflect"
 	"fmt"
+	"reflect"
+	"sort"
+
+	"github.com/caicloud/nirvana/definition"
+	"github.com/caicloud/nirvana/examples/swapi/pkg/model"
 )
 
 func getByIdDefinition(people []model.Person) definition.Definition {

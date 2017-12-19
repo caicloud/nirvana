@@ -2,11 +2,12 @@ package people
 
 import (
 	"context"
-	"github.com/caicloud/nirvana/examples/swapi/pkg/model"
-	"sort"
-	"github.com/caicloud/nirvana/definition"
-	"github.com/caicloud/nirvana/validator"
 	"reflect"
+	"sort"
+
+	"github.com/caicloud/nirvana/definition"
+	"github.com/caicloud/nirvana/examples/swapi/pkg/model"
+	"github.com/caicloud/nirvana/validator"
 )
 
 func listDefinition(people []model.Person) definition.Definition {
