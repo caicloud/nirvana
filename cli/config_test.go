@@ -297,8 +297,7 @@ func TestAllKeys(t *testing.T) {
 	ReadConfig(strings.NewReader(`{"k2": "v", "k": {"k3": 1}}`))
 	want := sort.StringSlice{"k1", "k2", "k.k3"}
 	want.Sort()
-	var allKeys sort.StringSlice
-	allKeys = AllKeys()
+	allKeys := sort.StringSlice(AllKeys())
 	allKeys.Sort()
 	assert.Equal(t, want, allKeys)
 }

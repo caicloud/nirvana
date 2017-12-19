@@ -11,6 +11,7 @@
     "goimports",
     "varcheck",
     "gas",
+    "gosimple",
     "lll",
     "unconvert",
     "misspell",
