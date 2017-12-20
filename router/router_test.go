@@ -360,10 +360,16 @@ func makeRouter(t *testing.T, rds []TestRouterData) Router {
 	return root
 }
 
+type contextKey string
+
+func (c contextKey) String() string {
+	return "mypackage context key " + string(c)
+}
+
 func testMatch(t *testing.T, router Router, right []TestData, wrong []TestData) {
 	for _, d := range right {
 		values := NewTestValueContainer()
-		ctx := context.WithValue(context.Background(), "Type", d.Type)
+		ctx := context.WithValue(context.Background(), contextKey("Type"), d.Type)
 		e := router.Match(ctx, values, d.Path)
 		if e == nil {
 			t.Fatalf("Can't match path: %s", d.Path)
@@ -375,7 +381,7 @@ func testMatch(t *testing.T, router Router, right []TestData, wrong []TestData) 
 			}
 		}
 		result := 0
-		ctx = context.WithValue(ctx, "Result", &result)
+		ctx = context.WithValue(ctx, contextKey("Result"), &result)
 		err := e.Execute(ctx)
 		if err != nil {
 			t.Fatalf("Untracked error: %s", err.Error())
@@ -386,7 +392,7 @@ func testMatch(t *testing.T, router Router, right []TestData, wrong []TestData) 
 	}
 	for _, d := range wrong {
 		values := NewTestValueContainer()
-		ctx := context.WithValue(context.Background(), "Type", d.Type)
+		ctx := context.WithValue(context.Background(), contextKey("Type"), d.Type)
 		e := router.Match(ctx, values, d.Path)
 		if e != nil {
 			t.Logf("%+v", e)
@@ -398,9 +404,9 @@ func testMatch(t *testing.T, router Router, right []TestData, wrong []TestData) 
 func TestMiddleWare(t *testing.T) {
 	rds := []TestRouterData{
 		{"/api/v2", []*TestExecutor{{"GET", 202}, {"DELETE", 203}}, []Middleware{func(ctx context.Context, c RoutingChain) error {
-			resultptr := ctx.Value("Result").(*int)
+			resultptr := ctx.Value(contextKey("Result")).(*int)
 			*resultptr++
-			c.Continue(context.WithValue(ctx, "Result", resultptr))
+			c.Continue(context.WithValue(ctx, contextKey("Result"), resultptr))
 			return nil
 		}}},
 	}
@@ -650,7 +656,7 @@ type TestExecutor struct {
 }
 
 func (te *TestExecutor) Inspect(c context.Context) (Executor, bool) {
-	ins := c.Value("Type")
+	ins := c.Value(contextKey("Type"))
 	if typ, ok := ins.(string); ok && typ == te.Type {
 		return te, true
 	}
@@ -658,7 +664,7 @@ func (te *TestExecutor) Inspect(c context.Context) (Executor, bool) {
 }
 
 func (te *TestExecutor) Execute(c context.Context) error {
-	result := c.Value("Result")
+	result := c.Value(contextKey("Result"))
 	if pointer, ok := result.(*int); ok {
 		*pointer += te.Result
 	} else {

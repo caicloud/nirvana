@@ -355,16 +355,15 @@ func (e *cell) Execute(ctx context.Context) (err error) {
 				e.formatError(string(p.generator.Source()), p.name, fmt.Errorf("required field but got empty")).Error(),
 				http.StatusBadRequest)
 			return nil
-		} else {
-			if closer, ok := result.(io.Closer); ok {
-				defer func() {
-					if e := closer.Close(); e != nil && err == nil {
-						// Need to print error here.
-						err = e
-					}
-				}()
-			}
+		} else if closer, ok := result.(io.Closer); ok {
+			defer func() {
+				if e := closer.Close(); e != nil && err == nil {
+					// Need to print error here.
+					err = e
+				}
+			}()
 		}
+
 		paramValues = append(paramValues, reflect.ValueOf(result))
 	}
 	resultValues := e.function.Call(paramValues)

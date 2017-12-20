@@ -42,17 +42,17 @@ type Executor interface {
 	Execute(context.Context) error
 }
 
-// RouterKind is kind of routers.
-type RouterKind string
+// RouteKind is kind of routers.
+type RouteKind string
 
 const (
 	// String means the router has a fixed string.
-	String RouterKind = "String"
+	String RouteKind = "String"
 	// Regexp means the router has a regular expression.
-	Regexp RouterKind = "Regexp"
+	Regexp RouteKind = "Regexp"
 	// Path means the router matches the rest. Path router only can
 	// be placed at the leaf node.
-	Path RouterKind = "Path"
+	Path RouteKind = "Path"
 )
 
 // Container is a key-value container. It saves key-values from path.
@@ -69,7 +69,7 @@ type Router interface {
 	// It can be a fixed string or a regular expression.
 	Target() string
 	// Kind returns the kind of the router node.
-	Kind() RouterKind
+	Kind() RouteKind
 	// Match find an executor matched by path.
 	// The context contains information to inspect executor.
 	// The container can save key-value pair from the path.
@@ -97,10 +97,10 @@ type Router interface {
 }
 
 const (
-	// Default match regular expression. All regexp router without expression
+	// FullMatchTarget is a match for full regular expression. All regexp router without expression
 	// will use the expression.
 	FullMatchTarget = ".*"
-	// Tail match expression.
+	// TailMatchTarget is a match expression for tail only.
 	TailMatchTarget = "*"
 )
 
@@ -161,28 +161,29 @@ func SegmentToRouter(seg *Segment) (Router, error) {
 			return &FullMatchRegexpNode{
 				Key: seg.Keys[0],
 			}, nil
-		} else {
-			node := &RegexpNode{
-				Exp: seg.Match,
-			}
-			r, err := regexp.Compile("^" + seg.Match + "$")
-			if err != nil {
-				return nil, err
-			}
-			node.Regexp = r
-			names := r.SubexpNames()
-			j := 0
-			for i := 0; i < len(names) && j < len(seg.Keys); i++ {
-				if names[i] == seg.Keys[j] {
-					node.Indices = append(node.Indices, Index{names[i], i})
-					j++
-				}
-			}
-			if j != len(seg.Keys) {
-				return nil, fmt.Errorf("unmatched keys: %+v", seg)
-			}
-			return node, nil
 		}
+
+		node := &RegexpNode{
+			Exp: seg.Match,
+		}
+		r, err := regexp.Compile("^" + seg.Match + "$")
+		if err != nil {
+			return nil, err
+		}
+		node.Regexp = r
+		names := r.SubexpNames()
+		j := 0
+		for i := 0; i < len(names) && j < len(seg.Keys); i++ {
+			if names[i] == seg.Keys[j] {
+				node.Indices = append(node.Indices, Index{names[i], i})
+				j++
+			}
+		}
+		if j != len(seg.Keys) {
+			return nil, fmt.Errorf("unmatched keys: %+v", seg)
+		}
+		return node, nil
+
 	case Path:
 		return &PathNode{
 			Key: seg.Keys[0],
@@ -235,7 +236,7 @@ type Segment struct {
 	// Keys contains keys from segments.
 	Keys []string
 	// Kind is the router kind which the segment can be converted to.
-	Kind RouterKind
+	Kind RouteKind
 }
 
 // Reorganize reorganizes the form of paths.

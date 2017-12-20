@@ -50,7 +50,7 @@ func (n *RegexpNode) Target() string {
 }
 
 // Kind returns the kind of the router node.
-func (n *RegexpNode) Kind() RouterKind {
+func (n *RegexpNode) Kind() RouteKind {
 	return Regexp
 }
 
@@ -119,7 +119,7 @@ func (n *FullMatchRegexpNode) Target() string {
 }
 
 // Kind returns the kind of the router node.
-func (n *FullMatchRegexpNode) Kind() RouterKind {
+func (n *FullMatchRegexpNode) Kind() RouteKind {
 	return Regexp
 }
 

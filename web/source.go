@@ -309,7 +309,7 @@ func (g *PrefabParameterGenerator) Generate(ctx context.Context, vc ValueContain
 	return prefab.Make(ctx)
 }
 
-// AutoParameterGenerators generates an object from a struct type. The fields in a struct can have tag.
+// AutoParameterGenerator generates an object from a struct type. The fields in a struct can have tag.
 // Tag name is "source". Its value format is "Source,Name".
 //
 // ex.
