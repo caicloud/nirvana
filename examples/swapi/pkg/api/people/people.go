@@ -17,9 +17,10 @@ limitations under the License.
 package people
 
 import (
+	"sort"
+
 	"github.com/caicloud/nirvana/definition"
 	"github.com/caicloud/nirvana/examples/swapi/pkg/loader"
-	"sort"
 )
 
 func API(l loader.ModelLoader) definition.Descriptor {
