@@ -381,7 +381,7 @@ func testMatch(t *testing.T, router Router, right []TestData, wrong []TestData) 
 			}
 		}
 		result := 0
-		ctx = context.WithValue(ctx, contextKey("result"), &result)
+		ctx = context.WithValue(ctx, contextKey("Result"), &result)
 		err := e.Execute(ctx)
 		if err != nil {
 			t.Fatalf("Untracked error: %s", err.Error())
