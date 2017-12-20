@@ -17,10 +17,10 @@ limitations under the License.
 package loader
 
 import (
-	"github.com/caicloud/nirvana/examples/swapi/pkg/model"
-	"path"
-	"io/ioutil"
 	"encoding/json"
+	"github.com/caicloud/nirvana/examples/swapi/pkg/model"
+	"io/ioutil"
+	"path"
 )
 
 type ModelLoader interface {

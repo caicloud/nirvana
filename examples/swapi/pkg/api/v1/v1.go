@@ -17,10 +17,10 @@ limitations under the License.
 package v1
 
 import (
-	"github.com/caicloud/nirvana/examples/swapi/pkg/loader"
+	"context"
 	"github.com/caicloud/nirvana/definition"
 	"github.com/caicloud/nirvana/examples/swapi/pkg/api/people"
-	"context"
+	"github.com/caicloud/nirvana/examples/swapi/pkg/loader"
 )
 
 func API(model loader.ModelLoader) definition.Descriptor {

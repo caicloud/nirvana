@@ -17,9 +17,9 @@ limitations under the License.
 package api
 
 import (
-	"github.com/caicloud/nirvana/web"
-	"github.com/caicloud/nirvana/examples/swapi/pkg/loader"
 	"github.com/caicloud/nirvana/examples/swapi/pkg/api/v1"
+	"github.com/caicloud/nirvana/examples/swapi/pkg/loader"
+	"github.com/caicloud/nirvana/web"
 )
 
 func CreateWebServer(model loader.ModelLoader) web.Server {
