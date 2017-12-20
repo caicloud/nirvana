@@ -17,7 +17,6 @@ limitations under the License.
 package cli
 
 import (
-	"io"
 	"io/ioutil"
 	"os"
 	"path"
@@ -91,9 +90,6 @@ func TestIsSet(t *testing.T) {
 }
 
 func TestGet(t *testing.T) {
-	type args struct {
-		key string
-	}
 	tests := []struct {
 		name  string
 		key   string
@@ -115,11 +111,9 @@ func TestSetConfigFile(t *testing.T) {
 	type args struct {
 		in string
 	}
-	tests := []struct {
+	var tests []struct {
 		name string
 		args args
-	}{
-	// TODO: Add test cases.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -129,9 +123,6 @@ func TestSetConfigFile(t *testing.T) {
 }
 
 func TestReadConfig(t *testing.T) {
-	type args struct {
-		in io.Reader
-	}
 	tests := []struct {
 		name    string
 		content string
@@ -167,7 +158,7 @@ func TestReadInConfig(t *testing.T) {
 	defer cleanup()
 
 	entries, _ := ioutil.ReadDir(root)
-	paths := []string{}
+	var paths []string
 	for _, e := range entries {
 		if e.IsDir() {
 			paths = append(paths, e.Name())
@@ -189,9 +180,6 @@ func TestReadInConfig(t *testing.T) {
 
 func TestMergeConfig(t *testing.T) {
 	Reset()
-	type args struct {
-		in io.Reader
-	}
 	tests := []struct {
 		name    string
 		content string
@@ -227,7 +215,7 @@ func TestMergeInConfig(t *testing.T) {
 	defer cleanup()
 
 	entries, _ := ioutil.ReadDir(root)
-	paths := []string{}
+	var paths []string
 	for _, e := range entries {
 		if e.IsDir() {
 			paths = append(paths, e.Name())
@@ -245,50 +233,6 @@ func TestMergeInConfig(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, "value is "+path.Base(paths[1]), v.GetString("key"))
 }
-
-// func TestWatchConfig(t *testing.T) {
-// 	Reset()
-// 	root, config, cleanup := initDirs(t)
-// 	defer cleanup()
-
-// 	entries, _ := ioutil.ReadDir(root)
-// 	paths := []string{}
-// 	for _, e := range entries {
-// 		if e.IsDir() {
-// 			paths = append(paths, e.Name())
-// 		}
-// 	}
-// 	SetConfigPaths(config, paths...)
-// 	ReadInConfig()
-// 	// watch
-// 	changed := 0
-// 	onChange := func(in fsnotify.Event) {
-// 		changed++
-// 	}
-
-// 	WatchConfig(onChange)
-// 	// watch take a little time, so we sleep to wait
-// 	time.Sleep(10 * time.Millisecond)
-
-// 	err := ioutil.WriteFile(
-// 		path.Join(paths[0], config+".toml"),
-// 		[]byte("key = \"value is 1\"\n"),
-// 		0640)
-// 	time.Sleep(10 * time.Millisecond)
-// 	assert.Nil(t, err)
-// 	assert.Equal(t, 1, changed)
-// 	assert.Equal(t, "value is 1", v.GetString("key"))
-
-// 	err = ioutil.WriteFile(
-// 		path.Join(paths[0], config+".toml"),
-// 		[]byte("key = \"value is 2\"\n"),
-// 		0640)
-// 	time.Sleep(10 * time.Millisecond)
-// 	assert.Nil(t, err)
-// 	assert.Equal(t, 2, changed)
-// 	assert.Equal(t, "value is 2", v.GetString("key"))
-
-// }
 
 func TestAllKeys(t *testing.T) {
 	Reset()

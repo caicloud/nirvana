@@ -16,13 +16,12 @@ limitations under the License.
 
 package types
 
-import (
-	"time"
-)
+import "time"
 
 // go:generate flag-gen -i github.com/caicloud/nirvana/cmd/flag-gen/types -o github.com/caicloud/nirvana/cli
 
-// FlagTypes ...
+// FlagTypes is an example struct to be consumed by flag-gen
+// nolint: megacheck
 type FlagTypes struct {
 	a bool
 	// b []bool not support now
