@@ -20,25 +20,26 @@ import (
 	"context"
 	"reflect"
 	"testing"
+
+	"github.com/caicloud/nirvana/definition"
+	"github.com/caicloud/nirvana/errors"
 )
 
 func TestVar(t *testing.T) {
-	v, err := Var("gt=0,lt=10")(context.Background(), 5)
+	op := Var("gt=0,lt=10")
+	v, err := op.Operate(context.Background(), 5)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if !reflect.DeepEqual(v, 5) {
 		t.Fatalf("get %v want %v", v, 5)
 	}
-}
-
-func TestVarWithValue(t *testing.T) {
-	v, err := VarWithValue("other", "eqcsfield")(context.Background(), "other")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !reflect.DeepEqual(v, "other") {
-		t.Fatalf("get %v want %v", v, "other")
+	infoer := op.(Infoer)
+	if !reflect.DeepEqual(infoer.Info(), Info{
+		Kind: KindVar,
+		Tag:  "gt=0,lt=10",
+	}) {
+		t.Fatal(infoer.Info())
 	}
 }
 
@@ -46,12 +47,47 @@ func TestStruct(t *testing.T) {
 	var me = struct {
 		Name string `json:"name" validate:"required,printascii"`
 	}{"233"}
-
-	v, err := Struct()(context.Background(), me)
+	op := Struct()
+	v, err := op.Operate(context.Background(), me)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if !reflect.DeepEqual(v, me) {
 		t.Fatalf("get %v want %v", v, me)
+	}
+	infoer := op.(Infoer)
+	if !reflect.DeepEqual(infoer.Info(), Info{
+		Kind: KindStruct,
+	}) {
+		t.Fatal(infoer.Info())
+	}
+}
+
+func TestNewCustom(t *testing.T) {
+	var anje = struct {
+		Name string
+	}{"anje"}
+	op := NewCustom(definition.OperatorFunc(func(ctx context.Context, object interface{}) (interface{}, error) {
+		obj := object.(struct {
+			Name string
+		})
+		if obj.Name != "anje" {
+			return nil, errors.BadRequest.NewFactory("badRequest:name", "${name} wrong").New("anje")
+		}
+		return object, nil
+	}), "check name")
+	v, err := op.Operate(context.Background(), anje)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(v, anje) {
+		t.Fatalf("get %v want %v", v, anje)
+	}
+	infoer := op.(Infoer)
+	if !reflect.DeepEqual(infoer.Info(), Info{
+		Kind:        KindCustom,
+		Description: "check name",
+	}) {
+		t.Fatal(infoer.Info())
 	}
 }
