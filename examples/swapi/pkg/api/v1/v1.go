@@ -18,6 +18,7 @@ package v1
 
 import (
 	"context"
+
 	"github.com/caicloud/nirvana/definition"
 	"github.com/caicloud/nirvana/examples/swapi/pkg/api/people"
 	"github.com/caicloud/nirvana/examples/swapi/pkg/loader"

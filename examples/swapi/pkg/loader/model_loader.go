@@ -18,9 +18,10 @@ package loader
 
 import (
 	"encoding/json"
-	"github.com/caicloud/nirvana/examples/swapi/pkg/model"
 	"io/ioutil"
 	"path"
+
+	"github.com/caicloud/nirvana/examples/swapi/pkg/model"
 )
 
 type ModelLoader interface {
