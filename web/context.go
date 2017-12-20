@@ -191,6 +191,9 @@ func (c *response) Header() http.Header {
 
 // Write is a disguise of http.response.Write().
 func (c *response) Write(data []byte) (int, error) {
+	if c.statusCode <= 0 {
+		c.WriteHeader(200)
+	}
 	length, err := c.writer.Write(data)
 	c.contentLength += length
 	return length, err

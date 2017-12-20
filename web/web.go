@@ -64,7 +64,6 @@ func NewDefaultServer() Server {
 	s.AddFilters(RedirectTrailingSlash(), ParseRequestForm(), FillLeadingSlash())
 	s.SetModifier(FirstContextParameter())
 	return s
-
 }
 
 // NewServer creates a basic server.

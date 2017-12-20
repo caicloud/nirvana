@@ -123,6 +123,19 @@ func (s *XMLSerializer) Produce(w io.Writer, v interface{}) error {
 	return xml.NewEncoder(w).Encode(v)
 }
 
+const (
+	MIME_OCTET = "application/octet-stream"
+	MIME_TEXT  = "text/plain"
+)
+
+type nopProducer string
+
+func (p nopProducer) Produce(w io.Writer, v interface{}) error { return nil }
+
+func (p nopProducer) ContentType() string {
+	return string(p)
+}
+
 // Prefab creates instances for internal type. These instances are not
 // unmarshaled form http request data.
 type Prefab interface {

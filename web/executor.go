@@ -42,7 +42,8 @@ func (e *executor) addDefinition(d definition.Definition) error {
 	if method == "" {
 		return fmt.Errorf("no http method for %s", d.Method)
 	}
-	if len(d.Consumes) <= 0 {
+
+	if !methodIsHeadOrGet(method) && len(d.Consumes) <= 0 {
 		return fmt.Errorf("no content type to consume for %s", d.Method)
 	}
 	if len(d.Produces) <= 0 {
@@ -189,6 +190,10 @@ func (s resultsSorter) Swap(i, j int) {
 	s[i], s[j] = s[j], s[i]
 }
 
+func methodIsHeadOrGet(method string) bool {
+	return http.MethodGet == method || http.MethodHead == method
+}
+
 // Inspect finds a valid executor to execute target context.
 func (e *executor) Inspect(ctx context.Context) (router.Executor, bool) {
 	req := HTTPRequest(ctx)
@@ -203,7 +208,7 @@ func (e *executor) Inspect(ctx context.Context) (router.Executor, bool) {
 		return nil, false
 	}
 	ct, err := ContentType(req)
-	if err != nil || ct == "" {
+	if err != nil || (!methodIsHeadOrGet(req.Method) && ct == "") {
 		return nil, false
 	}
 	accepted := 0
@@ -287,6 +292,9 @@ func (e *cell) ctMap() map[string][]string {
 }
 
 func (e *cell) acceptable(ct string) bool {
+	if methodIsHeadOrGet(e.method) {
+		return true
+	}
 	for _, c := range e.consumers {
 		if c.ContentType() == ct {
 			return true

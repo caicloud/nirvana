@@ -17,6 +17,7 @@ limitations under the License.
 package main
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/caicloud/nirvana/examples/api-basic/api/v1"
@@ -32,5 +33,6 @@ func main() {
 	s := web.NewDefaultServer()
 	v1.Install(s)
 	v2.Install(s)
+	log.Printf("Listening on 8080")
 	http.ListenAndServe(":8080", s)
 }
