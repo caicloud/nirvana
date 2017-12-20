@@ -342,7 +342,7 @@ func (e *cell) Execute(ctx context.Context) (err error) {
 			result = p.defaultValue
 		}
 		for _, operator := range p.operators {
-			result, err = operator(ctx, result)
+			result, err = operator.Operate(ctx, result)
 			if err != nil {
 				http.Error(&c.response,
 					e.formatError(string(p.generator.Source()), p.name, err).Error(),
@@ -371,7 +371,7 @@ func (e *cell) Execute(ctx context.Context) (err error) {
 		v := resultValues[r.index]
 		data := v.Interface()
 		for _, operator := range r.operators {
-			newData, err := operator(ctx, data)
+			newData, err := operator.Operate(ctx, data)
 			if err != nil {
 				return err
 			}

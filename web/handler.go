@@ -44,12 +44,12 @@ type Error interface {
 // You can add the operator into the field "definition.Definition.Results[].Operators[]":
 // MetaOperatorForKey("Content-Type")
 func MetaOperatorForKey(key string) definition.Operator {
-	return func(ctx context.Context, object interface{}) (interface{}, error) {
+	return definition.OperatorFunc(func(ctx context.Context, object interface{}) (interface{}, error) {
 		if str, ok := object.(string); ok {
 			return map[string]string{key: str}, nil
 		}
 		return nil, fmt.Errorf("can't convert meta for type %s", reflect.TypeOf(object))
-	}
+	})
 }
 
 const (

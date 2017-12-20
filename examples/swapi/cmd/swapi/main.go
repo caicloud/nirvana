@@ -18,13 +18,14 @@ package main
 
 import (
 	"fmt"
+	"net/http"
+	"os"
+	"path"
+
 	"github.com/caicloud/nirvana/cli"
 	"github.com/caicloud/nirvana/examples/swapi/pkg/api"
 	"github.com/caicloud/nirvana/examples/swapi/pkg/loader"
 	"github.com/spf13/cobra"
-	"net/http"
-	"os"
-	"path"
 )
 
 const ErrCode = 1
