@@ -11,7 +11,7 @@ before_install:
   - go test -i $(go list ./... | grep -v /vendor | grep -v /tests)
 
 script:
-  - gometalinter --config=config.json --deadline=300s ./...
+  - gometalinter --config=config.json ./...
   - goveralls -service=travis-ci
   - hack/verify-govet.sh
   - hack/verify-gofmt.sh

@@ -28,9 +28,9 @@ import (
 )
 
 var (
-	// contextKeyUnderlyingHttpContext is a key for context.
+	// contextKeyUnderlyingHTTPContext is a key for context.
 	// It's unique and point to httpCtx.
-	contextKeyUnderlyingHttpContext interface{} = new(byte)
+	contextKeyUnderlyingHTTPContext interface{} = new(byte)
 )
 
 // httpCtx contains a http.Request and a http.ResponseWriter for a request.
@@ -41,7 +41,7 @@ type httpCtx struct {
 	response  response
 }
 
-func newHttpContext() interface{} {
+func newHTTPContext() interface{} {
 	ctx := &httpCtx{}
 	ctx.container.params = make([]param, 0, 5)
 	return ctx
@@ -69,9 +69,9 @@ func (c *httpCtx) clear() {
 	c.response.writer = nil
 }
 
-// Value returns itself when key is contextKeyUnderlyingHttpContext.
+// Value returns itself when key is contextKeyUnderlyingHTTPContext.
 func (c *httpCtx) Value(key interface{}) interface{} {
-	if key == contextKeyUnderlyingHttpContext {
+	if key == contextKeyUnderlyingHTTPContext {
 		return c
 	}
 	return c.Context.Value(key)
@@ -268,7 +268,7 @@ func HTTPValueContainer(ctx context.Context) ValueContainer {
 }
 
 func httpContext(ctx context.Context) *httpCtx {
-	value := ctx.Value(contextKeyUnderlyingHttpContext)
+	value := ctx.Value(contextKeyUnderlyingHTTPContext)
 	if value == nil {
 		return nil
 	}

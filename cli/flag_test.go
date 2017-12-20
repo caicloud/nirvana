@@ -18,14 +18,13 @@ package cli
 
 import (
 	"testing"
-	time "time"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
 
 type testCase struct {
 	flag     string
-	value    interface{}
 	defValue interface{}
 	want     interface{}
 }

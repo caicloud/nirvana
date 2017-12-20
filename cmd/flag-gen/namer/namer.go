@@ -95,7 +95,6 @@ func (ns *NameStrategy) removePrefixAndSuffix(s string) string {
 	return s[b:e]
 }
 
-// See the comment on NameStrategy.
 func (ns *NameStrategy) Name(t *types.Type) string {
 	// pre get name
 	name := ns.NameStrategy.Name(t)
