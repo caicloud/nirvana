@@ -309,7 +309,7 @@ func ParseExpSegment(exp string) (*ExpSegment, error) {
 	if !strings.HasPrefix(exp, "{") || !strings.HasSuffix(exp, "}") {
 		return nil, fmt.Errorf("exp does not have normative format: %s", exp)
 	}
-	exp = exp[1: len(exp)-1]
+	exp = exp[1 : len(exp)-1]
 	pos := strings.Index(exp, ":")
 	seg := &ExpSegment{}
 	if pos < 0 {

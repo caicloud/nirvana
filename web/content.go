@@ -127,7 +127,7 @@ const (
 	// MimeOctet is the mime type for unknown byte stream
 	MimeOctet = "application/octet-stream"
 	// MimeText is the mime type for text
-	MimeText  = "text/plain"
+	MimeText = "text/plain"
 )
 
 type nopProducer string
