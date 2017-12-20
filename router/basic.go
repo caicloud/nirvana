@@ -91,7 +91,7 @@ func (h *Handler) UnionExecutor(ctx context.Context) Executor {
 	return h.Pack(e)
 }
 
-// CharRouter
+// CharRouter is a router for characters
 type CharRouter struct {
 	Char   byte
 	Router *StringNode
@@ -163,7 +163,7 @@ func (p *Progeny) Match(ctx context.Context, c Container, path string) Executor 
 	return nil
 }
 
-//  AddRouter adds a router to current progeny.
+// AddRouter adds a router to current progeny.
 func (p *Progeny) AddRouter(router Router) {
 	switch router.Kind() {
 	case String:

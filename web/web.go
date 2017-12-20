@@ -80,7 +80,7 @@ func NewServer() Server {
 		filters:     []Filter{},
 		logger:      &log.SilentLogger{},
 	}
-	c.pool.New = newHttpContext
+	c.pool.New = newHTTPContext
 	return c
 }
 

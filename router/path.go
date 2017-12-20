@@ -35,7 +35,7 @@ func (n *PathNode) Target() string {
 }
 
 // Kind returns the kind of the router node.
-func (n *PathNode) Kind() RouterKind {
+func (n *PathNode) Kind() RouteKind {
 	return Path
 }
 

@@ -18,7 +18,7 @@ package cli
 
 import (
 	"testing"
-	time "time"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )

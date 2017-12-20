@@ -42,7 +42,7 @@ type Consumer interface {
 	Consume(r io.Reader, v interface{}) error
 }
 
-// Consumer marshals an object to specifically typed data and write it into a writer.
+// Producer marshals an object to specifically typed data and write it into a writer.
 type Producer interface {
 	// ContentType returns a HTTP MIME type.
 	ContentType() string
@@ -124,8 +124,10 @@ func (s *XMLSerializer) Produce(w io.Writer, v interface{}) error {
 }
 
 const (
-	MIME_OCTET = "application/octet-stream"
-	MIME_TEXT  = "text/plain"
+	// MIMEOctet is the mime type for unknown byte stream
+	MIMEOctet = "application/octet-stream"
+	// MIMEText is the mime type for text
+	MIMEText = "text/plain"
 )
 
 type nopProducer string
