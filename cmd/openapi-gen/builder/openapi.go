@@ -79,10 +79,7 @@ func newOpenAPI(c *common.Config) (*openAPI, error) {
 }
 
 func (o *openAPI) init(descriptor *definition.Descriptor) error {
-	if err := o.buildDescriptor("", nil, nil, descriptor); err != nil {
-		return err
-	}
-	return nil
+	return o.buildDescriptor("", nil, nil, descriptor)
 }
 
 func (o *openAPI) buildDescriptor(path string, consumes, produces []string, descriptor *definition.Descriptor) error {
@@ -171,7 +168,7 @@ func (o *openAPI) buildOperation(def *definition.Definition, consumes, produces 
 			Security: nil,
 		},
 	}
-	ps, err := o.buildParameters(def.Parameters)
+	ps, err := o.buildParameters(def.Function, def.Parameters)
 	if err != nil {
 		return nil, err
 	}
@@ -184,16 +181,21 @@ func (o *openAPI) buildOperation(def *definition.Definition, consumes, produces 
 	return &op, nil
 }
 
-func (o *openAPI) buildParameters(params []definition.Parameter) ([]spec.Parameter, error) {
+func (o *openAPI) buildParameters(handler interface{}, params []definition.Parameter) ([]spec.Parameter, error) {
 	specParams := []spec.Parameter{}
-	for _, param := range params {
+
+	ht := reflect.TypeOf(handler)
+	if ht.Kind() != reflect.Func {
+		return nil, fmt.Errorf("Handler is not a function")
+	}
+
+	for i, param := range params {
 		specParam := spec.Parameter{
 			ParamProps: spec.ParamProps{
 				Name:        param.Name,
 				Description: param.Description,
 				Required:    false,
 			},
-			SimpleSchema: spec.SimpleSchema{},
 		}
 		specParam.Default = param.Default
 		if specParam.Default == nil {
@@ -215,10 +217,26 @@ func (o *openAPI) buildParameters(params []definition.Parameter) ([]spec.Paramet
 			if !specParam.Required {
 				return nil, fmt.Errorf("body param %v MUST be required", param.Name)
 			}
+			dataType := ht.In(i)
+			s, err := o.toSchema(dataType)
+			if err != nil {
+				return nil, err
+			}
+			specParam.Schema = s
+			specParams = append(specParams, specParam)
+			continue
 		case definition.Prefab:
 			// NOTE(liubog2008): skip prefab
 		case definition.Auto:
 			// NOTE(liubog2008): handle by ref
+		}
+		// TODO(liubog2008): support array type of parameter, e.g. []string
+		dataType := ht.In(i)
+		if openAPIType, openAPIFormat := common.GetOpenAPITypeFormat(getCanonicalizeTypeName(dataType)); openAPIType != "" {
+			specParam.SimpleSchema = spec.SimpleSchema{
+				Type:   openAPIType,
+				Format: openAPIFormat,
+			}
 		}
 		specParams = append(specParams, specParam)
 	}
@@ -231,7 +249,9 @@ func (o *openAPI) buildResponses(handler interface{}, results []definition.Resul
 	}
 
 	rightResponse := spec.Response{
-		ResponseProps: spec.ResponseProps{},
+		ResponseProps: spec.ResponseProps{
+			Headers: map[string]spec.Header{},
+		},
 	}
 
 	ht := reflect.TypeOf(handler)

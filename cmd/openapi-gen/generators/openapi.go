@@ -126,9 +126,7 @@ func (g *openAPIGen) Namers(ctx *generator.Context) namer.NameSystems {
 
 func (g *openAPIGen) Imports(ctx *generator.Context) []string {
 	importLines := []string{}
-	for _, singleImport := range g.imports.ImportLines() {
-		importLines = append(importLines, singleImport)
-	}
+	importLines = append(importLines, g.imports.ImportLines()...)
 	importLines = append(importLines, specPackagePath)
 	return importLines
 }

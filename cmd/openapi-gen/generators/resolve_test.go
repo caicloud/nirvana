@@ -81,6 +81,14 @@ func TestGetReferableName(t *testing.T) {
 			},
 			"A",
 		},
+		{
+			"skip if json tag is '-'",
+			&types.Member{
+				Name: "A",
+				Tags: `json:"-"`,
+			},
+			"",
+		},
 	}
 	for _, c := range cases {
 		assert.Equal(t, c.name, getReferableName(c.m), c.description)

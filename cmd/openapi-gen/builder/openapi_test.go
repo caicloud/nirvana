@@ -5,9 +5,129 @@ import (
 	"testing"
 
 	"github.com/caicloud/nirvana/cmd/openapi-gen/common"
+	"github.com/caicloud/nirvana/definition"
 	"github.com/go-openapi/spec"
 	"github.com/stretchr/testify/assert"
 )
+
+var def = definition.Definition{
+	Method:   definition.Create,
+	Function: Handler,
+	Parameters: []definition.Parameter{
+		{
+			Source: definition.Header,
+			Name:   "User-Agent",
+		},
+		{
+			Source: definition.Query,
+			Name:   "start",
+		},
+		{
+			Source: definition.Body,
+			Name:   "app",
+		},
+	},
+	Results: []definition.Result{
+		{
+			Type: definition.Meta,
+			Headers: map[string]string{
+				"xxx": "X-Xxx",
+			},
+		},
+		{Type: definition.Data},
+		{Type: definition.Error},
+	},
+}
+
+var descriptor = definition.Descriptor{
+	Path:        "/api/v1",
+	Definitions: []definition.Definition{},
+	Consumes:    []string{"application/json"},
+	Produces:    []string{"application/json"},
+	Children: []definition.Descriptor{
+		{
+			Path: "/input",
+			Definitions: []definition.Definition{
+				def,
+			},
+		},
+	},
+}
+
+var (
+	parameters = []spec.Parameter{
+		{
+			ParamProps: spec.ParamProps{
+				Name:     "User-Agent",
+				Required: true,
+				In:       "header",
+			},
+			SimpleSchema: spec.SimpleSchema{
+				Type:   "string",
+				Format: "",
+			},
+		},
+		{
+			ParamProps: spec.ParamProps{
+				Name:     "start",
+				Required: true,
+				In:       "query",
+			},
+			SimpleSchema: spec.SimpleSchema{
+				Type:   "integer",
+				Format: "int",
+			},
+		},
+		{
+			ParamProps: spec.ParamProps{
+				Name:     "app",
+				Required: true,
+				In:       "body",
+				Schema: &spec.Schema{
+					SchemaProps: spec.SchemaProps{
+						Ref: spec.MustCreateRef("#/definitions/builder.TestInput"),
+					},
+				},
+			},
+		},
+	}
+	responses = &spec.Responses{
+		ResponsesProps: spec.ResponsesProps{
+			StatusCodeResponses: map[int]spec.Response{
+				201: spec.Response{
+					ResponseProps: spec.ResponseProps{
+						Headers: map[string]spec.Header{
+							"X-Xxx": {
+								SimpleSchema: spec.SimpleSchema{
+									Type:   "string",
+									Format: "",
+								},
+							},
+						},
+						Schema: &spec.Schema{
+							SchemaProps: spec.SchemaProps{
+								Ref: spec.MustCreateRef("#/definitions/builder.TestOutput"),
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	operation = &spec.Operation{
+		OperationProps: spec.OperationProps{
+			Description: def.Description,
+			Consumes:    []string{"application/json"},
+			Produces:    []string{"application/json"},
+			Parameters:  parameters,
+			Responses:   responses,
+		},
+	}
+)
+
+func Handler(agent string, start int, input *TestInput) (map[string]string, *TestOutput, error) {
+	return nil, nil, nil
+}
 
 // TestContent ...
 type TestContent struct {
@@ -162,10 +282,60 @@ func newConfig() *common.Config {
 	}
 }
 
+func TestBuildPathItems(t *testing.T) {
+	c := newConfig()
+	o, err := newOpenAPI(c)
+	assert.Nil(t, err, "can new openAPI successfully")
+
+	pathItems, err := o.buildPathItems("/api/v1/input", descriptor.Consumes, descriptor.Produces, descriptor.Children[0].Definitions)
+	assert.Nil(t, err)
+
+	assert.Equal(t, map[string]spec.PathItem{
+		"/api/v1/input": {
+			PathItemProps: spec.PathItemProps{
+				Post: operation,
+			},
+		},
+	}, pathItems)
+}
+
+func TestBuildOperation(t *testing.T) {
+	c := newConfig()
+	o, err := newOpenAPI(c)
+	assert.Nil(t, err, "can new openAPI successfully")
+
+	op, err := o.buildOperation(&def, descriptor.Consumes, descriptor.Produces, 201)
+	assert.Nil(t, err)
+
+	assert.Equal(t, operation, op)
+}
+
+func TestBuildParameters(t *testing.T) {
+	c := newConfig()
+	o, err := newOpenAPI(c)
+	assert.Nil(t, err, "can new openAPI successfully")
+
+	ps, err := o.buildParameters(def.Function, def.Parameters)
+	assert.Nil(t, err)
+
+	assert.Equal(t, parameters, ps)
+}
+
+func TestBuildResponses(t *testing.T) {
+	c := newConfig()
+	o, err := newOpenAPI(c)
+	assert.Nil(t, err, "can new openAPI successfully")
+
+	resp, err := o.buildResponses(def.Function, def.Results, 201)
+	assert.Nil(t, err)
+
+	assert.Equal(t, responses, resp, "can build response")
+}
+
 func TestToSchema(t *testing.T) {
 	c := newConfig()
 	o, err := newOpenAPI(c)
-	assert.NoError(t, err, "can new openAPI successfully")
+	assert.Nil(t, err, "can new openAPI successfully")
 
 	var (
 		simple   string
@@ -178,7 +348,7 @@ func TestToSchema(t *testing.T) {
 	)
 
 	simpleSchema, err := o.toSchema(reflect.TypeOf(simple))
-	assert.NoError(t, err, "can convert simple type to schema")
+	assert.Nil(t, err, "can convert simple type to schema")
 	assert.Equal(t, &spec.Schema{
 		SchemaProps: spec.SchemaProps{
 			Type:   []string{"string"},
@@ -187,7 +357,7 @@ func TestToSchema(t *testing.T) {
 	}, simpleSchema, "can convert string type to schema")
 
 	complexSchema, err := o.toSchema(reflect.TypeOf(inputPtr))
-	assert.NoError(t, err, "can convert complex type to schema")
+	assert.Nil(t, err, "can convert complex type to schema")
 
 	assert.Equal(t, &spec.Schema{
 		SchemaProps: spec.SchemaProps{
@@ -210,7 +380,7 @@ func TestGetCanonializeTypeName(t *testing.T) {
 func TestBuildDefinitionForType(t *testing.T) {
 	c := newConfig()
 	o, err := newOpenAPI(c)
-	assert.NoError(t, err, "can new openAPI successfully")
+	assert.Nil(t, err, "can new openAPI successfully")
 
 	var (
 		inputStruct TestInput
@@ -224,11 +394,11 @@ func TestBuildDefinitionForType(t *testing.T) {
 	)
 
 	inputRef, err := o.buildDefinitionForType(reflect.TypeOf(inputStruct))
-	assert.NoError(t, err, "can build Definition for type")
+	assert.Nil(t, err, "can build Definition for type")
 	assert.Equal(t, spec.MustCreateRef("#/definitions/builder.TestInput"), *inputRef, "input ref for building definition should be equal")
 
 	outputRef, err := o.buildDefinitionForType(reflect.TypeOf(outputPtr))
-	assert.NoError(t, err, "can build Definition for type")
+	assert.Nil(t, err, "can build Definition for type")
 	assert.Equal(t, spec.MustCreateRef("#/definitions/builder.TestOutput"), *outputRef, "output ref for building definition should be equal")
 
 	assert.Equal(t, definitions, o.swagger.Definitions, "definitions should be equal")
@@ -237,21 +407,23 @@ func TestBuildDefinitionForType(t *testing.T) {
 func TestBuildDefinitionRecursively(t *testing.T) {
 	c := newConfig()
 	o, err := newOpenAPI(c)
-	assert.NoError(t, err, "can new openAPI successfully")
+	assert.Nil(t, err, "can new openAPI successfully")
 
 	definitions := spec.Definitions{
 		"builder.TestInput":   inputSchema,
 		"builder.TestContent": contentSchema,
 	}
 
-	assert.NoError(t, o.buildDefinitionRecursively(inputName), "can build definition recursively for TestInput type")
+	assert.Nil(t, o.buildDefinitionRecursively(inputName), "can build definition recursively for TestInput type")
 	assert.Equal(t, definitions, o.swagger.Definitions, "can add input and content schema when build for TestInput type")
 
-	assert.NoError(t, o.buildDefinitionRecursively(contentName), "can build definition recursively for TetContent type")
+	assert.Nil(t, o.buildDefinitionRecursively(contentName), "can build definition recursively for TetContent type")
 	assert.Equal(t, definitions, o.swagger.Definitions, "can ignore content schema when build for TestContent type")
 
 	definitions["builder.TestOutput"] = outputSchema
 
-	assert.NoError(t, o.buildDefinitionRecursively(outputName), "can build definition recursively for TestOutput type")
+	assert.Nil(t, o.buildDefinitionRecursively(outputName), "can build definition recursively for TestOutput type")
 	assert.Equal(t, definitions, o.swagger.Definitions, "can add output schema when build for TestOutput type")
+
+	assert.Error(t, o.buildDefinitionRecursively("builder.XXX"), "cannot find model definition for builder.XXX")
 }
