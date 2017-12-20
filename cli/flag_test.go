@@ -25,7 +25,6 @@ import (
 
 type testCase struct {
 	flag     string
-	value    interface{}
 	defValue interface{}
 	want     interface{}
 }
