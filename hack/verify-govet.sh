@@ -1,4 +1,5 @@
-#!/usr/bin/env bash
+#!/bin/bash
+
 # Copyright 2017 Caicloud Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
