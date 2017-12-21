@@ -10,7 +10,7 @@ test:
 
 .PHONY: flag-gen 
 flag-gen: 
-	go run ./cmd/flag-gen/main.go -i github.com/caicloud/nirvana/cmd/flag-gen/types \
+	go run ./hack/flag-gen/main.go -i github.com/caicloud/nirvana/hack/flag-gen/types \
 	  -p github.com/caicloud/nirvana/cli \
 	  -v 5
 	@for generated in $(shell ls cli | grep generated); do \
@@ -21,4 +21,4 @@ flag-gen:
 
 .PHONY: license
 license: 
-	go run ./cmd/license/apache.go --go-header-file hack/boilerplate/boilerplate.go.txt --logtostderr
+	go run ./hack/license/apache.go --go-header-file hack/boilerplate/boilerplate.go.txt --logtostderr

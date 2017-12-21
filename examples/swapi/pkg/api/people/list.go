@@ -23,7 +23,7 @@ import (
 
 	"github.com/caicloud/nirvana/definition"
 	"github.com/caicloud/nirvana/examples/swapi/pkg/model"
-	"github.com/caicloud/nirvana/validator"
+	"github.com/caicloud/nirvana/operators/validator"
 )
 
 func listDefinition(people []model.Person) definition.Definition {

@@ -18,7 +18,7 @@ package v2
 
 import (
 	"github.com/caicloud/nirvana/definition"
-	"github.com/caicloud/nirvana/web"
+	"github.com/caicloud/nirvana/service"
 )
 
 var descriptors = []definition.Descriptor{}
@@ -27,7 +27,7 @@ func register(ds ...definition.Descriptor) {
 	descriptors = append(descriptors, ds...)
 }
 
-func Install(s web.Server) {
+func Install(s service.Server) {
 	v1 := definition.Descriptor{
 		Path:        "/api/v2",
 		Description: "It contains all APIs in v2",

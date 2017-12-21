@@ -14,15 +14,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package trace
+package tracing
 
 import (
 	"context"
 	"io"
 	"time"
 
-	"github.com/caicloud/nirvana/router"
-	"github.com/caicloud/nirvana/web"
+	"github.com/caicloud/nirvana/definition"
+	"github.com/caicloud/nirvana/service"
 	"github.com/golang/glog"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
@@ -45,9 +45,9 @@ type Config struct {
 }
 
 // New created trace middlewares.
-func New(c *Config) func(context.Context, router.RoutingChain) error {
-	return func(ctx context.Context, next router.RoutingChain) error {
-		req := web.HTTPRequest(ctx)
+func New(c *Config) func(context.Context, definition.Chain) error {
+	return func(ctx context.Context, next definition.Chain) error {
+		req := service.HTTPRequest(ctx)
 
 		// extract span context from HTTP Headers
 		spanContext, err := c.Tracer.Extract(opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(req.Header))
@@ -82,7 +82,7 @@ func New(c *Config) func(context.Context, router.RoutingChain) error {
 			return err
 		}
 
-		resp := web.HTTPResponseWriter(ctx)
+		resp := service.HTTPResponseWriter(ctx)
 		code := resp.StatusCode()
 		ext.HTTPStatusCode.Set(span, uint16(code))
 		if code >= 400 {

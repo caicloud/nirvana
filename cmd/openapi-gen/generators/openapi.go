@@ -24,7 +24,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/caicloud/nirvana/cmd/openapi-gen/common"
+	"github.com/caicloud/nirvana/utils/openapi/common"
 	"github.com/golang/glog"
 	"k8s.io/gengo/args"
 	"k8s.io/gengo/generator"
@@ -98,7 +98,7 @@ func Packages(ctx *generator.Context, arguments *args.GeneratorArgs) generator.P
 
 const (
 	specPackagePath          = "github.com/go-openapi/spec"
-	openAPICommonPackagePath = "github.com/caicloud/nirvana/cmd/openapi-gen/common"
+	openAPICommonPackagePath = "github.com/caicloud/nirvana/utils/openapi/common"
 )
 
 // NewOpenAPIGen returns an openapi generator

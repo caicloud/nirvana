@@ -14,16 +14,17 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package web
+package service
 
 import (
+	"context"
 	"net/http"
 	"strings"
 	"sync"
 
 	"github.com/caicloud/nirvana/definition"
 	"github.com/caicloud/nirvana/log"
-	"github.com/caicloud/nirvana/router"
+	"github.com/caicloud/nirvana/service/router"
 )
 
 // Server handles HTTP requests.
@@ -134,7 +135,13 @@ func (c *server) addDescriptors(prefix string, consumes []string, produces []str
 			return err
 		}
 		if len(descriptor.Middlewares) > 0 {
-			leaf.AddMiddleware(descriptor.Middlewares...)
+			for _, m := range descriptor.Middlewares {
+				func(m definition.Middleware) {
+					leaf.AddMiddleware(func(ctx context.Context, chain router.RoutingChain) error {
+						return m(ctx, chain)
+					})
+				}(m)
+			}
 		}
 		executor := c.executors[path]
 		if executor == nil {

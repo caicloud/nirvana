@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package nirvana
+package profiling
 
 import (
 	"context"
@@ -26,12 +26,11 @@ import (
 	"strings"
 
 	"github.com/caicloud/nirvana/definition"
-
-	"github.com/caicloud/nirvana/web"
+	"github.com/caicloud/nirvana/service"
 )
 
-// profiling adds handlers for pprof under /debug/pprof.
-type profiling struct{}
+// Profiling adds handlers for pprof under /debug/pprof.
+type Profiling struct{}
 
 func pprofHandler(w http.ResponseWriter, r *http.Request) {
 	if strings.HasPrefix(r.URL.Path, "/debug/pprof/") {
@@ -51,8 +50,8 @@ func pprofHandler(w http.ResponseWriter, r *http.Request) {
 	pprofIndex(w, r)
 }
 
-// Install adds the Profiling webservice to the given mux.
-func (d profiling) Install(s web.Server) {
+// Install adds the Profiling service to the given mux.
+func (d Profiling) Install(s service.Server) {
 	h := http.HandlerFunc(pprofHandler)
 	if err := s.AddDescriptors(
 		convertHandlerToDescriptor("/debug/pprof", h),
@@ -93,8 +92,8 @@ var indexTmpl = template.Must(template.New("index").Parse(`<html>
 
 func convertHandlerToFunction(h http.Handler) interface{} {
 	return func(ctx context.Context) {
-		r := web.HTTPRequest(ctx)
-		w := web.HTTPResponseWriter(ctx)
+		r := service.HTTPRequest(ctx)
+		w := service.HTTPResponseWriter(ctx)
 		h.ServeHTTP(w, r)
 	}
 }

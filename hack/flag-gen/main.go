@@ -21,7 +21,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/caicloud/nirvana/cmd/flag-gen/generators"
+	"github.com/caicloud/nirvana/hack/flag-gen/generators"
 	"github.com/spf13/pflag"
 
 	"github.com/golang/glog"
@@ -31,7 +31,7 @@ import (
 func main() {
 	arguments := &args.GeneratorArgs{
 		OutputBase:       args.DefaultSourceTree(),
-		GoHeaderFilePath: filepath.Join(args.DefaultSourceTree(), "github.com/caicloud/nirvana/boilerplate/boilerplate.go.txt"),
+		GoHeaderFilePath: filepath.Join(args.DefaultSourceTree(), "github.com/caicloud/nirvana/hack/boilerplate/boilerplate.go.txt"),
 	}
 	arguments.AddFlags(pflag.CommandLine)
 	pflag.CommandLine.AddGoFlagSet(goflag.CommandLine)

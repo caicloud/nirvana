@@ -20,8 +20,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/caicloud/nirvana/cmd/openapi-gen/common"
 	"github.com/caicloud/nirvana/definition"
+	"github.com/caicloud/nirvana/utils/openapi/common"
 	"github.com/go-openapi/spec"
 	"github.com/stretchr/testify/assert"
 )

@@ -19,9 +19,17 @@ package definition
 import (
 	"context"
 	"reflect"
-
-	"github.com/caicloud/nirvana/router"
 )
+
+// Chain contains all subsequent actions.
+type Chain interface {
+	// Continue continues to execute the next subsequent actions.
+	Continue(context.Context) error
+}
+
+// Middleware describes the form of middlewares. If you want to
+// carry on, call Chain.Continue() and pass the context.
+type Middleware func(context.Context, Chain) error
 
 type Operator interface {
 	Operate(ctx context.Context, object interface{}) (interface{}, error)
@@ -195,7 +203,7 @@ type Descriptor struct {
 	// It will override parent descriptor's produces.
 	Produces []string
 	// Middlewares contains path middlewares.
-	Middlewares []router.Middleware
+	Middlewares []Middleware
 	// Definitions contains handlers for current path.
 	Definitions []Definition
 	// Children is used to place sub-descriptors.

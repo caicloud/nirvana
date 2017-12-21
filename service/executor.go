@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package web
+package service
 
 import (
 	"context"
@@ -26,7 +26,7 @@ import (
 	"strings"
 
 	"github.com/caicloud/nirvana/definition"
-	"github.com/caicloud/nirvana/router"
+	"github.com/caicloud/nirvana/service/router"
 )
 
 type executor struct {

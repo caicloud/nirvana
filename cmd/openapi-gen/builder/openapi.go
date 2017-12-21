@@ -22,9 +22,9 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/caicloud/nirvana/cmd/openapi-gen/common"
 	"github.com/caicloud/nirvana/definition"
-	"github.com/caicloud/nirvana/web"
+	"github.com/caicloud/nirvana/service"
+	"github.com/caicloud/nirvana/utils/openapi/common"
 	"github.com/go-openapi/spec"
 )
 
@@ -110,7 +110,7 @@ func (o *openAPI) buildPathItems(path string, consumes, produces []string, defs 
 	specPaths := map[string]spec.PathItem{}
 	for _, def := range defs {
 		pathItem := spec.PathItem{}
-		op, err := o.buildOperation(&def, consumes, produces, web.HTTPCodeFor(def.Method))
+		op, err := o.buildOperation(&def, consumes, produces, service.HTTPCodeFor(def.Method))
 		if err != nil {
 			return nil, err
 		}

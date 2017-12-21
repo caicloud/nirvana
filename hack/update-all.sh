@@ -20,4 +20,4 @@ set -o pipefail
 
 TESTINFRA_ROOT=$(git rev-parse --show-toplevel)
 ${TESTINFRA_ROOT}/hack/update-gofmt.sh
-go run ./cmd/license/apache.go --go-header-file hack/boilerplate/boilerplate.go.txt --logtostderr
+go run ./hack/license/apache.go --go-header-file hack/boilerplate/boilerplate.go.txt --logtostderr

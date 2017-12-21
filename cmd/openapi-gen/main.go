@@ -20,7 +20,6 @@ import (
 	"path/filepath"
 
 	"github.com/caicloud/nirvana/cmd/openapi-gen/generators"
-
 	"github.com/golang/glog"
 	"k8s.io/gengo/args"
 )
