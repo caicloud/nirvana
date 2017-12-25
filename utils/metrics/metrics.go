@@ -14,21 +14,46 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package nirvana
+package metrics
 
 import (
-	"github.com/caicloud/nirvana/web"
+	"context"
+	"net/http"
+
+	"github.com/caicloud/nirvana/definition"
+	"github.com/caicloud/nirvana/service"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
-// metrics installs the default prometheus metrics handler
-type metrics struct{}
+// Metrics installs the default prometheus metrics handler
+type Metrics struct{}
 
-func (d metrics) Install(s web.Server, metricsPath string) {
+func (d Metrics) Install(s service.Server, metricsPath string) {
 	if metricsPath == "" {
 		metricsPath = "/metrics"
 	}
 	if err := s.AddDescriptors(convertHandlerToDescriptor(metricsPath, promhttp.Handler())); err != nil {
 		panic(err)
+	}
+}
+
+func convertHandlerToFunction(h http.Handler) interface{} {
+	return func(ctx context.Context) {
+		r := service.HTTPRequest(ctx)
+		w := service.HTTPResponseWriter(ctx)
+		h.ServeHTTP(w, r)
+	}
+}
+
+func convertHandlerToDescriptor(path string, h http.Handler) definition.Descriptor {
+	return definition.Descriptor{
+		Path: path,
+		Definitions: []definition.Definition{
+			{
+				Method:   definition.Get,
+				Function: convertHandlerToFunction(h),
+				Produces: []string{"text/plain", "application/octet-stream"},
+			},
+		},
 	}
 }

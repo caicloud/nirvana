@@ -21,7 +21,7 @@ limitations under the License.
 package api
 
 import (
-	common "github.com/caicloud/nirvana/cmd/openapi-gen/common"
+	common "github.com/caicloud/nirvana/utils/openapi/common"
 	"github.com/go-openapi/spec"
 )
 

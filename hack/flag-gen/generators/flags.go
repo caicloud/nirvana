@@ -19,7 +19,7 @@ package generators
 import (
 	"io"
 
-	flagNamer "github.com/caicloud/nirvana/cmd/flag-gen/namer"
+	flagNamer "github.com/caicloud/nirvana/hack/flag-gen/namer"
 	"github.com/golang/glog"
 	"k8s.io/gengo/args"
 	"k8s.io/gengo/generator"

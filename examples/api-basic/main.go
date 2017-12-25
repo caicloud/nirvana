@@ -22,15 +22,15 @@ import (
 
 	"github.com/caicloud/nirvana/examples/api-basic/api/v1"
 	"github.com/caicloud/nirvana/examples/api-basic/api/v2"
-	"github.com/caicloud/nirvana/web"
+	"github.com/caicloud/nirvana/service"
 )
 
 func main() {
-	if err := web.RegisterDefaultEnvironment(); err != nil {
+	if err := service.RegisterDefaultEnvironment(); err != nil {
 		panic(err)
 	}
 
-	s := web.NewDefaultServer()
+	s := service.NewDefaultServer()
 	v1.Install(s)
 	v2.Install(s)
 	log.Printf("Listening on 8080")

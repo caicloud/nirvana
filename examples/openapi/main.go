@@ -21,9 +21,9 @@ import (
 	"os"
 
 	"github.com/caicloud/nirvana/cmd/openapi-gen/builder"
-	"github.com/caicloud/nirvana/cmd/openapi-gen/common"
 	"github.com/caicloud/nirvana/examples/openapi/api"
 	"github.com/caicloud/nirvana/examples/openapi/pkg/api/v1"
+	"github.com/caicloud/nirvana/utils/openapi/common"
 	"github.com/go-openapi/spec"
 )
 

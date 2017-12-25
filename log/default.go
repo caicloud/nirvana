@@ -16,59 +16,106 @@ limitations under the License.
 
 package log
 
-// SilentLogger logs nothing.
-type SilentLogger struct{}
+// default logger. Don't use the logger directly.
+var logger Logger = newStderrLogger(LevelDebug, 1)
 
-var silentLogger Logger = &SilentLogger{}
-
-// V reports whether verbosity at the call site is at least the requested level.
-// The returned value is a Verboser, which implements Info, Infof
-func (l *SilentLogger) V(Level) Verboser { return l }
+type defaultVerboser struct {
+	verboser Verboser
+}
 
 // Info logs to the INFO log.
 // Arguments are handled in the manner of fmt.Println; a newline is appended if missing.
-func (*SilentLogger) Info(...interface{}) {}
+func (v *defaultVerboser) Info(a ...interface{}) {
+	v.verboser.Info(a...)
+}
 
 // Infof logs to the INFO log.
 // Arguments are handled in the manner of fmt.Printf; a newline is appended if missing.
-func (*SilentLogger) Infof(string, ...interface{}) {}
+func (v *defaultVerboser) Infof(format string, a ...interface{}) {
+	v.verboser.Infof(format, a...)
+}
 
 // Infoln logs to the INFO log.
 // Arguments are handled in the manner of fmt.Println; a newline is appended if missing.
-func (*SilentLogger) Infoln(...interface{}) {}
+func (v *defaultVerboser) Infoln(a ...interface{}) {
+	v.verboser.Infoln(a...)
+}
+
+// V reports whether verbosity at the call site is at least the requested level.
+// The returned value is a Verboser, which implements Info, Infof
+// and Infoln. These methods will write to the Info log if called.
+func V(v Level) Verboser {
+	return &defaultVerboser{logger.V(v)}
+}
+
+// Info logs to the INFO log.
+// Arguments are handled in the manner of fmt.Println; a newline is appended if missing.
+func Info(a ...interface{}) {
+	logger.Info(a...)
+}
+
+// Infof logs to the INFO log.
+// Arguments are handled in the manner of fmt.Printf; a newline is appended if missing.
+func Infof(format string, a ...interface{}) {
+	logger.Infof(format, a...)
+}
+
+// Infoln logs to the INFO log.
+// Arguments are handled in the manner of fmt.Println; a newline is appended if missing.
+func Infoln(a ...interface{}) {
+	logger.Infoln(a...)
+}
 
 // Warning logs to the WARNING logs.
 // Arguments are handled in the manner of fmt.Print; a newline is appended if missing.
-func (*SilentLogger) Warning(...interface{}) {}
+func Warning(a ...interface{}) {
+	logger.Warning(a...)
+}
 
 // Warningf logs to the WARNING logs.
 // Arguments are handled in the manner of fmt.Printf; a newline is appended if missing.
-func (*SilentLogger) Warningf(string, ...interface{}) {}
+func Warningf(format string, a ...interface{}) {
+	logger.Warningf(format, a...)
+}
 
 // Warningln logs to the WARNING logs.
 // Arguments are handled in the manner of fmt.Println; a newline is appended if missing.
-func (*SilentLogger) Warningln(...interface{}) {}
+func Warningln(a ...interface{}) {
+	logger.Warningln(a...)
+}
 
 // Error logs to the ERROR logs.
 // Arguments are handled in the manner of fmt.Print; a newline is appended if missing.
-func (*SilentLogger) Error(...interface{}) {}
+func Error(a ...interface{}) {
+	logger.Error(a...)
+}
 
 // Errorf logs to the ERROR logs.
 // Arguments are handled in the manner of fmt.Printf; a newline is appended if missing.
-func (*SilentLogger) Errorf(string, ...interface{}) {}
+func Errorf(format string, a ...interface{}) {
+	logger.Errorf(format, a...)
+}
 
 // Errorln logs to the ERROR logs.
 // Arguments are handled in the manner of fmt.Println; a newline is appended if missing.
-func (*SilentLogger) Errorln(...interface{}) {}
+func Errorln(a ...interface{}) {
+	logger.Errorln(a...)
+}
 
 // Fatal logs to the FATAL logs, then calls os.Exit(1).
 // Arguments are handled in the manner of fmt.Print; a newline is appended if missing.
-func (*SilentLogger) Fatal(v ...interface{}) {}
+func Fatal(a ...interface{}) {
+	logger.Fatal(a...)
+}
 
 // Fatalf logs to the FATAL logs, then calls os.Exit(1).
 // Arguments are handled in the manner of fmt.Printf; a newline is appended if missing.
-func (*SilentLogger) Fatalf(string, ...interface{}) {}
+func Fatalf(format string, a ...interface{}) {
+	logger.Fatalf(format, a...)
+}
 
 // Fatalln logs to the FATAL logs, then calls os.Exit(1).
 // Arguments are handled in the manner of fmt.Println; a newline is appended if missing.
-func (*SilentLogger) Fatalln(v ...interface{}) {}
+func Fatalln(a ...interface{}) {
+	logger.Fatalln(a...)
+}

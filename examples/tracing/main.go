@@ -22,34 +22,33 @@ import (
 	"net/http"
 
 	"github.com/caicloud/nirvana/definition"
-	"github.com/caicloud/nirvana/router"
-	"github.com/caicloud/nirvana/trace"
-	"github.com/caicloud/nirvana/web"
+	"github.com/caicloud/nirvana/middlewares/tracing"
+	"github.com/caicloud/nirvana/service"
 )
 
 func main() {
-	if err := web.RegisterDefaultEnvironment(); err != nil {
+	if err := service.RegisterDefaultEnvironment(); err != nil {
 		panic(err)
 	}
 
-	s := web.NewDefaultServer()
+	s := service.NewDefaultServer()
 
-	tracer, ioClose := trace.NewDefaultTracerClient("example", "127.0.0.1:6831")
+	tracer, ioClose := tracing.NewDefaultTracerClient("example", "127.0.0.1:6831")
 	defer ioClose.Close()
 
-	cfg := &trace.Config{
+	cfg := &tracing.Config{
 		Tracer: tracer,
 	}
 
 	example := definition.Descriptor{
 		Path:        "/",
 		Description: "trace example",
-		Middlewares: []router.Middleware{trace.New(cfg)},
+		Middlewares: []definition.Middleware{tracing.New(cfg)},
 		Definitions: []definition.Definition{
 			{
 				Method: definition.Get,
 				Function: func(ctx context.Context) (string, error) {
-					msg := web.HTTPRequest(ctx).URL.Query().Get("msg")
+					msg := service.HTTPRequest(ctx).URL.Query().Get("msg")
 					if msg != "" {
 						return "", errors.New(msg)
 					}

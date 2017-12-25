@@ -19,9 +19,8 @@ package generators
 import (
 	"testing"
 
-	"k8s.io/gengo/types"
-
 	"github.com/stretchr/testify/assert"
+	"k8s.io/gengo/types"
 )
 
 func TestGetOpenAPITagValue(t *testing.T) {

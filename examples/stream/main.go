@@ -22,7 +22,7 @@ import (
 	"net/http"
 
 	"github.com/caicloud/nirvana/examples/stream/api/v1"
-	"github.com/caicloud/nirvana/web"
+	"github.com/caicloud/nirvana/service"
 )
 
 type SomeDataProducer struct {
@@ -45,14 +45,14 @@ func (p *SomeDataProducer) Produce(w io.Writer, v interface{}) error {
 }
 
 func main() {
-	if err := web.RegisterDefaultEnvironment(); err != nil {
+	if err := service.RegisterDefaultEnvironment(); err != nil {
 		panic(err)
 	}
 	// Register a producer for content type 'application/somedata'
-	if err := web.RegisterProducer(&SomeDataProducer{}); err != nil {
+	if err := service.RegisterProducer(&SomeDataProducer{}); err != nil {
 		panic(err)
 	}
-	s := web.NewDefaultServer()
+	s := service.NewDefaultServer()
 	v1.Install(s)
 	http.ListenAndServe(":8080", s)
 }

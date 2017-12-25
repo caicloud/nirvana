@@ -19,14 +19,14 @@ package api
 import (
 	"github.com/caicloud/nirvana/examples/swapi/pkg/api/v1"
 	"github.com/caicloud/nirvana/examples/swapi/pkg/loader"
-	"github.com/caicloud/nirvana/web"
+	"github.com/caicloud/nirvana/service"
 )
 
-func CreateWebServer(model loader.ModelLoader) web.Server {
-	if err := web.RegisterDefaultEnvironment(); err != nil {
+func CreateWebServer(model loader.ModelLoader) service.Server {
+	if err := service.RegisterDefaultEnvironment(); err != nil {
 		panic(err)
 	}
-	s := web.NewDefaultServer()
+	s := service.NewDefaultServer()
 	if err := s.AddDescriptors(v1.API(model)); err != nil {
 		panic(err)
 	}

@@ -1,11 +1,27 @@
+/*
+Copyright 2017 Caicloud Authors
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package builder
 
 import (
 	"reflect"
 	"testing"
 
-	"github.com/caicloud/nirvana/cmd/openapi-gen/common"
 	"github.com/caicloud/nirvana/definition"
+	"github.com/caicloud/nirvana/utils/openapi/common"
 	"github.com/go-openapi/spec"
 	"github.com/stretchr/testify/assert"
 )
@@ -94,7 +110,7 @@ var (
 	responses = &spec.Responses{
 		ResponsesProps: spec.ResponsesProps{
 			StatusCodeResponses: map[int]spec.Response{
-				201: spec.Response{
+				201: {
 					ResponseProps: spec.ResponseProps{
 						Headers: map[string]spec.Header{
 							"X-Xxx": {
@@ -248,15 +264,15 @@ var (
 
 func getOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenAPIDefinition {
 	return map[string]common.OpenAPIDefinition{
-		contentName: common.OpenAPIDefinition{
+		contentName: {
 			Schema:       contentSchema,
 			Dependencies: []string{},
 		},
-		inputName: common.OpenAPIDefinition{
+		inputName: {
 			Schema:       inputSchema,
 			Dependencies: []string{contentName},
 		},
-		outputName: common.OpenAPIDefinition{
+		outputName: {
 			Schema:       outputSchema,
 			Dependencies: []string{},
 		},
