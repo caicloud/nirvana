@@ -18,116 +18,115 @@ package router
 
 import (
 	"context"
-	"fmt"
 	"reflect"
 	"sort"
 )
 
-// Handler contains middlewares and executor.
-type Handler struct {
-	Middlewares []Middleware
-	Executor    Executor
+// handler contains middlewares and executor.
+type handler struct {
+	middlewares []Middleware
+	inspector   Inspector
 }
 
 // AddMiddleware adds middleware to the router node.
 // If the router matches a path, all middlewares in the router
 // will be executed by the returned executor.
-func (h *Handler) AddMiddleware(ms ...Middleware) {
-	h.Middlewares = append(h.Middlewares, ms...)
+func (h *handler) AddMiddleware(ms ...Middleware) {
+	h.middlewares = append(h.middlewares, ms...)
+}
+
+// Middlewares returns all middlewares of the router.
+// Don't modify the returned values.
+func (h *handler) Middlewares() []Middleware {
+	return h.middlewares
 }
 
 // AddExecutor adds executor to the router node.
 // A router can hold many executors, but there is only one executor
 // is selected for a match.
-func (h *Handler) AddExecutor(es ...Executor) {
-	var executors Executors
-	if h.Executor != nil {
-		if array, ok := h.Executor.(Executors); ok {
-			executors = array
-		} else {
-			executors = Executors{h.Executor}
-		}
-	}
-	for _, e := range es {
-		if e != nil {
-			if array, ok := e.(Executors); ok {
-				executors = append(executors, array...)
-			} else {
-				executors = append(executors, e)
-			}
-		}
-	}
-	if executors != nil {
-		h.Executor = executors
-	}
+func (h *handler) SetInspector(inspector Inspector) {
+	h.inspector = inspector
+}
+
+// Inspector gets inspector from the router node.
+// Don't modify the returned values.
+func (h *handler) Inspector() Inspector {
+	return h.inspector
 }
 
 // Merge merges middlewares and executors.
-func (h *Handler) Merge(o *Handler) {
-	h.AddMiddleware(o.Middlewares...)
-	h.AddExecutor(o.Executor)
+func (h *handler) Merge(o *handler) error {
+	h.AddMiddleware(o.middlewares...)
+	if h.inspector != nil {
+		if o.inspector != nil {
+			return ConflictInspectors.Error()
+		}
+	} else {
+		h.inspector = o.inspector
+	}
+	return nil
 }
 
-// Pack packs middlewares with the executor.
-func (h *Handler) Pack(e Executor) Executor {
+// pack packs middlewares with the executor.
+func (h *handler) pack(e Executor) (Executor, error) {
 	if e == nil {
-		return nil
+		return nil, NoExecutor.Error()
 	}
-	if len(h.Middlewares) <= 0 {
-		return e
+	if len(h.middlewares) <= 0 {
+		return e, nil
 	}
-	return NewMiddlewareExecutor(h.Middlewares, e)
+	return newMiddlewareExecutor(h.middlewares, e), nil
 }
 
-// UnionExecutor packs middlewares and own executor.
-func (h *Handler) UnionExecutor(ctx context.Context) Executor {
-	if h.Executor == nil {
-		return nil
+// unionExecutor packs middlewares and own executor.
+func (h *handler) unionExecutor(ctx context.Context) (Executor, error) {
+	if h.inspector == nil {
+		return nil, NoInspector.Error()
 	}
-	e, ok := h.Executor.Inspect(ctx)
-	if !ok {
-		return nil
+	e, err := h.inspector.Inspect(ctx)
+	if err != nil {
+		return nil, err
 	}
-	return h.Pack(e)
+	return h.pack(e)
 }
 
-// CharRouter is a router for characters
-type CharRouter struct {
-	Char   byte
-	Router *StringNode
+// charRouter is a router for characters
+type charRouter struct {
+	char   byte
+	router *stringNode
 }
 
-// Progeny contains all children routers.
-type Progeny struct {
-	StringRouters []CharRouter
-	RegexpRouters []Router
-	PathRouter    Router
+// children contains all children routers.
+type children struct {
+	stringRouters []charRouter
+	regexpRouters []Router
+	pathRouter    Router
 }
 
-// FindStringRouter find a router by first char.
-func (p *Progeny) FindStringRouter(char byte) Router {
-	length := len(p.StringRouters)
+// findStringRouter find a router by first char.
+func (p *children) findStringRouter(char byte) Router {
+	length := len(p.stringRouters)
 	if length <= 3 {
 		// If the length is less than 3, use linear search.
-		for _, cr := range p.StringRouters {
-			if cr.Char == char {
-				return cr.Router
+		for _, cr := range p.stringRouters {
+			if cr.char == char {
+				return cr.router
 			}
 		}
 		return nil
 	}
 	// Binary search.
-	index := sort.Search(len(p.StringRouters), func(i int) bool {
-		return char <= p.StringRouters[i].Char
+	index := sort.Search(len(p.stringRouters), func(i int) bool {
+		return char <= p.stringRouters[i].char
 	})
 	if index >= length {
 		return nil
 	}
-	target := p.StringRouters[index]
-	if char != target.Char {
+	target := p.stringRouters[index]
+	if char != target.char {
 		return nil
 	}
-	return target.Router
+	return target.router
 }
 
 // Match find an executor matched by path.
@@ -135,108 +134,112 @@ func (p *Progeny) FindStringRouter(char byte) Router {
 // The container can save key-value pair from the path.
 // If the router is the leaf node to match the path, it will return
 // the first executor which Inspect() returns true.
-func (p *Progeny) Match(ctx context.Context, c Container, path string) Executor {
+func (p *children) Match(ctx context.Context, c Container, path string) (Executor, error) {
 	if len(path) <= 0 {
-		return nil
+		return nil, RouterNotFound.Error()
 	}
 
 	// Match string routers
-	if len(p.StringRouters) > 0 {
-		if router := p.FindStringRouter(path[0]); router != nil {
-			if executor := router.Match(ctx, c, path); executor != nil {
-				return executor
+	if len(p.stringRouters) > 0 {
+		if router := p.findStringRouter(path[0]); router != nil {
+			if executor, err := router.Match(ctx, c, path); err == nil {
+				return executor, nil
 			}
 		}
 	}
 
 	// Match regexp routers
-	for _, regexp := range p.RegexpRouters {
-		if executor := regexp.Match(ctx, c, path); executor != nil {
-			return executor
+	for _, regexp := range p.regexpRouters {
+		if executor, err := regexp.Match(ctx, c, path); err == nil {
+			return executor, nil
 		}
 	}
 
 	// Match path router
-	if p.PathRouter != nil {
-		return p.PathRouter.Match(ctx, c, path)
+	if p.pathRouter != nil {
+		return p.pathRouter.Match(ctx, c, path)
 	}
-	return nil
+	return nil, RouterNotFound.Error()
 }
 
-// AddRouter adds a router to current progeny.
-func (p *Progeny) AddRouter(router Router) {
+// addRouter adds a router to current progeny.
+func (p *children) addRouter(router Router) error {
 	switch router.Kind() {
 	case String:
 		target := router.Target()
 		if len(target) <= 0 {
-			panic("invalid router target")
+			return EmptyRouterTarget.Error(router.Kind())
 		}
-		r, ok := router.(*StringNode)
+		r, ok := router.(*stringNode)
 		if !ok {
-			panic(fmt.Sprintf("unknown string node: %s", reflect.TypeOf(router).String()))
+			return UnknownRouterType.Error(router.Kind(), reflect.TypeOf(router).String())
 		}
 		c := target[0]
-		sr := p.FindStringRouter(c)
+		sr := p.findStringRouter(c)
 		if sr != nil {
 			_, err := sr.Merge(router)
-			if err != nil {
-				panic(err.Error())
-			}
-			return
+			return err
 		}
-		length := len(p.StringRouters)
+		length := len(p.stringRouters)
 		index := 0
 		if length > 0 {
 			index = sort.Search(length, func(i int) bool {
-				return c < p.StringRouters[i].Char
+				return c < p.stringRouters[i].char
 			})
 		}
-		cr := CharRouter{c, r}
+		cr := charRouter{c, r}
 		if index >= length {
-			p.StringRouters = append(p.StringRouters, cr)
+			p.stringRouters = append(p.stringRouters, cr)
 		} else {
-			p.StringRouters = append(p.StringRouters[:index+1], p.StringRouters[index:]...)
-			p.StringRouters[index] = cr
+			p.stringRouters = append(p.stringRouters[:index+1], p.stringRouters[index:]...)
+			p.stringRouters[index] = cr
 		}
 	case Regexp:
 		found := false
-		for _, r := range p.RegexpRouters {
+		for _, r := range p.regexpRouters {
 			if r.Target() == router.Target() {
-				_, err := r.Merge(router)
-				if err != nil {
-					panic(err.Error())
+				if _, err := r.Merge(router); err != nil {
+					return err
 				}
 				found = true
 				break
 			}
 		}
 		if !found {
-			p.RegexpRouters = append(p.RegexpRouters, router)
+			p.regexpRouters = append(p.regexpRouters, router)
 		}
 	case Path:
-		if p.PathRouter != nil {
-			r, err := p.PathRouter.Merge(router)
+		if p.pathRouter != nil {
+			r, err := p.pathRouter.Merge(router)
 			if err != nil {
-				panic(fmt.Sprintf("failed to merge path router : %s", err.Error()))
+				return err
 			}
-			p.PathRouter = r
+			p.pathRouter = r
 		} else {
-			p.PathRouter = router
+			p.pathRouter = router
 		}
 	default:
-		panic(fmt.Sprintf("unknown router kind: %s", router.Kind()))
+		return UnknownRouterType.Error(router.Kind(), reflect.TypeOf(router).String())
 	}
+	return nil
 }
 
-// Merge merges children routers.
-func (p *Progeny) Merge(o *Progeny) {
-	for _, r := range o.StringRouters {
-		p.AddRouter(r.Router)
+// merge merges children routers.
+func (p *children) merge(o *children) error {
+	for _, r := range o.stringRouters {
+		if err := p.addRouter(r.router); err != nil {
+			return err
+		}
 	}
-	for _, r := range o.RegexpRouters {
-		p.AddRouter(r)
+	for _, r := range o.regexpRouters {
+		if err := p.addRouter(r); err != nil {
+			return err
+		}
 	}
-	if o.PathRouter != nil {
-		p.AddRouter(o.PathRouter)
+	if o.pathRouter != nil {
+		if err := p.addRouter(o.pathRouter); err != nil {
+			return err
+		}
 	}
+	return nil
 }
