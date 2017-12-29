@@ -21,6 +21,8 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+
+	"github.com/caicloud/nirvana/definition"
 )
 
 // Filter can filter request. It has the highest priority in a request
@@ -68,9 +70,9 @@ func ParseRequestForm() Filter {
 		ct, err := ContentType(req)
 		if err == nil {
 			switch ct {
-			case "application/x-www-form-urlencoded":
+			case definition.MIMEURLEncoded:
 				err = req.ParseForm()
-			case "multipart/form-data":
+			case definition.MIMEFormData:
 				err = req.ParseMultipartForm(32 << 20)
 			default:
 				req.Form = req.URL.Query()
@@ -88,13 +90,18 @@ func ParseRequestForm() Filter {
 func ContentType(req *http.Request) (string, error) {
 	ct := req.Header.Get("Content-Type")
 	if ct == "" {
-		return "application/octet-stream", nil
+		length := req.Header.Get("Content-Length")
+		transfer := req.Header.Get("Transfer-Encoding")
+		if length != "" || transfer != "" {
+			return definition.MIMEOctetStream, nil
+		}
+		return definition.MIMENone, nil
 	}
-	ct, _, err := mime.ParseMediaType(ct)
+	result, _, err := mime.ParseMediaType(ct)
 	if err != nil {
-		return "", err
+		return "", invalidContentType.Error(ct)
 	}
-	return ct, nil
+	return result, nil
 }
 
 // AcceptTypes is a util to get accept types from a request.
@@ -102,7 +109,7 @@ func ContentType(req *http.Request) (string, error) {
 func AcceptTypes(req *http.Request) ([]string, error) {
 	ct := req.Header.Get("Accept")
 	if ct == "" {
-		return []string{acceptTypeAll}, nil
+		return []string{definition.MIMEAll}, nil
 	}
 	return parseAcceptTypes(ct)
 }
@@ -130,7 +137,7 @@ func parseAcceptTypes(v string) ([]string, error) {
 		return types, nil
 	}
 	// In most cases, bubble sort is enough.
-	// May be can optimize.
+	// Can optimize here.
 	exchanged := true
 	for exchanged {
 		exchanged = false

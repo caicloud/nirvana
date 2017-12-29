@@ -18,7 +18,6 @@ package service
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"reflect"
 
@@ -35,23 +34,6 @@ type Error interface {
 	Message() interface{}
 }
 
-// MetaOperatorForKey is a util to generate http.Header for a string.
-// If your handler return a string and you want set it to the header of a response,
-// you can use the util to specify the key of header.
-//
-// ex.
-// func SomeHandler(ctx context.Context) (contentType string, err error)
-// You can add the operator into the field "definition.Definition.Results[].Operators[]":
-// MetaOperatorForKey("Content-Type")
-func MetaOperatorForKey(key string) definition.Operator {
-	return definition.OperatorFunc(func(ctx context.Context, object interface{}) (interface{}, error) {
-		if str, ok := object.(string); ok {
-			return map[string]string{key: str}, nil
-		}
-		return nil, fmt.Errorf("can't convert meta for type %s", reflect.TypeOf(object))
-	})
-}
-
 const (
 	// HighPriority for error type.
 	// If an error occurs, ignore meta and data.
@@ -62,10 +44,10 @@ const (
 	LowPriority int = 300
 )
 
-// TypeHandler is used to handle the results from API handlers.
-type TypeHandler interface {
+// DestinationHandler is used to handle the results from API handlers.
+type DestinationHandler interface {
 	// Type returns definition.Type which the type handler can handle.
-	Type() definition.Type
+	Destination() definition.Destination
 	// Priority returns priority of the type handler. Type handler with higher priority will prior execute.
 	Priority() int
 	// Validate validates whether the type handler can handle the target type.
@@ -86,52 +68,53 @@ type TypeHandler interface {
 	Handle(ctx context.Context, producers []Producer, code int, value interface{}) (goon bool, err error)
 }
 
-var handlers = map[definition.Type]TypeHandler{}
+var handlers = map[definition.Destination]DestinationHandler{
+	definition.Meta:  &MetaDestinationHandler{},
+	definition.Data:  &DataDestinationHandler{},
+	definition.Error: &ErrorDestinationHandler{},
+}
 
-// TypeHandlerFor gets a type handler for specified type.
-func TypeHandlerFor(typ definition.Type) TypeHandler {
+// DestinationHandlerFor gets a type handler for specified type.
+func DestinationHandlerFor(typ definition.Destination) DestinationHandler {
 	return handlers[typ]
 }
 
-// RegisterTypeHandler registers a type handler.
-func RegisterTypeHandler(handler TypeHandler) error {
-	if _, ok := handlers[handler.Type()]; ok {
-		return fmt.Errorf("type handler of type %s has been registered", handler.Type())
-	}
-	handlers[handler.Type()] = handler
+// RegisterDestinationHandler registers a type handler.
+func RegisterDestinationHandler(handler DestinationHandler) error {
+	handlers[handler.Destination()] = handler
 	return nil
 }
 
-// MetaTypeHandler writes metadata to http.ResponseWriter.Header and value type should be map[string]string.
+// MetaDestinationHandler writes metadata to http.ResponseWriter.Header and value type should be map[string]string.
 // If value type is not map, the handler will stop the handlers chain and return an error.
 // If there is no error, it always expect that the next handler goes on.
-type MetaTypeHandler struct{}
+type MetaDestinationHandler struct{}
 
-func (h *MetaTypeHandler) Type() definition.Type              { return definition.Meta }
-func (h *MetaTypeHandler) Priority() int                      { return MediumPriority }
-func (h *MetaTypeHandler) Validate(target reflect.Type) error { return nil }
-func (h *MetaTypeHandler) Handle(ctx context.Context, producers []Producer, code int, value interface{}) (goon bool, err error) {
+func (h *MetaDestinationHandler) Destination() definition.Destination { return definition.Meta }
+func (h *MetaDestinationHandler) Priority() int                       { return MediumPriority }
+func (h *MetaDestinationHandler) Validate(target reflect.Type) error  { return nil }
+func (h *MetaDestinationHandler) Handle(ctx context.Context, producers []Producer, code int, value interface{}) (goon bool, err error) {
 	if value == nil {
 		return true, nil
 	}
 	if values, ok := value.(map[string]string); ok {
-		headers := HTTPResponseWriter(ctx).Header()
+		headers := HTTPContextFrom(ctx).ResponseWriter().Header()
 		for key, value := range values {
 			headers.Set(key, value)
 		}
 		return true, nil
 	}
-	return false, fmt.Errorf("can't recognize meta for type %s", reflect.TypeOf(value))
+	return false, invalidMetaType.Error(reflect.TypeOf(value))
 }
 
-// DataTypeHandler writes value to http.ResponseWriter. The type handler handle object value.
+// DataDestinationHandler writes value to http.ResponseWriter. The type handler handle object value.
 // If value is nil, the handler does nothing.
-type DataTypeHandler struct{}
+type DataDestinationHandler struct{}
 
-func (h *DataTypeHandler) Type() definition.Type              { return definition.Data }
-func (h *DataTypeHandler) Priority() int                      { return LowPriority }
-func (h *DataTypeHandler) Validate(target reflect.Type) error { return nil }
-func (h *DataTypeHandler) Handle(ctx context.Context, producers []Producer, code int, value interface{}) (goon bool, err error) {
+func (h *DataDestinationHandler) Destination() definition.Destination { return definition.Data }
+func (h *DataDestinationHandler) Priority() int                       { return LowPriority }
+func (h *DataDestinationHandler) Validate(target reflect.Type) error  { return nil }
+func (h *DataDestinationHandler) Handle(ctx context.Context, producers []Producer, code int, value interface{}) (goon bool, err error) {
 	if value == nil {
 		return true, nil
 	}
@@ -139,41 +122,75 @@ func (h *DataTypeHandler) Handle(ctx context.Context, producers []Producer, code
 	return err == nil, err
 }
 
-// ErrorTypeHandler writes error to http.ResponseWriter.
+// ErrorDestinationHandler writes error to http.ResponseWriter.
 // If there is no error, the handler does nothing.
-type ErrorTypeHandler struct{}
+type ErrorDestinationHandler struct{}
 
-func (h *ErrorTypeHandler) Type() definition.Type              { return definition.Error }
-func (h *ErrorTypeHandler) Priority() int                      { return HighPriority }
-func (h *ErrorTypeHandler) Validate(target reflect.Type) error { return nil }
-func (h *ErrorTypeHandler) Handle(ctx context.Context, producers []Producer, code int, value interface{}) (goon bool, err error) {
+func (h *ErrorDestinationHandler) Destination() definition.Destination { return definition.Error }
+func (h *ErrorDestinationHandler) Priority() int                       { return HighPriority }
+func (h *ErrorDestinationHandler) Validate(target reflect.Type) error  { return nil }
+func (h *ErrorDestinationHandler) Handle(ctx context.Context, producers []Producer, code int, value interface{}) (goon bool, err error) {
 	if value == nil {
 		return true, nil
 	}
-	if e, ok := value.(Error); ok {
-		err := WriteData(ctx, producers, e.Code(), e.Message())
-		return false, err
+	return false, writeError(ctx, producers, value)
+}
+
+func writeError(ctx context.Context, producers []Producer, err interface{}) error {
+	httpCtx := HTTPContextFrom(ctx)
+	ats, e := AcceptTypes(httpCtx.Request())
+	if e != nil {
+		return e
 	}
-	return false, WriteData(ctx, producers, http.StatusInternalServerError, value)
+	if len(producers) <= 0 {
+		return noProducerToWrite.Error(ats)
+	}
+	code := http.StatusInternalServerError
+	msg := interface{}(nil)
+	switch e := err.(type) {
+	case Error:
+		code = e.Code()
+		msg = e.Message()
+	case error:
+		msg = e.Error()
+	default:
+		msg = err
+	}
+
+	producer := chooseProducer(ats, producers)
+	if producer == nil {
+		// Choose the first producer
+		producer = producers[0]
+	}
+	resp := httpCtx.ResponseWriter()
+	if resp.HeaderWritable() {
+		resp.Header().Set("Content-Type", producer.ContentType())
+		resp.WriteHeader(code)
+	}
+	return producer.Produce(resp, msg)
 }
 
 // WriteData chooses right producer by "Accrpt" header and writes data to context.
 // You should never call the function except you are writing a type handler.
 func WriteData(ctx context.Context, producers []Producer, code int, data interface{}) error {
-	httpCtx := httpContext(ctx)
-	ats, err := AcceptTypes(httpCtx.container.request)
+	httpCtx := HTTPContextFrom(ctx)
+	ats, err := AcceptTypes(httpCtx.Request())
 	if err != nil {
 		return err
 	}
+	if len(producers) <= 0 {
+		return noProducerToWrite.Error(ats)
+	}
 	producer := chooseProducer(ats, producers)
 	if producer == nil {
-		return fmt.Errorf("can't find producer for accept types %+v", ats)
+		return noProducerToWrite.Error(ats)
 	}
-	if httpCtx.response.HeaderWritable() {
-		httpCtx.response.Header().Set("Content-Type", producer.ContentType())
-		httpCtx.response.WriteHeader(code)
+	resp := httpCtx.ResponseWriter()
+	if resp.HeaderWritable() {
+		resp.Header().Set("Content-Type", producer.ContentType())
+		resp.WriteHeader(code)
 	}
-	return producer.Produce(&httpCtx.response, data)
+	return producer.Produce(resp, data)
 }
 
 func chooseProducer(acceptTypes []string, producers []Producer) Producer {
@@ -181,7 +198,7 @@ func chooseProducer(acceptTypes []string, producers []Producer) Producer {
 		return nil
 	}
 	for _, v := range acceptTypes {
-		if v == acceptTypeAll {
+		if v == definition.MIMEAll {
 			return producers[0]
 		}
 		for _, p := range producers {

@@ -19,7 +19,6 @@ package service
 import (
 	"bufio"
 	"context"
-	"fmt"
 	"io"
 	"mime/multipart"
 	"net"
@@ -220,7 +219,7 @@ func (c *response) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 	if h, ok := c.writer.(http.Hijacker); ok {
 		return h.Hijack()
 	}
-	return nil, nil, fmt.Errorf("underlying http.ResponseWriter does not implement http.Hijacker")
+	return nil, nil, noConnectionHijacker.Error()
 }
 
 // StatusCode returns status code.
@@ -243,31 +242,15 @@ func (c *response) HeaderWritable() bool {
 	return c.statusCode <= 0
 }
 
-// HTTPRequest gets http.Request from context.
-func HTTPRequest(ctx context.Context) *http.Request {
-	if c := httpContext(ctx); c != nil {
-		return c.container.request
-	}
-	return nil
+// HTTPContext describes an http context.
+type HTTPContext interface {
+	Request() *http.Request
+	ResponseWriter() ResponseWriter
+	ValueContainer() ValueContainer
 }
 
-// HTTPResponseWriter gets ResponseWriter from context.
-func HTTPResponseWriter(ctx context.Context) ResponseWriter {
-	if c := httpContext(ctx); c != nil {
-		return &c.response
-	}
-	return nil
-}
-
-// HTTPValueContainer gets ValueContainer from context.
-func HTTPValueContainer(ctx context.Context) ValueContainer {
-	if c := httpContext(ctx); c != nil {
-		return &c.container
-	}
-	return nil
-}
-
-func httpContext(ctx context.Context) *httpCtx {
+// HTTPContextFrom get http context from context.
+func HTTPContextFrom(ctx context.Context) HTTPContext {
 	value := ctx.Value(contextKeyUnderlyingHTTPContext)
 	if value == nil {
 		return nil
@@ -276,4 +259,19 @@ func httpContext(ctx context.Context) *httpCtx {
 		return c
 	}
 	return nil
+}
+
+// Request gets http.Request.
+func (c *httpCtx) Request() *http.Request {
+	return c.container.request
+}
+
+// ResponseWriter gets ResponseWriter.
+func (c *httpCtx) ResponseWriter() ResponseWriter {
+	return &c.response
+}
+
+// ValueContainer gets ValueContainer.
+func (c *httpCtx) ValueContainer() ValueContainer {
+	return &c.container
 }

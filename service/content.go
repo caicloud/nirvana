@@ -20,19 +20,12 @@ import (
 	"context"
 	"encoding/json"
 	"encoding/xml"
-	"fmt"
 	"io"
 	"reflect"
 	"strconv"
-)
 
-// acceptTypeAll indicates a accept type from http request.
-// It means client can receive any content.
-// Request content type in header "Content-Type" must not set to "*/*".
-// It only can exist in request header "Accept".
-// In most time, it locate at the last element of "Accept".
-// It's default value if client have not set "Accept" header.
-const acceptTypeAll = "*/*"
+	"github.com/caicloud/nirvana/definition"
+)
 
 // Consumer handles specifically typed data from a reader and unmarshals it into an object.
 type Consumer interface {
@@ -50,12 +43,56 @@ type Producer interface {
 	Produce(w io.Writer, v interface{}) error
 }
 
-var consumers = map[string]Consumer{}
-var producers = map[string]Producer{}
+var consumers = map[string]Consumer{
+	definition.MIMENone:        &NoneSerializer{},
+	definition.MIMEText:        &NoneSerializer{},
+	definition.MIMEJSON:        &JSONSerializer{},
+	definition.MIMEXML:         &XMLSerializer{},
+	definition.MIMEOctetStream: &NoneSerializer{},
+	definition.MIMEURLEncoded:  &NoneSerializer{},
+	definition.MIMEFormData:    &NoneSerializer{},
+}
+
+var producers = map[string]Producer{
+	definition.MIMENone:        &NoneSerializer{},
+	definition.MIMEText:        &NoneSerializer{},
+	definition.MIMEJSON:        &JSONSerializer{},
+	definition.MIMEXML:         &XMLSerializer{},
+	definition.MIMEOctetStream: &NoneSerializer{},
+	definition.MIMEURLEncoded:  &NoneSerializer{},
+	definition.MIMEFormData:    &NoneSerializer{},
+}
+
+// AllConsumers returns all consumers.
+func AllConsumers() []Consumer {
+	cs := make([]Consumer, 0, len(consumers))
+	for _, c := range consumers {
+		cs = append(cs, c)
+	}
+	return cs
+}
 
 // ConsumerFor gets a consumer for specified content type.
 func ConsumerFor(contentType string) Consumer {
 	return consumers[contentType]
+}
+
+// AllProducers returns all producers.
+func AllProducers() []Producer {
+	ps := make([]Producer, 0, len(producers))
+	// JSON always the first one in producers.
+	// The first one will be choosed when accept types
+	// are not recognized.
+	if p := producers[definition.MIMEJSON]; p != nil {
+		ps = append(ps, p)
+	}
+	for _, p := range producers {
+		if p.ContentType() == definition.MIMEJSON {
+			continue
+		}
+		ps = append(ps, p)
+	}
+	return ps
 }
 
 // ProducerFor gets a producer for specified content type.
@@ -65,11 +102,8 @@ func ProducerFor(contentType string) Producer {
 
 // RegisterConsumer register a consumer. A consumer must not handle "*/*".
 func RegisterConsumer(c Consumer) error {
-	if c.ContentType() == acceptTypeAll {
-		return fmt.Errorf("must not register a consumer for %s", acceptTypeAll)
-	}
-	if _, ok := consumers[c.ContentType()]; ok {
-		return fmt.Errorf("consumer %s has been registered", c.ContentType())
+	if c.ContentType() == definition.MIMEAll {
+		return invalidConsumer.Error(definition.MIMEAll)
 	}
 	consumers[c.ContentType()] = c
 	return nil
@@ -77,13 +111,29 @@ func RegisterConsumer(c Consumer) error {
 
 // RegisterProducer register a producer. A producer must not handle "*/*".
 func RegisterProducer(p Producer) error {
-	if p.ContentType() == acceptTypeAll {
-		return fmt.Errorf("must not register a producer for %s", acceptTypeAll)
-	}
-	if _, ok := producers[p.ContentType()]; ok {
-		return fmt.Errorf("producer %s has been registered", p.ContentType())
+	if p.ContentType() == definition.MIMEAll {
+		return invalidProducer.Error(definition.MIMEAll)
 	}
 	producers[p.ContentType()] = p
+	return nil
+}
+
+// NoneSerializer implements Consumer and Producer for content types
+// which can only receive data by io.Reader.
+type NoneSerializer struct{}
+
+// ContentType returns none MIME type.
+func (s *NoneSerializer) ContentType() string {
+	return definition.MIMENone
+}
+
+// Consume does nothing.
+func (s *NoneSerializer) Consume(r io.Reader, v interface{}) error {
+	return nil
+}
+
+// Produce does nothing.
+func (s *NoneSerializer) Produce(w io.Writer, v interface{}) error {
 	return nil
 }
 
@@ -92,7 +142,7 @@ type JSONSerializer struct{}
 
 // ContentType returns json MIME type.
 func (s *JSONSerializer) ContentType() string {
-	return "application/json"
+	return definition.MIMEJSON
 }
 
 // Consume unmarshals json from r into v.
@@ -110,7 +160,7 @@ type XMLSerializer struct{}
 
 // ContentType returns xml MIME type.
 func (s *XMLSerializer) ContentType() string {
-	return "application/xml"
+	return definition.MIMEXML
 }
 
 // Consume unmarshals xml from r into v.
@@ -121,21 +171,6 @@ func (s *XMLSerializer) Consume(r io.Reader, v interface{}) error {
 // Produce marshals v to xml and write to w.
 func (s *XMLSerializer) Produce(w io.Writer, v interface{}) error {
 	return xml.NewEncoder(w).Encode(v)
-}
-
-const (
-	// MIMEOctet is the mime type for unknown byte stream
-	MIMEOctet = "application/octet-stream"
-	// MIMEText is the mime type for text
-	MIMEText = "text/plain"
-)
-
-type nopProducer string
-
-func (p nopProducer) Produce(w io.Writer, v interface{}) error { return nil }
-
-func (p nopProducer) ContentType() string {
-	return string(p)
 }
 
 // Prefab creates instances for internal type. These instances are not
@@ -149,7 +184,9 @@ type Prefab interface {
 	Make(ctx context.Context) (interface{}, error)
 }
 
-var prefabs = map[string]Prefab{}
+var prefabs = map[string]Prefab{
+	"context": &ContextPrefab{},
+}
 
 // PrefabFor gets a prefab by name.
 func PrefabFor(name string) Prefab {
@@ -158,9 +195,6 @@ func PrefabFor(name string) Prefab {
 
 // RegisterPrefab registers a prefab.
 func RegisterPrefab(prefab Prefab) error {
-	if _, ok := prefabs[prefab.Name()]; ok {
-		return fmt.Errorf("prefab %s has been registered", prefab.Name())
-	}
 	prefabs[prefab.Name()] = prefab
 	return nil
 }
@@ -210,9 +244,9 @@ func ConverterFor(typ reflect.Type) Converter {
 	return converters[typ]
 }
 
-// SetConverter sets a converter for specified type. New converter
+// RegisterConverter registers a converter for specified type. New converter
 // overrides old one.
-func SetConverter(typ reflect.Type, converter Converter) {
+func RegisterConverter(typ reflect.Type, converter Converter) {
 	converters[typ] = converter
 }
 
@@ -221,7 +255,7 @@ func ConvertToBool(ctx context.Context, data []string) (interface{}, error) {
 	origin := data[0]
 	target, err := strconv.ParseBool(origin)
 	if err != nil {
-		return nil, fmt.Errorf("can't convert %s to bool", origin)
+		return nil, invalidConversion.Error(origin, "bool")
 	}
 	return target, nil
 }
@@ -231,7 +265,7 @@ func ConvertToInt(ctx context.Context, data []string) (interface{}, error) {
 	origin := data[0]
 	target, err := strconv.ParseInt(origin, 10, 0)
 	if err != nil {
-		return nil, fmt.Errorf("can't convert %s to int", reflect.TypeOf(origin).String())
+		return nil, invalidConversion.Error(origin, "int")
 	}
 	return int(target), nil
 }
@@ -241,7 +275,7 @@ func ConvertToInt8(ctx context.Context, data []string) (interface{}, error) {
 	origin := data[0]
 	target, err := strconv.ParseInt(origin, 10, 8)
 	if err != nil {
-		return nil, fmt.Errorf("can't convert %s to int8", reflect.TypeOf(origin).String())
+		return nil, invalidConversion.Error(origin, "int8")
 	}
 	return int8(target), nil
 }
@@ -251,7 +285,7 @@ func ConvertToInt16(ctx context.Context, data []string) (interface{}, error) {
 	origin := data[0]
 	target, err := strconv.ParseInt(origin, 10, 16)
 	if err != nil {
-		return nil, fmt.Errorf("can't convert %s to int16", reflect.TypeOf(origin).String())
+		return nil, invalidConversion.Error(origin, "int16")
 	}
 	return int16(target), nil
 }
@@ -261,7 +295,7 @@ func ConvertToInt32(ctx context.Context, data []string) (interface{}, error) {
 	origin := data[0]
 	target, err := strconv.ParseInt(origin, 10, 32)
 	if err != nil {
-		return nil, fmt.Errorf("can't convert %s to int32", reflect.TypeOf(origin).String())
+		return nil, invalidConversion.Error(origin, "int32")
 	}
 	return int32(target), nil
 }
@@ -271,7 +305,7 @@ func ConvertToInt64(ctx context.Context, data []string) (interface{}, error) {
 	origin := data[0]
 	target, err := strconv.ParseInt(origin, 10, 64)
 	if err != nil {
-		return nil, fmt.Errorf("can't convert %s to int64", reflect.TypeOf(origin).String())
+		return nil, invalidConversion.Error(origin, "int64")
 	}
 	return target, nil
 }
@@ -281,7 +315,7 @@ func ConvertToUint(ctx context.Context, data []string) (interface{}, error) {
 	origin := data[0]
 	target, err := strconv.ParseUint(origin, 10, 0)
 	if err != nil {
-		return nil, fmt.Errorf("can't convert %s to uint", reflect.TypeOf(origin).String())
+		return nil, invalidConversion.Error(origin, "uint")
 	}
 	return uint(target), nil
 }
@@ -291,7 +325,7 @@ func ConvertToUint8(ctx context.Context, data []string) (interface{}, error) {
 	origin := data[0]
 	target, err := strconv.ParseUint(origin, 10, 8)
 	if err != nil {
-		return nil, fmt.Errorf("can't convert %s to uint8", reflect.TypeOf(origin).String())
+		return nil, invalidConversion.Error(origin, "uint8")
 	}
 	return uint8(target), nil
 }
@@ -301,7 +335,7 @@ func ConvertToUint16(ctx context.Context, data []string) (interface{}, error) {
 	origin := data[0]
 	target, err := strconv.ParseUint(origin, 10, 16)
 	if err != nil {
-		return nil, fmt.Errorf("can't convert %s to uint16", reflect.TypeOf(origin).String())
+		return nil, invalidConversion.Error(origin, "uint16")
 	}
 	return uint16(target), nil
 }
@@ -311,7 +345,7 @@ func ConvertToUint32(ctx context.Context, data []string) (interface{}, error) {
 	origin := data[0]
 	target, err := strconv.ParseUint(origin, 10, 32)
 	if err != nil {
-		return nil, fmt.Errorf("can't convert %s to uint32", reflect.TypeOf(origin).String())
+		return nil, invalidConversion.Error(origin, "uint32")
 	}
 	return uint32(target), nil
 }
@@ -321,7 +355,7 @@ func ConvertToUint64(ctx context.Context, data []string) (interface{}, error) {
 	origin := data[0]
 	target, err := strconv.ParseUint(origin, 10, 64)
 	if err != nil {
-		return nil, fmt.Errorf("can't convert %s to uint64", reflect.TypeOf(origin).String())
+		return nil, invalidConversion.Error(origin, "uint64")
 	}
 	return target, nil
 }
@@ -331,7 +365,7 @@ func ConvertToFloat32(ctx context.Context, data []string) (interface{}, error) {
 	origin := data[0]
 	target, err := strconv.ParseFloat(origin, 32)
 	if err != nil {
-		return nil, fmt.Errorf("can't convert %s to float32", reflect.TypeOf(origin).String())
+		return nil, invalidConversion.Error(origin, "float32")
 	}
 	return float32(target), nil
 }
@@ -341,7 +375,7 @@ func ConvertToFloat64(ctx context.Context, data []string) (interface{}, error) {
 	origin := data[0]
 	target, err := strconv.ParseFloat(origin, 64)
 	if err != nil {
-		return nil, fmt.Errorf("can't convert %s to float64", reflect.TypeOf(origin).String())
+		return nil, invalidConversion.Error(origin, "float64")
 	}
 	return target, nil
 }

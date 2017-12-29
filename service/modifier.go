@@ -16,18 +16,26 @@ limitations under the License.
 
 package service
 
-import "github.com/caicloud/nirvana/definition"
+import (
+	"net/http"
+
+	"github.com/caicloud/nirvana/definition"
+)
 
 // DefinitionModifier is used in Server. It's used to modify definition.
 // If you want to add some common data into all definitions, you can write
 // a customized modifier for it.
 type DefinitionModifier func(d *definition.Definition)
 
-// With decorates another modifier. Current modifier is prior to a.
-func (m DefinitionModifier) With(a DefinitionModifier) DefinitionModifier {
+// DefinitionModifiers is a convinient type for []DefinitionModifier
+type DefinitionModifiers []DefinitionModifier
+
+// Combine combines a list of modifiers to one.
+func (m DefinitionModifiers) Combine() DefinitionModifier {
 	return func(d *definition.Definition) {
-		m(d)
-		a(d)
+		for _, f := range m {
+			f(d)
+		}
 	}
 }
 
@@ -51,6 +59,86 @@ func FirstContextParameter() DefinitionModifier {
 	}
 }
 
+// ConsumeAllIfComsumesIsEmpty adds definition.MIMEAll to consumes if consumes
+// is empty.
+func ConsumeAllIfComsumesIsEmpty() DefinitionModifier {
+	return func(d *definition.Definition) {
+		if len(d.Consumes) <= 0 {
+			d.Consumes = []string{definition.MIMEAll}
+		}
+	}
+}
+
+// ProduceAllIfProducesIsEmpty adds definition.MIMEAll to consumes if consumes
+// is empty.
+func ProduceAllIfProducesIsEmpty() DefinitionModifier {
+	return func(d *definition.Definition) {
+		if len(d.Produces) <= 0 {
+			d.Produces = []string{definition.MIMEAll}
+		}
+	}
+}
+
+// ConsumeNoneForHTTPGet adds definition.MIMENone to consumes for get definitions.
+// Then you don't need to manually write the consume to every get definitions.
+// The get is http get rather than definition.Get.
+func ConsumeNoneForHTTPGet() DefinitionModifier {
+	return func(d *definition.Definition) {
+		if HTTPMethodFor(d.Method) == http.MethodGet {
+			found := false
+			for _, v := range d.Consumes {
+				if v == definition.MIMENone {
+					found = true
+					break
+				}
+			}
+			if !found {
+				d.Consumes = append(d.Consumes, definition.MIMENone)
+			}
+		}
+	}
+}
+
+// ConsumeNoneForHTTPDelete adds definition.MIMENone to consumes for delete definitions.
+// Then you don't need to manually write the consume to every delete definitions.
+// The delete is http delete rather than definition.Delete.
+func ConsumeNoneForHTTPDelete() DefinitionModifier {
+	return func(d *definition.Definition) {
+		if HTTPMethodFor(d.Method) == http.MethodDelete {
+			found := false
+			for _, v := range d.Consumes {
+				if v == definition.MIMENone {
+					found = true
+					break
+				}
+			}
+			if !found {
+				d.Consumes = append(d.Consumes, definition.MIMENone)
+			}
+		}
+	}
+}
+
+// ProduceNoneForHTTPDelete adds definition.MIMENone to produces for delete definitions.
+// Then you don't need to manually write the produce to every delete definitions.
+// The delete is http delete rather than definition.Delete.
+func ProduceNoneForHTTPDelete() DefinitionModifier {
+	return func(d *definition.Definition) {
+		if HTTPMethodFor(d.Method) == http.MethodDelete {
+			found := false
+			for _, v := range d.Produces {
+				if v == definition.MIMENone {
+					found = true
+					break
+				}
+			}
+			if !found {
+				d.Produces = append(d.Produces, definition.MIMENone)
+			}
+		}
+	}
+}
+
 // LastErrorResult adds a error result into all definitions.
 // Then you don't need to manually write the result to every definitions.
 func LastErrorResult() DefinitionModifier {
@@ -58,12 +146,12 @@ func LastErrorResult() DefinitionModifier {
 		length := len(d.Results)
 		if length > 0 {
 			r := d.Results[length-1]
-			if r.Type == definition.Error {
+			if r.Destination == definition.Error {
 				return
 			}
 		}
 		d.Results = append(d.Results, definition.Result{
-			Type: definition.Error,
+			Destination: definition.Error,
 		})
 	}
 }

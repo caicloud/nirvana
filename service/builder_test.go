@@ -81,8 +81,8 @@ var desc = definition.Descriptor{
 						},
 					},
 					Results: []definition.Result{
-						{Type: definition.Data},
-						{Type: definition.Error},
+						{Destination: definition.Data},
+						{Destination: definition.Error},
 					},
 				},
 			},
@@ -122,11 +122,14 @@ func TestServer(t *testing.T) {
 		},
 		ContentLength: int64(len(data)),
 	}
-	if err := RegisterDefaultEnvironment(); err != nil {
+	builder := NewBuilder()
+	builder.SetModifier(FirstContextParameter())
+	builder.AddFilter(RedirectTrailingSlash(), FillLeadingSlash(), ParseRequestForm())
+	err := builder.AddDescriptor(desc)
+	if err != nil {
 		t.Fatal(err)
 	}
-	s := NewDefaultServer()
-	err := s.AddDescriptors(desc)
+	s, err := builder.Build()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -167,11 +170,14 @@ func BenchmarkServer(b *testing.B) {
 		},
 		ContentLength: int64(len(data)),
 	}
-	if err := RegisterDefaultEnvironment(); err != nil {
+	builder := NewBuilder()
+	builder.SetModifier(FirstContextParameter())
+	builder.AddFilter(RedirectTrailingSlash(), FillLeadingSlash(), ParseRequestForm())
+	err := builder.AddDescriptor(desc)
+	if err != nil {
 		b.Fatal(err)
 	}
-	s := NewDefaultServer()
-	err := s.AddDescriptors(desc)
+	s, err := builder.Build()
 	if err != nil {
 		b.Fatal(err)
 	}

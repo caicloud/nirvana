@@ -139,11 +139,27 @@ func (p *children) Match(ctx context.Context, c Container, path string) (Executo
 		return nil, RouterNotFound.Error()
 	}
 
+	// Two routers may match same path:
+	//   /path/{id} without inspector
+	//   /path/{name} with inspector
+	// When match `/path/some`, the first router won't match it and
+	// returns NoInspector. The the second router can match the path.
+	// If the second router can't generate an executor, an error is
+	// returned by inspector. In this case, resultError should be the
+	// assigned with the error from second router.
+	// If there are multiple routers match a path, the error is from
+	// the last matched router.
+	resultError := RouterNotFound.Error()
+
 	// Match string routers
 	if len(p.stringRouters) > 0 {
 		if router := p.findStringRouter(path[0]); router != nil {
 			if executor, err := router.Match(ctx, c, path); err == nil {
 				return executor, nil
+			} else if !RouterNotFound.Derived(err) &&
+				!NoInspector.Derived(err) &&
+				!NoExecutor.Derived(err) {
+				resultError = err
 			}
 		}
 	}
@@ -152,14 +168,24 @@ func (p *children) Match(ctx context.Context, c Container, path string) (Executo
 	for _, regexp := range p.regexpRouters {
 		if executor, err := regexp.Match(ctx, c, path); err == nil {
 			return executor, nil
+		} else if !RouterNotFound.Derived(err) &&
+			!NoInspector.Derived(err) &&
+			!NoExecutor.Derived(err) {
+			resultError = err
 		}
 	}
 
 	// Match path router
 	if p.pathRouter != nil {
-		return p.pathRouter.Match(ctx, c, path)
+		if executor, err := p.pathRouter.Match(ctx, c, path); err == nil {
+			return executor, nil
+		} else if !RouterNotFound.Derived(err) &&
+			!NoInspector.Derived(err) &&
+			!NoExecutor.Derived(err) {
+			resultError = err
+		}
 	}
-	return nil, RouterNotFound.Error()
+	return nil, resultError
 }
 
 // addRouter adds a router to current progeny.

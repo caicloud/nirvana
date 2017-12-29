@@ -20,80 +20,115 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"net/http"
 	"reflect"
 	"sort"
-	"strings"
 
 	"github.com/caicloud/nirvana/definition"
+	"github.com/caicloud/nirvana/log"
 	"github.com/caicloud/nirvana/service/router"
 )
 
-type executor struct {
-	cells map[string][]*cell
+type inspector struct {
+	path      string
+	logger    log.Logger
+	executors map[string][]*executor
 }
 
-func newExecutor() *executor {
-	return &executor{map[string][]*cell{}}
+func newInspector(path string, logger log.Logger) *inspector {
+	return &inspector{
+		path:      path,
+		logger:    logger,
+		executors: map[string][]*executor{},
+	}
 }
 
-func (e *executor) addDefinition(d definition.Definition) error {
+func (i *inspector) addDefinition(d definition.Definition) error {
 	method := HTTPMethodFor(d.Method)
 	if method == "" {
-		return fmt.Errorf("no http method for %s", d.Method)
+		return definitionNoMethod.Error(d.Method, i.path)
 	}
-
-	if !methodIsHeadOrGet(method) && len(d.Consumes) <= 0 {
-		return fmt.Errorf("no content type to consume for %s", d.Method)
+	if len(d.Consumes) <= 0 {
+		return definitionNoComsumes.Error(d.Method, i.path)
 	}
 	if len(d.Produces) <= 0 {
-		return fmt.Errorf("no content type to produce for %s", d.Method)
+		return definitionNoProduces.Error(d.Method, i.path)
 	}
 	if d.Function == nil {
-		return fmt.Errorf("no function for %s", d.Method)
+		return definitionNoFunction.Error(d.Method, i.path)
 	}
 	value := reflect.ValueOf(d.Function)
 	if value.Kind() != reflect.Func {
-		return fmt.Errorf("function type %s is invalid", value.Type().String())
+		return definitionInvalidFunctionType.Error(value.Type(), d.Method, i.path)
 	}
-	c := &cell{
+	c := &executor{
+		logger:   i.logger,
 		method:   method,
 		code:     HTTPCodeFor(d.Method),
 		function: value,
 	}
+	consumeAll := false
+	consumes := map[string]bool{}
 	for _, ct := range d.Consumes {
+		if ct == definition.MIMEAll {
+			consumeAll = true
+			continue
+		}
 		if consumer := ConsumerFor(ct); consumer != nil {
 			c.consumers = append(c.consumers, consumer)
+			consumes[consumer.ContentType()] = true
 		} else {
-			return fmt.Errorf("no consumer for content type %s", ct)
+			return definitionNoComsumer.Error(ct, d.Method, i.path)
 		}
 	}
+	if consumeAll {
+		// Add remaining consumers to executor.
+		for _, consumer := range AllConsumers() {
+			if !consumes[consumer.ContentType()] {
+				c.consumers = append(c.consumers, consumer)
+			}
+		}
+	}
+	produceAll := false
+	produces := map[string]bool{}
 	for _, ct := range d.Produces {
+		if ct == definition.MIMEAll {
+			produceAll = true
+			continue
+		}
 		if producer := ProducerFor(ct); producer != nil {
 			c.producers = append(c.producers, producer)
+			produces[producer.ContentType()] = true
 		} else {
-			return fmt.Errorf("no producer for content type %s", ct)
+			return definitionNoProducer.Error(ct, d.Method, i.path)
 		}
 	}
-	ps, err := e.generateParameters(value.Type(), d.Parameters)
+	if produceAll {
+		// Add remaining producers to executor.
+		for _, producer := range AllProducers() {
+			if !produces[producer.ContentType()] {
+				c.producers = append(c.producers, producer)
+			}
+		}
+	}
+	ps, err := i.generateParameters(value.Type(), d.Parameters)
 	if err != nil {
 		return err
 	}
 	c.parameters = ps
-	rs, err := e.generateResults(value.Type(), d.Results)
+	rs, err := i.generateResults(value.Type(), d.Results)
 	if err != nil {
 		return err
 	}
 	c.results = rs
-	if err := e.conflictCheck(c); err != nil {
+	if err := i.conflictCheck(c); err != nil {
 		return err
 	}
-	e.cells[method] = append(e.cells[method], c)
+	i.executors[method] = append(i.executors[method], c)
 	return nil
 }
 
-func (e *executor) conflictCheck(c *cell) error {
-	cs := e.cells[c.method]
+func (i *inspector) conflictCheck(c *executor) error {
+	cs := i.executors[c.method]
 	if len(cs) <= 0 {
 		return nil
 	}
@@ -110,22 +145,22 @@ func (e *executor) conflictCheck(c *cell) error {
 	for k, vs := range cMap {
 		for _, v := range vs {
 			if !ctMap[k+":"+v] {
-				return fmt.Errorf("consumer-producer pair %s:%s conflicts", k, v)
+				return definitionConflict.Error(k, v, c.method, i.path)
 			}
 		}
 	}
 	return nil
 }
 
-func (e *executor) generateParameters(typ reflect.Type, ps []definition.Parameter) ([]parameter, error) {
+func (i *inspector) generateParameters(typ reflect.Type, ps []definition.Parameter) ([]parameter, error) {
 	if typ.NumIn() != len(ps) {
-		return nil, fmt.Errorf("function parameters number does not adapt to definition")
+		return nil, definitionUnmatchedParameters.Error(typ, typ.NumIn(), len(ps), i.path)
 	}
 	parameters := make([]parameter, 0, len(ps))
-	for i, p := range ps {
+	for index, p := range ps {
 		generator := ParameterGeneratorFor(p.Source)
 		if generator == nil {
-			return nil, fmt.Errorf("no parameter generator for source %s", p.Source)
+			return nil, noParameterGenerator.Error(p.Source)
 		}
 
 		param := parameter{
@@ -134,12 +169,14 @@ func (e *executor) generateParameters(typ reflect.Type, ps []definition.Paramete
 			generator:    generator,
 			operators:    p.Operators,
 		}
-		if p.Type == nil {
-			param.targetType = typ.In(i)
+		if len(p.Operators) <= 0 {
+			param.targetType = typ.In(index)
 		} else {
-			param.targetType = p.Type
+			param.targetType = p.Operators[0].In()
 		}
 		if err := generator.Validate(param.name, param.defaultValue, param.targetType); err != nil {
+			// Order from 0 is odd. So index+1.
+			i.logger.Errorf("Can't validate %s parameter: %s", order(index+1), err.Error())
 			return nil, err
 		}
 		parameters = append(parameters, param)
@@ -147,22 +184,24 @@ func (e *executor) generateParameters(typ reflect.Type, ps []definition.Paramete
 	return parameters, nil
 }
 
-func (e *executor) generateResults(typ reflect.Type, rs []definition.Result) ([]result, error) {
+func (i *inspector) generateResults(typ reflect.Type, rs []definition.Result) ([]result, error) {
 	if typ.NumOut() != len(rs) {
-		return nil, fmt.Errorf("function results number does not adapt to definition")
+		return nil, definitionUnmatchedResults.Error(typ, typ.NumOut(), len(rs), i.path)
 	}
 	results := make([]result, 0, len(rs))
-	for i, r := range rs {
-		handler := TypeHandlerFor(r.Type)
+	for index, r := range rs {
+		handler := DestinationHandlerFor(r.Destination)
 		if handler == nil {
-			return nil, fmt.Errorf("no type handler for type %s", r.Type)
+			return nil, noDestinationHandler.Error(r.Description)
 		}
 		result := result{
-			index:     i,
+			index:     index,
 			handler:   handler,
 			operators: r.Operators,
 		}
-		if err := handler.Validate(typ.Out(i)); err != nil {
+		if err := handler.Validate(typ.Out(index)); err != nil {
+			// Order from 0 is odd. So index+1.
+			i.logger.Errorf("Can't validate %s result: %s", order(index+1), err.Error())
 			return nil, err
 		}
 		results = append(results, result)
@@ -190,46 +229,42 @@ func (s resultsSorter) Swap(i, j int) {
 	s[i], s[j] = s[j], s[i]
 }
 
-func methodIsHeadOrGet(method string) bool {
-	return http.MethodGet == method || http.MethodHead == method
-}
-
 // Inspect finds a valid executor to execute target context.
-func (e *executor) Inspect(ctx context.Context) (router.Executor, bool) {
-	req := HTTPRequest(ctx)
+func (i *inspector) Inspect(ctx context.Context) (router.Executor, error) {
+	req := HTTPContextFrom(ctx).Request()
 	if req == nil {
-		return nil, false
+		return nil, noContext.Error()
 	}
-	cells := []*cell{}
-	if cs, ok := e.cells[req.Method]; ok && len(cs) > 0 {
-		cells = append(cells, cs...)
+	executors := []*executor{}
+	if cs, ok := i.executors[req.Method]; ok && len(cs) > 0 {
+		executors = append(executors, cs...)
 	}
-	if len(cells) <= 0 {
-		return nil, false
+	if len(executors) <= 0 {
+		return nil, noExecutorForMethod.Error()
 	}
 	ct, err := ContentType(req)
-	if err != nil || (!methodIsHeadOrGet(req.Method) && ct == "") {
-		return nil, false
+	if err != nil {
+		return nil, err
 	}
 	accepted := 0
-	for i, c := range cells {
+	for i, c := range executors {
 		if c.acceptable(ct) {
 			if accepted != i {
-				cells[accepted] = c
+				executors[accepted] = c
 			}
 			accepted++
 		}
 	}
 	if accepted <= 0 {
-		return nil, false
+		return nil, noExecutorForContentType.Error()
 	}
 	ats, err := AcceptTypes(req)
-	if err != nil || len(ats) <= 0 {
-		return nil, false
+	if err != nil {
+		return nil, err
 	}
-	cells = cells[:accepted]
-	var target *cell
-	for _, c := range cells {
+	executors = executors[:accepted]
+	var target *executor
+	for _, c := range executors {
 		if c.producible(ats) {
 			target = c
 			break
@@ -237,26 +272,19 @@ func (e *executor) Inspect(ctx context.Context) (router.Executor, bool) {
 	}
 	if target == nil {
 		for _, at := range ats {
-			if at == acceptTypeAll {
-				target = cells[0]
+			if at == definition.MIMEAll {
+				target = executors[0]
 			}
 		}
 	}
 	if target == nil {
-		return nil, false
+		return nil, noExecutorToProduce.Error()
 	}
-	return target, true
+	return target, nil
 }
 
-// Execute executes with context.
-func (e *executor) Execute(ctx context.Context) error {
-	if e, ok := e.Inspect(ctx); ok {
-		return e.Execute(ctx)
-	}
-	return fmt.Errorf("no executor to execute")
-}
-
-type cell struct {
+type executor struct {
+	logger     log.Logger
 	method     string
 	code       int
 	consumers  []Consumer
@@ -276,11 +304,11 @@ type parameter struct {
 
 type result struct {
 	index     int
-	handler   TypeHandler
+	handler   DestinationHandler
 	operators []definition.Operator
 }
 
-func (e *cell) ctMap() map[string][]string {
+func (e *executor) ctMap() map[string][]string {
 	result := map[string][]string{}
 	for _, c := range e.consumers {
 		for _, p := range e.producers {
@@ -291,10 +319,7 @@ func (e *cell) ctMap() map[string][]string {
 	return result
 }
 
-func (e *cell) acceptable(ct string) bool {
-	if methodIsHeadOrGet(e.method) {
-		return true
-	}
+func (e *executor) acceptable(ct string) bool {
 	for _, c := range e.consumers {
 		if c.ContentType() == ct {
 			return true
@@ -303,7 +328,7 @@ func (e *cell) acceptable(ct string) bool {
 	return false
 }
 
-func (e *cell) producible(ats []string) bool {
+func (e *executor) producible(ats []string) bool {
 	for _, at := range ats {
 		for _, c := range e.producers {
 			if c.ContentType() == at {
@@ -314,47 +339,29 @@ func (e *cell) producible(ats []string) bool {
 	return false
 }
 
-// Inspect finds a valid executor to execute target context.
-func (e *cell) Inspect(ctx context.Context) (router.Executor, bool) {
-	return e, true
-}
-
-func (e *cell) formatError(flag string, name string, err error) error {
-	return fmt.Errorf("[%s]%s: %s", strings.ToLower(flag), name, err.Error())
-}
-
 // Execute executes with context.
-func (e *cell) Execute(ctx context.Context) (err error) {
-	c := httpContext(ctx)
+func (e *executor) Execute(ctx context.Context) (err error) {
+	c := HTTPContextFrom(ctx)
 	if c == nil {
-		return fmt.Errorf("can't find http context")
+		return noContext.Error()
 	}
 	paramValues := make([]reflect.Value, 0, len(e.parameters))
 	for _, p := range e.parameters {
-		result, err := p.generator.Generate(ctx, &c.container, p.name, p.targetType)
+		result, err := p.generator.Generate(ctx, c.ValueContainer(), e.consumers, p.name, p.targetType)
 		if err != nil {
-			http.Error(&c.response,
-				e.formatError(string(p.generator.Source()), p.name, err).Error(),
-				http.StatusBadRequest)
-			return nil
+			return writeError(ctx, e.producers, err)
 		}
 		if result == nil && p.defaultValue != nil {
 			result = p.defaultValue
 		}
 		for _, operator := range p.operators {
-			result, err = operator.Operate(ctx, result)
+			result, err = operator.Operate(ctx, p.name, result)
 			if err != nil {
-				http.Error(&c.response,
-					e.formatError(string(p.generator.Source()), p.name, err).Error(),
-					http.StatusBadRequest)
-				return nil
+				return writeError(ctx, e.producers, err)
 			}
 		}
 		if result == nil {
-			http.Error(&c.response,
-				e.formatError(string(p.generator.Source()), p.name, fmt.Errorf("required field but got empty")).Error(),
-				http.StatusBadRequest)
-			return nil
+			return writeError(ctx, e.producers, requiredField.Error(p.name, p.generator.Source()))
 		} else if closer, ok := result.(io.Closer); ok {
 			defer func() {
 				if e := closer.Close(); e != nil && err == nil {
@@ -371,7 +378,7 @@ func (e *cell) Execute(ctx context.Context) (err error) {
 		v := resultValues[r.index]
 		data := v.Interface()
 		for _, operator := range r.operators {
-			newData, err := operator.Operate(ctx, data)
+			newData, err := operator.Operate(ctx, string(r.handler.Destination()), data)
 			if err != nil {
 				return err
 			}
@@ -395,8 +402,22 @@ func (e *cell) Execute(ctx context.Context) (err error) {
 			break
 		}
 	}
-	if c.response.HeaderWritable() {
-		c.response.WriteHeader(e.code)
+	resp := c.ResponseWriter()
+	if resp.HeaderWritable() {
+		resp.WriteHeader(e.code)
 	}
 	return nil
+}
+
+func order(i int) string {
+	switch i % 10 {
+	case 1:
+		return fmt.Sprintf("%dst", i)
+	case 2:
+		return fmt.Sprintf("%dnd", i)
+	case 3:
+		return fmt.Sprintf("%drd", i)
+	default:
+		return fmt.Sprintf("%dth", i)
+	}
 }

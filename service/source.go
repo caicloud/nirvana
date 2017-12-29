@@ -18,7 +18,6 @@ package service
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"mime/multipart"
 	"reflect"
@@ -34,10 +33,19 @@ type ParameterGenerator interface {
 	// Validate validates whether defaultValue and target type is valid.
 	Validate(name string, defaultValue interface{}, target reflect.Type) error
 	// Generate generates an object by data from value container.
-	Generate(ctx context.Context, vc ValueContainer, name string, target reflect.Type) (interface{}, error)
+	Generate(ctx context.Context, vc ValueContainer, consumers []Consumer, name string, target reflect.Type) (interface{}, error)
 }
 
-var generators = map[definition.Source]ParameterGenerator{}
+var generators = map[definition.Source]ParameterGenerator{
+	definition.Path:   &PathParameterGenerator{},
+	definition.Query:  &QueryParameterGenerator{},
+	definition.Header: &HeaderParameterGenerator{},
+	definition.Form:   &FormParameterGenerator{},
+	definition.File:   &FileParameterGenerator{},
+	definition.Body:   &BodyParameterGenerator{},
+	definition.Auto:   &AutoParameterGenerator{},
+	definition.Prefab: &PrefabParameterGenerator{},
+}
 
 // ParameterGeneratorFor gets a parameter generator for specified source.
 func ParameterGeneratorFor(source definition.Source) ParameterGenerator {
@@ -46,9 +54,6 @@ func ParameterGeneratorFor(source definition.Source) ParameterGenerator {
 
 // RegisterParameterGenerator register a generator.
 func RegisterParameterGenerator(generator ParameterGenerator) error {
-	if _, ok := generators[generator.Source()]; ok {
-		return fmt.Errorf("parameter generator of source %s has been registered", generator.Source())
-	}
 	generators[generator.Source()] = generator
 	return nil
 }
@@ -59,7 +64,7 @@ func assignable(defaultValue interface{}, target reflect.Type) error {
 	}
 	value := reflect.ValueOf(defaultValue)
 	if !value.Type().AssignableTo(target) {
-		return fmt.Errorf("default value type %s can't assign to type %s", value.Type().String(), target.String())
+		return unassignableType.Error(value.Type(), target)
 	}
 	return nil
 }
@@ -67,7 +72,7 @@ func assignable(defaultValue interface{}, target reflect.Type) error {
 func convertible(target reflect.Type) error {
 	c := ConverterFor(target)
 	if c == nil {
-		return fmt.Errorf("type %s has no converter", target.String())
+		return noConverter.Error(target)
 	}
 	return nil
 }
@@ -85,7 +90,8 @@ func (g *PathParameterGenerator) Validate(name string, defaultValue interface{},
 	}
 	return nil
 }
-func (g *PathParameterGenerator) Generate(ctx context.Context, vc ValueContainer, name string, target reflect.Type) (interface{}, error) {
+func (g *PathParameterGenerator) Generate(ctx context.Context, vc ValueContainer, consumers []Consumer,
+	name string, target reflect.Type) (interface{}, error) {
 	data, ok := vc.Path(name)
 	if !ok || len(data) <= 0 {
 		return nil, nil
@@ -109,7 +115,8 @@ func (g *QueryParameterGenerator) Validate(name string, defaultValue interface{}
 	}
 	return nil
 }
-func (g *QueryParameterGenerator) Generate(ctx context.Context, vc ValueContainer, name string, target reflect.Type) (interface{}, error) {
+func (g *QueryParameterGenerator) Generate(ctx context.Context, vc ValueContainer, consumers []Consumer,
+	name string, target reflect.Type) (interface{}, error) {
 	data, ok := vc.Query(name)
 	if !ok || len(data) <= 0 {
 		return nil, nil
@@ -134,7 +141,8 @@ func (g *HeaderParameterGenerator) Validate(name string, defaultValue interface{
 	return nil
 }
 
-func (g *HeaderParameterGenerator) Generate(ctx context.Context, vc ValueContainer, name string, target reflect.Type) (interface{}, error) {
+func (g *HeaderParameterGenerator) Generate(ctx context.Context, vc ValueContainer, consumers []Consumer,
+	name string, target reflect.Type) (interface{}, error) {
 	data, ok := vc.Header(name)
 	if !ok || len(data) <= 0 {
 		return nil, nil
@@ -159,7 +167,8 @@ func (g *FormParameterGenerator) Validate(name string, defaultValue interface{},
 	return nil
 }
 
-func (g *FormParameterGenerator) Generate(ctx context.Context, vc ValueContainer, name string, target reflect.Type) (interface{}, error) {
+func (g *FormParameterGenerator) Generate(ctx context.Context, vc ValueContainer, consumers []Consumer,
+	name string, target reflect.Type) (interface{}, error) {
 	data, ok := vc.Form(name)
 	if !ok || len(data) <= 0 {
 		return nil, nil
@@ -198,12 +207,13 @@ func (g *FileParameterGenerator) Validate(name string, defaultValue interface{},
 		return err
 	}
 	if !reflect.TypeOf((*multipart.File)(nil)).Elem().AssignableTo(target) {
-		return fmt.Errorf("multipart.File can't assignable to %s", target.String())
+		return unassignableType.Error("multipart.File", target)
 	}
 	return nil
 }
 
-func (g *FileParameterGenerator) Generate(ctx context.Context, vc ValueContainer, name string, target reflect.Type) (interface{}, error) {
+func (g *FileParameterGenerator) Generate(ctx context.Context, vc ValueContainer, consumers []Consumer,
+	name string, target reflect.Type) (interface{}, error) {
 	file, ok := vc.File(name)
 	if !ok {
 		return nil, nil
@@ -227,7 +237,7 @@ func (g *BodyParameterGenerator) Validate(name string, defaultValue interface{},
 	case kind == reflect.Ptr && target.Elem().Kind() == reflect.Struct:
 	case kind == reflect.Interface && reflect.TypeOf((*io.ReadCloser)(nil)).Elem().AssignableTo(target):
 	default:
-		return fmt.Errorf("%s is not a valid type for body", target.String())
+		return invalidBodyType.Error(target)
 	}
 	return nil
 }
@@ -249,7 +259,8 @@ func (c *repeatableCloserForBody) Close() error {
 	return nil
 }
 
-func (g *BodyParameterGenerator) Generate(ctx context.Context, vc ValueContainer, name string, target reflect.Type) (interface{}, error) {
+func (g *BodyParameterGenerator) Generate(ctx context.Context, vc ValueContainer, consumers []Consumer,
+	name string, target reflect.Type) (interface{}, error) {
 	reader, contentType, ok := vc.Body()
 	if !ok {
 		return nil, nil
@@ -258,7 +269,13 @@ func (g *BodyParameterGenerator) Generate(ctx context.Context, vc ValueContainer
 	if kind == reflect.Interface && reflect.TypeOf((*io.ReadCloser)(nil)).Elem().AssignableTo(target) {
 		return &repeatableCloserForBody{reader, false}, nil
 	}
-	consumer := ConsumerFor(contentType)
+	var consumer Consumer
+	for _, c := range consumers {
+		if c.ContentType() == contentType {
+			consumer = c
+			break
+		}
+	}
 	if consumer == nil {
 		return nil, nil
 	}
@@ -293,18 +310,19 @@ func (g *PrefabParameterGenerator) Validate(name string, defaultValue interface{
 	}
 	prefab := PrefabFor(name)
 	if prefab == nil {
-		return fmt.Errorf("no prefab named %s", name)
+		return noPrefab.Error(name)
 	}
 	if !prefab.Type().AssignableTo(target) {
-		return fmt.Errorf("prefab %s can't assign to type %s", prefab.Name(), target.String())
+		return unassignableType.Error(prefab.Type(), target)
 	}
 	return nil
 }
 
-func (g *PrefabParameterGenerator) Generate(ctx context.Context, vc ValueContainer, name string, target reflect.Type) (interface{}, error) {
+func (g *PrefabParameterGenerator) Generate(ctx context.Context, vc ValueContainer, consumers []Consumer,
+	name string, target reflect.Type) (interface{}, error) {
 	prefab := PrefabFor(name)
 	if prefab == nil {
-		return nil, fmt.Errorf("no prefab named %s", name)
+		return nil, noPrefab.Error(name)
 	}
 	return prefab.Make(ctx)
 }
@@ -326,7 +344,7 @@ func (g *AutoParameterGenerator) Validate(name string, defaultValue interface{},
 		return err
 	}
 	if target.Kind() != reflect.Struct && !(target.Kind() == reflect.Ptr && target.Elem().Kind() == reflect.Struct) {
-		return fmt.Errorf("%s should be a struct or a pointer to struct", target.String())
+		return invalidAutoParameter.Error(target)
 	}
 	f := func(index []int, field reflect.StructField) error {
 		source, name, err := g.split(field.Tag.Get("source"))
@@ -335,7 +353,7 @@ func (g *AutoParameterGenerator) Validate(name string, defaultValue interface{},
 		}
 		generator := ParameterGeneratorFor(definition.Source(source))
 		if generator == nil {
-			return fmt.Errorf("no parameter generator for source %s", source)
+			return noParameterGenerator.Error(source)
 		}
 		return generator.Validate(name, nil, field.Type)
 	}
@@ -350,12 +368,12 @@ func (g *AutoParameterGenerator) Validate(name string, defaultValue interface{},
 func (g *AutoParameterGenerator) split(tag string) (source string, name string, err error) {
 	result := strings.Split(tag, ",")
 	if len(result) != 2 {
-		return "", "", fmt.Errorf("filed tag %s is invalid", tag)
+		return "", "", invalidFieldTag.Error(tag)
 	}
 	return result[0], result[1], nil
 }
 
-func (g *AutoParameterGenerator) Generate(ctx context.Context, vc ValueContainer, name string, target reflect.Type) (interface{}, error) {
+func (g *AutoParameterGenerator) Generate(ctx context.Context, vc ValueContainer, consumers []Consumer, name string, target reflect.Type) (interface{}, error) {
 	var result interface{}
 	var value reflect.Value
 	if target.Kind() == reflect.Struct {
@@ -366,13 +384,13 @@ func (g *AutoParameterGenerator) Generate(ctx context.Context, vc ValueContainer
 		result = value.Interface()
 		value = value.Elem()
 	}
-	if err := g.generate(ctx, vc, value); err != nil {
+	if err := g.generate(ctx, vc, consumers, value); err != nil {
 		return nil, err
 	}
 	return result, nil
 }
 
-func (g *AutoParameterGenerator) generate(ctx context.Context, vc ValueContainer, value reflect.Value) error {
+func (g *AutoParameterGenerator) generate(ctx context.Context, vc ValueContainer, consumers []Consumer, value reflect.Value) error {
 	f := func(index []int, field reflect.StructField) error {
 		source, name, err := g.split(field.Tag.Get("source"))
 		if err != nil {
@@ -380,9 +398,9 @@ func (g *AutoParameterGenerator) generate(ctx context.Context, vc ValueContainer
 		}
 		generator := ParameterGeneratorFor(definition.Source(source))
 		if generator == nil {
-			return fmt.Errorf("no parameter generator for source %s", source)
+			return noParameterGenerator.Error(source)
 		}
-		ins, err := generator.Generate(ctx, vc, name, field.Type)
+		ins, err := generator.Generate(ctx, vc, consumers, name, field.Type)
 		if err != nil {
 			return err
 		}
