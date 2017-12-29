@@ -17,22 +17,18 @@ limitations under the License.
 package main
 
 import (
-	"log"
-	"net/http"
-
+	"github.com/caicloud/nirvana"
 	"github.com/caicloud/nirvana/examples/api-basic/api/v1"
 	"github.com/caicloud/nirvana/examples/api-basic/api/v2"
-	"github.com/caicloud/nirvana/service"
+	"github.com/caicloud/nirvana/log"
 )
 
 func main() {
-	if err := service.RegisterDefaultEnvironment(); err != nil {
-		panic(err)
+	config := nirvana.NewDefaultConfig("", 8080, log.LevelDebug)
+	v1.Install(config)
+	v2.Install(config)
+	config.Logger.Infof("Listening on %s:%d", config.IP, config.Port)
+	if err := nirvana.NewServer(config).Serve(); err != nil {
+		config.Logger.Fatal(err)
 	}
-
-	s := service.NewDefaultServer()
-	v1.Install(s)
-	v2.Install(s)
-	log.Printf("Listening on 8080")
-	http.ListenAndServe(":8080", s)
 }

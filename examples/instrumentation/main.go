@@ -17,20 +17,22 @@ limitations under the License.
 package main
 
 import (
-	"log"
-	"net/http"
-
 	"github.com/caicloud/nirvana"
+	"github.com/caicloud/nirvana/log"
+	"github.com/caicloud/nirvana/plugins/metrics"
+	"github.com/caicloud/nirvana/plugins/profiling"
 )
 
 func main() {
-	s, err := nirvana.New(&nirvana.Config{
-		EnableMetrics:   true,
-		EnableProfiling: true,
-	})
-	if err != nil {
-		panic(err)
+	config := nirvana.NewDefaultConfig("", 8080, log.LevelDebug).
+		Configure(
+			metrics.Path("/metrics"),
+			profiling.Path("/debug/pprof/"),
+			profiling.Contention(true),
+		)
+
+	config.Logger.Infof("Listening on %s:%d", config.IP, config.Port)
+	if err := nirvana.NewServer(config).Serve(); err != nil {
+		config.Logger.Fatal(err)
 	}
-	log.Printf("Listening on 8080")
-	http.ListenAndServe(":8080", s)
 }

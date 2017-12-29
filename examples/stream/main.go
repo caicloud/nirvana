@@ -19,9 +19,10 @@ package main
 import (
 	"fmt"
 	"io"
-	"net/http"
 
+	"github.com/caicloud/nirvana"
 	"github.com/caicloud/nirvana/examples/stream/api/v1"
+	"github.com/caicloud/nirvana/log"
 	"github.com/caicloud/nirvana/service"
 )
 
@@ -45,14 +46,15 @@ func (p *SomeDataProducer) Produce(w io.Writer, v interface{}) error {
 }
 
 func main() {
-	if err := service.RegisterDefaultEnvironment(); err != nil {
-		panic(err)
-	}
 	// Register a producer for content type 'application/somedata'
 	if err := service.RegisterProducer(&SomeDataProducer{}); err != nil {
 		panic(err)
 	}
-	s := service.NewDefaultServer()
-	v1.Install(s)
-	http.ListenAndServe(":8080", s)
+
+	config := nirvana.NewDefaultConfig("", 8080, log.LevelDebug)
+	v1.Install(config)
+	config.Logger.Infof("Listening on %s:%d", config.IP, config.Port)
+	if err := nirvana.NewServer(config).Serve(); err != nil {
+		config.Logger.Fatal(err)
+	}
 }

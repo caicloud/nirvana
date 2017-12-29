@@ -55,8 +55,8 @@ var Desc = definition.Descriptor{
 						},
 					},
 					Results: []definition.Result{
-						{Type: definition.Data},
-						{Type: definition.Error},
+						{Destination: definition.Data},
+						{Destination: definition.Error},
 					},
 				},
 			},

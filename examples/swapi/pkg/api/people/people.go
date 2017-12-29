@@ -30,7 +30,6 @@ func API(l loader.ModelLoader) definition.Descriptor {
 	return definition.Descriptor{
 		Path:        "/people",
 		Description: "It contains all APIs in v1",
-		Consumes:    []string{"application/json"},
 		Produces:    []string{"application/json"},
 		Definitions: []definition.Definition{
 			listDefinition(people),

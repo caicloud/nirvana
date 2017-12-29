@@ -17,10 +17,8 @@ limitations under the License.
 package v1
 
 import (
-	"reflect"
-
 	"github.com/caicloud/nirvana/definition"
-	"github.com/caicloud/nirvana/examples/api-basic/api/v1/operators"
+	"github.com/caicloud/nirvana/examples/api-basic/api/v1/converters"
 	"github.com/caicloud/nirvana/examples/api-basic/application"
 )
 
@@ -28,32 +26,16 @@ func init() {
 	register(app)
 }
 
-var app = definition.Descriptor{
-	Path: "/applications",
-	Definitions: []definition.Definition{
-		{
-			Method:   definition.Create,
-			Function: application.CreateApplication,
-			Parameters: []definition.Parameter{
-				{
-					Source: definition.Body,
-					Type:   reflect.TypeOf(&application.ApplicationV1{}),
-					Operators: []definition.Operator{
-						operators.ConvertApplicationV1ToApplicationV2(),
-					},
-				},
-			},
-			Results: []definition.Result{
-				{
-					Type: definition.Data,
-					Operators: []definition.Operator{
-						operators.ConvertApplicationV2ToApplicationV1(),
-					},
-				},
-				{
-					Type: definition.Error,
-				},
-			},
-		},
-	},
-}
+var app = definition.DescriptorFor("/applications", "Application API").
+	Definition(
+		definition.CreateDefinitionFor(application.CreateApplication, "Create Application").
+			Parameter(
+				definition.BodyParameterFor("Application V1 json object").
+					Operator(converters.ConvertApplicationV1ToApplication()),
+			).
+			Result(
+				definition.DataResultFor("Application V1 json object").
+					Operator(converters.ConvertApplicationToApplicationV1()),
+				definition.ErrorResult(),
+			),
+	)

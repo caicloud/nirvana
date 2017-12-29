@@ -28,12 +28,10 @@ func API(model loader.ModelLoader) definition.Descriptor {
 	return definition.Descriptor{
 		Path:        "/api/v1",
 		Description: "It contains all APIs in v1",
-		Consumes:    []string{"application/json"},
 		Produces:    []string{"application/json"},
 		Definitions: []definition.Definition{
 			{
 				Method:   definition.Get,
-				Consumes: []string{"application/json"},
 				Produces: []string{"application/json"},
 				Function: func(ctx context.Context) string {
 					return "hello world"
@@ -41,7 +39,7 @@ func API(model loader.ModelLoader) definition.Descriptor {
 				Parameters: []definition.Parameter{},
 				Results: []definition.Result{
 					{
-						Type: definition.Data,
+						Destination: definition.Data,
 					},
 				},
 			},
