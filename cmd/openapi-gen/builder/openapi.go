@@ -189,7 +189,16 @@ func (o *openAPI) buildParameters(handler interface{}, params []definition.Param
 		return nil, fmt.Errorf("Handler is not a function")
 	}
 
+	// In default config of nirvana, the first parameter of handler
+	// should be context. But the context is no useless for openapi.
+	// So ignore it.
+	const ignoreFirstContext = true
+
 	for i, param := range params {
+		parameterIndex := i
+		if ignoreFirstContext {
+			parameterIndex++
+		}
 		specParam := spec.Parameter{
 			ParamProps: spec.ParamProps{
 				Name:        param.Name,
@@ -217,7 +226,7 @@ func (o *openAPI) buildParameters(handler interface{}, params []definition.Param
 			if !specParam.Required {
 				return nil, fmt.Errorf("body param %v MUST be required", param.Name)
 			}
-			dataType := ht.In(i)
+			dataType := ht.In(parameterIndex)
 			s, err := o.toSchema(dataType)
 			if err != nil {
 				return nil, err
@@ -231,7 +240,7 @@ func (o *openAPI) buildParameters(handler interface{}, params []definition.Param
 			// NOTE(liubog2008): handle by ref
 		}
 		// TODO(liubog2008): support array type of parameter, e.g. []string
-		dataType := ht.In(i)
+		dataType := ht.In(parameterIndex)
 		if openAPIType, openAPIFormat := common.GetOpenAPITypeFormat(getCanonicalizeTypeName(dataType)); openAPIType != "" {
 			specParam.SimpleSchema = spec.SimpleSchema{
 				Type:   openAPIType,
@@ -250,7 +259,7 @@ func (o *openAPI) buildResponses(handler interface{}, results []definition.Resul
 
 	rightResponse := spec.Response{
 		ResponseProps: spec.ResponseProps{
-			Headers: map[string]spec.Header{},
+		// Headers: map[string]spec.Header{},
 		},
 	}
 
@@ -261,7 +270,7 @@ func (o *openAPI) buildResponses(handler interface{}, results []definition.Resul
 
 	haveData, haveError := false, false
 	for i, res := range results {
-		switch res.Type {
+		switch res.Destination {
 		case definition.Data:
 			if haveData {
 				return nil, fmt.Errorf("Only one data type result is allowed")
@@ -285,19 +294,19 @@ func (o *openAPI) buildResponses(handler interface{}, results []definition.Resul
 			// TODO(liubog2008):
 			haveError = true
 		case definition.Meta:
-			for _, k := range res.Headers {
-				rightResponse.Headers[k] = spec.Header{
-					// TODO(liubog2008): now only string is supported
-					SimpleSchema: spec.SimpleSchema{
-						Type:   "string",
-						Format: "",
-					},
-					// TODO(liubog2008): add header description for each one
-					HeaderProps: spec.HeaderProps{
-						Description: res.Description,
-					},
-				}
-			}
+			// for _, k := range res.Headers {
+			//     rightResponse.Headers[k] = spec.Header{
+			//         // TODO(liubog2008): now only string is supported
+			//         SimpleSchema: spec.SimpleSchema{
+			//             Type:   "string",
+			//             Format: "",
+			//         },
+			//         // TODO(liubog2008): add header description for each one
+			//         HeaderProps: spec.HeaderProps{
+			//             Description: res.Description,
+			//         },
+			//     }
+			// }
 		}
 	}
 	if !haveData && defaultStatusCode != http.StatusNoContent {
