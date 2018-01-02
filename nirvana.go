@@ -17,6 +17,7 @@ limitations under the License.
 package nirvana
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
@@ -134,6 +135,7 @@ func NewConfig() *Config {
 // server is nirvana server.
 type server struct {
 	config *Config
+	server *http.Server
 }
 
 // NewServer creates a nirvana server.
@@ -178,11 +180,30 @@ func (s *server) Serve() error {
 	if err != nil {
 		return err
 	}
-	server := &http.Server{
+	s.server = &http.Server{
 		Addr:    fmt.Sprintf("%s:%d", s.config.IP, s.config.Port),
 		Handler: service,
 	}
-	return server.ListenAndServe()
+	err = s.server.ListenAndServe()
+	e := s.config.forEach(func(name string, config interface{}) error {
+		installer := ConfigInstallerFor(name)
+		if installer == nil {
+			s.config.Logger.Error(noConfigInstaller.Error(name))
+		}
+		err := installer.Uninstall(builder, s.config)
+		s.config.Logger.Error(err)
+		return nil
+	})
+	if e != nil {
+		s.config.Logger.Error(e)
+	}
+	return err
+}
+
+// Shutdown gracefully shuts down the server without interrupting any
+// active connections.
+func (s *server) Shutdown(ctx context.Context) error {
+	return s.server.Shutdown(ctx)
 }
 
 // ConfigInstaller is used to install config to service builder.
