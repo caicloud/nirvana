@@ -57,7 +57,7 @@ func (i *metricsInstaller) Uninstall(builder service.Builder, cfg *nirvana.Confi
 	return nil
 }
 
-// Disable disables metrics.
+// Disable returns a configurer to disable metrics.
 func Disable() nirvana.Configurer {
 	return func(c *nirvana.Config) error {
 		c.Set(ExternalConfigName, nil)
@@ -81,7 +81,8 @@ func wapper(c *nirvana.Config, f func(c *config)) {
 	c.Set(ExternalConfigName, cfg)
 }
 
-// Path sets metrics path. Empty path means /metrics.
+// Path returns a configurer to set metrics path.
+// Empty path means /metrics.
 func Path(path string) nirvana.Configurer {
 	if path == "" {
 		path = "/metrics"

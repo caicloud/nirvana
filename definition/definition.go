@@ -31,7 +31,7 @@ type Chain interface {
 // carry on, call Chain.Continue() and pass the context.
 type Middleware func(context.Context, Chain) error
 
-// Operator is used to operate an object and return an object as replacement.
+// Operator is used to operate an object and return an replacement object.
 //
 // For example:
 //  A converter:
@@ -59,12 +59,12 @@ type Operator interface {
 	// Kind indicates operator type.
 	Kind() string
 	// In returns the type of the only object parameter of operator.
-	// The type must be a concrete struct or built-in type rather
-	// than interface.
+	// The type must be a concrete struct or built-in type. It should
+	// not be interface unless it's a file or stream reader.
 	In() reflect.Type
 	// Out returns the type of the only object result of operator.
-	// The type must be a concrete struct or built-in type rather
-	// than interface.
+	// The type must be a concrete struct or built-in type. It should
+	// not be interface unless it's a file or stream reader.
 	Out() reflect.Type
 	// Operate operates an object and return one.
 	Operate(ctx context.Context, field string, object interface{}) (interface{}, error)
@@ -138,7 +138,9 @@ const (
 	Meta Destination = "Meta"
 	// Data means result will be set into the body of response.
 	Data Destination = "Data"
-	// Error means the result is an error and should be treat specially.
+	// Error means the result is an error and should be treated specially.
+	// An error occurs indicates that there is no data to return. So the
+	// error should be treated as data and be writed back to client.
 	Error Destination = "Error"
 )
 
@@ -175,7 +177,7 @@ func (p Parameter) DefaultValue(value interface{}) Parameter {
 	return p
 }
 
-// Operator adds operators to current result.
+// Operator adds operators to current parameter.
 func (p Parameter) Operator(operators ...Operator) Parameter {
 	p.Operators = append(p.Operators, operators...)
 	return p
@@ -259,15 +261,17 @@ type Descriptor struct {
 	// If parent path is "/api/v1", current is "/some",
 	// It means current definitions handles "/api/v1/some".
 	Path string
-	// Consumes indicates content types children handlers can consume.
+	// Consumes indicates content types that current definitions
+	// and child definitions can consume.
 	// It will override parent descriptor's consumes.
 	Consumes []string
-	// Produces indicates content types children handlers can produce.
+	// Produces indicates content types that current definitions
+	// and child definitions can produce.
 	// It will override parent descriptor's produces.
 	Produces []string
 	// Middlewares contains path middlewares.
 	Middlewares []Middleware
-	// Definitions contains handlers for current path.
+	// Definitions contains definitions for current path.
 	Definitions []Definition
 	// Children is used to place sub-descriptors.
 	Children []Descriptor

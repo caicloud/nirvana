@@ -48,7 +48,7 @@ func RedirectTrailingSlash() Filter {
 	}
 }
 
-// FillLeadingSlash is a pseudo filter. It only fills a leading slash when
+// FillLeadingSlash returns a pseudo filter to fill a leading slash when
 // a request path does not have a leading slash.
 // The filter won't filter anything.
 func FillLeadingSlash() Filter {
@@ -62,7 +62,7 @@ func FillLeadingSlash() Filter {
 	}
 }
 
-// ParseRequestForm is a pseudo filter. It parse request form when content
+// ParseRequestForm returns a filter to parse request form when content
 // type is "application/x-www-form-urlencoded" or "multipart/form-data".
 // The filter won't filter anything unless some error occurs in parsing.
 func ParseRequestForm() Filter {

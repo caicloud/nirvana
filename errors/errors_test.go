@@ -129,7 +129,7 @@ func TestExpandPanic3(t *testing.T) {
 }
 
 func TestNewRaw(t *testing.T) {
-	err := NewRaw(400, "japari:NotFriend", "${kind} is not in japari park").Error("anje").(*err)
+	err := NewFactory(400, "japari:NotFriend", "${kind} is not in japari park").Error("anje").(*err)
 	if err.Error() != "anje is not in japari park" ||
 		err.Code() != 400 ||
 		!reflect.DeepEqual(err.Message(), message{
@@ -143,7 +143,7 @@ func TestNewRaw(t *testing.T) {
 	}
 }
 
-func TestCanNew(t *testing.T) {
+func TestDerived(t *testing.T) {
 	friendNotFound := NotFound.Build("japari:NotFriend", "${kind} is not in japari park")
 	foodNotFound := NotFound.Build("japari:NotFood", "${food} is not in japari park now")
 	e1 := friendNotFound.Error("anje")

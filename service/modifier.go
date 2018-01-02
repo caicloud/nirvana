@@ -27,7 +27,7 @@ import (
 // a customized modifier for it.
 type DefinitionModifier func(d *definition.Definition)
 
-// DefinitionModifiers is a convinient type for []DefinitionModifier
+// DefinitionModifiers is a convenient type for []DefinitionModifier
 type DefinitionModifiers []DefinitionModifier
 
 // Combine combines a list of modifiers to one.

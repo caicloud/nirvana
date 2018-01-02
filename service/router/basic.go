@@ -41,9 +41,7 @@ func (h *handler) Middlewares() []Middleware {
 	return h.middlewares
 }
 
-// AddExecutor adds executor to the router node.
-// A router can hold many executors, but there is only one executor
-// is selected for a match.
+// SetInspector sets inspector to the router node.
 func (h *handler) SetInspector(inspector Inspector) {
 	h.inspector = inspector
 }

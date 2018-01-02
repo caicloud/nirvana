@@ -69,7 +69,7 @@ func (i *profilingInstaller) Uninstall(builder service.Builder, cfg *nirvana.Con
 	return nil
 }
 
-// Disable disables profiling.
+// Disable returns a configurer to disable profiling.
 func Disable() nirvana.Configurer {
 	return func(c *nirvana.Config) error {
 		c.Set(ExternalConfigName, nil)
@@ -93,7 +93,7 @@ func wapper(c *nirvana.Config, f func(c *config)) {
 	c.Set(ExternalConfigName, cfg)
 }
 
-// Path sets metrics path.
+// Path returns a configurer to set metrics path.
 // Default path is /debug/pprof.
 // Then these path is used:
 //   /debug/pprof/profile
@@ -111,7 +111,8 @@ func Path(path string) nirvana.Configurer {
 	}
 }
 
-// Contention enables or disables contention profiling.
+// Contention returns a configurer to enable or
+// disable contention profiling.
 // Defaults to false.
 func Contention(enable bool) nirvana.Configurer {
 	return func(c *nirvana.Config) error {

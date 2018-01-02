@@ -210,7 +210,7 @@ func RegisterConfigInstaller(ci ConfigInstaller) {
 	installers[ci.Name()] = ci
 }
 
-// IP sets ip into config.
+// IP returns a configurer to set ip into config.
 func IP(ip string) Configurer {
 	return func(c *Config) error {
 		c.IP = ip
@@ -218,7 +218,7 @@ func IP(ip string) Configurer {
 	}
 }
 
-// Port sets port into config.
+// Port returns a configurer to set port into config.
 func Port(port uint16) Configurer {
 	return func(c *Config) error {
 		c.Port = port
@@ -226,7 +226,7 @@ func Port(port uint16) Configurer {
 	}
 }
 
-// Logger sets logger into config.
+// Logger returns a configurer to set logger into config.
 func Logger(logger log.Logger) Configurer {
 	return func(c *Config) error {
 		if logger == nil {
@@ -238,7 +238,7 @@ func Logger(logger log.Logger) Configurer {
 	}
 }
 
-// Descriptor adds descriptors into config.
+// Descriptor returns a configurer to add descriptors into config.
 func Descriptor(descriptors ...definition.Descriptor) Configurer {
 	return func(c *Config) error {
 		c.Descriptors = append(c.Descriptors, descriptors...)
@@ -246,7 +246,7 @@ func Descriptor(descriptors ...definition.Descriptor) Configurer {
 	}
 }
 
-// Filter adds filters into config.
+// Filter returns a configurer to add filters into config.
 func Filter(filters ...service.Filter) Configurer {
 	return func(c *Config) error {
 		c.Filters = append(c.Filters, filters...)
@@ -254,7 +254,7 @@ func Filter(filters ...service.Filter) Configurer {
 	}
 }
 
-// Modifier adds definition modifiers into config.
+// Modifier returns a configurer to add definition modifiers into config.
 func Modifier(modifiers ...service.DefinitionModifier) Configurer {
 	return func(c *Config) error {
 		c.Modifiers = append(c.Modifiers, modifiers...)

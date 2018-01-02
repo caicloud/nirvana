@@ -218,7 +218,7 @@ func (b *builder) Build() (Service, error) {
 //          ↓                    ↑
 // |-------------Executor---------------|
 //          ↓                    ↑
-// |-ParameterGenerators-|-TypeHandlers-|
+// |-ParameterGenerators-|-DestinationHandlers-|
 //          ↓                    ↑
 // |------------User Function-----------|
 type Service interface {

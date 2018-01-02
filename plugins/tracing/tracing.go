@@ -94,7 +94,7 @@ func (i *tracingInstaller) Uninstall(builder service.Builder, cfg *nirvana.Confi
 	return err
 }
 
-// Disable disables tracing.
+// Disable returns a configurer to disable tracing.
 func Disable() nirvana.Configurer {
 	return func(c *nirvana.Config) error {
 		c.Set(ExternalConfigName, nil)
@@ -116,7 +116,7 @@ func wapper(c *nirvana.Config, f func(c *config)) {
 	c.Set(ExternalConfigName, cfg)
 }
 
-// CustomTracer is used to set custom tracer.
+// CustomTracer returns a configurer to set custom tracer.
 func CustomTracer(tracer opentracing.Tracer) nirvana.Configurer {
 	return func(c *nirvana.Config) error {
 		wapper(c, func(c *config) {
@@ -126,7 +126,7 @@ func CustomTracer(tracer opentracing.Tracer) nirvana.Configurer {
 	}
 }
 
-// DefaultTracer creates a default tracer.
+// DefaultTracer returns a configurer to create default tracer by service and port.
 func DefaultTracer(serviceName string, agentHostPort string) nirvana.Configurer {
 	return func(c *nirvana.Config) error {
 		wapper(c, func(c *config) {

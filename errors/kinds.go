@@ -36,9 +36,9 @@ func (t kind) Build(reason Reason, format string) Factory {
 	return &factory{code: int(t), reason: reason, format: format}
 }
 
-// NewRaw creates a factory to create errors. The usage of this function is
-// not recommended. Prefab kinds is more preferable.
-func NewRaw(code int, reason Reason, format string) Factory {
+// NewFactory creates a factory to create errors. The usage of this function is
+// not recommended. Prefab kinds are more preferable.
+func NewFactory(code int, reason Reason, format string) Factory {
 	return newKind(code).Build(reason, format)
 }
 

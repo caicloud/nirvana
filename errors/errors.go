@@ -22,21 +22,25 @@ import (
 
 // Reason is an enumeration of possible failure causes. Each Reason
 // must map to a format which is a string containing ${formatArgu1}.
-// Exp:
-// Reason "kind:NotFound" may map to Format "${kindName} was not found".
-// Reason "Status:Sleep" may map to Format "${Name} is sleeping now"
+//
+// Following format is recommended:
+//   MuduleName[:SubmoduleName]:ShortErrorDescription
+// Examples:
+//   Reason "Nirvana:KindNotFound" may map to format "${kindName} was not found".
+//   Reason "Nirvana:SomeoneIsSleeping" may map to format "${name} is sleeping now"
 type Reason string
 
 // Factory can create error from a fixed format.
 type Factory interface {
 	// Error generates an error from v.
 	Error(v ...interface{}) error
-	// Derived checks if an error was derived by current factory.
+	// Derived checks if an error was derived from current factory.
 	Derived(e error) bool
 }
 
 // message can be marshaled for transferring.
-// Example for json:
+//
+// Example:
 // {
 //   "message": "name of something is to short",
 //   "reason": "SomeModule:NameTooShort",
@@ -46,10 +50,8 @@ type Factory interface {
 // }
 type message struct {
 	// Reason is a unique key for an error in global environment.
-	// Following format is recommended:
-	//   `MuduleName[:SubmoduleName]:ShortErrorDescription`
 	Reason Reason `json:"reason,omitempty"`
-	// Message contains the detailed descrtiption of an error.
+	// Message contains the detailed description of an error.
 	Message string `json:"message"`
 	// Data is used for i18n.
 	Data map[string]string `json:"data,omitempty"`
@@ -76,7 +78,7 @@ func (e *err) Error() string {
 	return e.message.Message
 }
 
-// Factory is an error factory.
+// factory is an error factory.
 type factory struct {
 	code   int
 	reason Reason
@@ -93,7 +95,7 @@ func (f *factory) Error(v ...interface{}) error {
 	}
 }
 
-// Derived checks if an error was derived by current factory.
+// Derived checks if an error was derived from current factory.
 func (f *factory) Derived(e error) bool {
 	origin, ok := e.(*err)
 	return ok && origin.factory == f
