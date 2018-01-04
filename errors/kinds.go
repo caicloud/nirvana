@@ -16,24 +16,38 @@ limitations under the License.
 
 package errors
 
-// FactoryBuilder can build error factories.
-type FactoryBuilder interface {
+// Builder can build error factories and errros.
+type Builder interface {
 	// Build builds a factory to generate errors with predefined format.
 	Build(reason Reason, format string) Factory
+	// Error immediately creates an error without reason.
+	Error(format string, v ...interface{}) error
 }
 
 // kind maps to http code.
 // And it can be used to make an error factory.
 type kind int
 
-// newKind creates a new Type with code.
-func newKind(code int) FactoryBuilder {
+// newKind creates a new builder with code.
+func newKind(code int) Builder {
 	return kind(code)
 }
 
 // Build builds a factory to generate errors with predefined format.
 func (t kind) Build(reason Reason, format string) Factory {
 	return &factory{code: int(t), reason: reason, format: format}
+}
+
+// Error immediately creates an error without reason.
+func (t kind) Error(format string, v ...interface{}) error {
+	msg, data := expand(format, v)
+	return &err{
+		message: message{
+			Message: msg,
+			Data:    data,
+		},
+		factory: &factory{code: int(t)},
+	}
 }
 
 // NewFactory creates a factory to create errors. The usage of this function is
