@@ -72,3 +72,9 @@ func (*SilentLogger) Fatalf(string, ...interface{}) {}
 // Fatalln logs to the FATAL logs, then calls os.Exit(1).
 // Arguments are handled in the manner of fmt.Println; a newline is appended if missing.
 func (*SilentLogger) Fatalln(v ...interface{}) {}
+
+// clone clones current logger with new wrapper.
+// A positive wrapper indicates how many wrappers outside the logger.
+func (l *SilentLogger) clone(wrapper int) Logger {
+	return l
+}

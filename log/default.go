@@ -19,6 +19,20 @@ package log
 // default logger. Don't use the logger directly.
 var logger Logger = newStderrLogger(LevelDebug, 1)
 
+// DefaultLogger returns default logger.
+func DefaultLogger() Logger {
+	return logger.clone(-1)
+}
+
+// SetDefaultLogger sets default logger.
+func SetDefaultLogger(l Logger) {
+	if l == nil {
+		logger = &SilentLogger{}
+	} else {
+		logger = l.clone(1)
+	}
+}
+
 type defaultVerboser struct {
 	verboser Verboser
 }
