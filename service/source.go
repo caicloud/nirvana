@@ -82,6 +82,9 @@ type PathParameterGenerator struct{}
 
 func (g *PathParameterGenerator) Source() definition.Source { return definition.Path }
 func (g *PathParameterGenerator) Validate(name string, defaultValue interface{}, target reflect.Type) error {
+	if name == "" {
+		return noName.Error(g.Source())
+	}
 	if err := assignable(defaultValue, target); err != nil {
 		return err
 	}
@@ -107,6 +110,9 @@ type QueryParameterGenerator struct{}
 
 func (g *QueryParameterGenerator) Source() definition.Source { return definition.Query }
 func (g *QueryParameterGenerator) Validate(name string, defaultValue interface{}, target reflect.Type) error {
+	if name == "" {
+		return noName.Error(g.Source())
+	}
 	if err := assignable(defaultValue, target); err != nil {
 		return err
 	}
@@ -132,6 +138,9 @@ type HeaderParameterGenerator struct{}
 
 func (g *HeaderParameterGenerator) Source() definition.Source { return definition.Header }
 func (g *HeaderParameterGenerator) Validate(name string, defaultValue interface{}, target reflect.Type) error {
+	if name == "" {
+		return noName.Error(g.Source())
+	}
 	if err := assignable(defaultValue, target); err != nil {
 		return err
 	}
@@ -158,6 +167,9 @@ type FormParameterGenerator struct{}
 
 func (g *FormParameterGenerator) Source() definition.Source { return definition.Form }
 func (g *FormParameterGenerator) Validate(name string, defaultValue interface{}, target reflect.Type) error {
+	if name == "" {
+		return noName.Error(g.Source())
+	}
 	if err := assignable(defaultValue, target); err != nil {
 		return err
 	}
@@ -202,6 +214,9 @@ type FileParameterGenerator struct {
 
 func (g *FileParameterGenerator) Source() definition.Source { return definition.File }
 func (g *FileParameterGenerator) Validate(name string, defaultValue interface{}, target reflect.Type) error {
+	if name == "" {
+		return noName.Error(g.Source())
+	}
 	err := assignable(defaultValue, target)
 	if err != nil {
 		return err
@@ -304,6 +319,9 @@ type PrefabParameterGenerator struct{}
 
 func (g *PrefabParameterGenerator) Source() definition.Source { return definition.Prefab }
 func (g *PrefabParameterGenerator) Validate(name string, defaultValue interface{}, target reflect.Type) error {
+	if name == "" {
+		return noName.Error(g.Source())
+	}
 	err := assignable(defaultValue, target)
 	if err != nil {
 		return err
@@ -367,6 +385,9 @@ func (g *AutoParameterGenerator) Validate(name string, defaultValue interface{},
 
 func (g *AutoParameterGenerator) split(tag string) (source string, name string, err error) {
 	result := strings.Split(tag, ",")
+	if len(result) == 1 {
+		return result[0], "", nil
+	}
 	if len(result) != 2 {
 		return "", "", invalidFieldTag.Error(tag)
 	}

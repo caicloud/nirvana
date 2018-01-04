@@ -82,3 +82,4 @@ var noPrefab = errors.InternalServerError.Build("Nirvana:Service:NoPrefab", "no 
 var invalidAutoParameter = errors.InternalServerError.Build("Nirvana:Service:InvalidAutoParameter", "${type} is not a struct or a pointer to struct")
 var noParameterGenerator = errors.InternalServerError.Build("Nirvana:Service:NoParameterGenerator", "no parameter generator for source ${source}")
 var invalidFieldTag = errors.InternalServerError.Build("Nirvana:Service:InvalidFieldTag", "filed tag ${tag} is invalid")
+var noName = errors.InternalServerError.Build("Nirvana:Service:NoName", "${source} must have a name")
