@@ -98,11 +98,11 @@ func (c *Config) forEach(f func(name string, config interface{}) error) error {
 //             ConsumeAllIfComsumesIsEmpty, ProduceAllIfProducesIsEmpty,
 //             ConsumeNoneForHTTPGet, ConsumeNoneForHTTPDelete,
 //             ProduceNoneForHTTPDelete.
-func NewDefaultConfig(ip string, port uint16, level log.Level) *Config {
+func NewDefaultConfig(ip string, port uint16) *Config {
 	return NewConfig().Configure(
 		IP(ip),
 		Port(port),
-		Logger(log.NewStdLogger(level)),
+		Logger(log.DefaultLogger()),
 		Filter(
 			service.RedirectTrailingSlash(),
 			service.FillLeadingSlash(),
