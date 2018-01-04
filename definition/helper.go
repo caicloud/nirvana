@@ -174,9 +174,14 @@ func AutoParameterFor(description string) Parameter {
 // ResultFor creates a simple result.
 func ResultFor(dest Destination, description string) Result {
 	return Result{
-		Destination: Data,
+		Destination: dest,
 		Description: description,
 	}
+}
+
+// MetaResultFor creates meta result.
+func MetaResultFor(description string) Result {
+	return ResultFor(Meta, description)
 }
 
 // DataResultFor creates data result.
