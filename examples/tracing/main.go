@@ -55,14 +55,14 @@ func main() {
 		},
 	}
 
-	config := nirvana.NewDefaultConfig("", 8080, log.LevelDebug).
+	config := nirvana.NewDefaultConfig("", 8080).
 		Configure(
 			tracing.DefaultTracer("example", "127.0.0.1:6831"),
 			nirvana.Descriptor(example),
 		)
 
-	config.Logger.Infof("Listening on %s:%d", config.IP, config.Port)
+	log.Infof("Listening on %s:%d", config.IP, config.Port)
 	if err := nirvana.NewServer(config).Serve(); err != nil {
-		config.Logger.Fatal(err)
+		log.Fatal(err)
 	}
 }

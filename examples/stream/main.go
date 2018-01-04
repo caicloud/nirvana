@@ -51,10 +51,10 @@ func main() {
 		panic(err)
 	}
 
-	config := nirvana.NewDefaultConfig("", 8080, log.LevelDebug)
+	config := nirvana.NewDefaultConfig("", 8080)
 	v1.Install(config)
-	config.Logger.Infof("Listening on %s:%d", config.IP, config.Port)
+	log.Infof("Listening on %s:%d", config.IP, config.Port)
 	if err := nirvana.NewServer(config).Serve(); err != nil {
-		config.Logger.Fatal(err)
+		log.Fatal(err)
 	}
 }

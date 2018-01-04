@@ -40,11 +40,11 @@ func main() {
 				return err
 			}
 
-			config := nirvana.NewDefaultConfig("", uint16(port), log.LevelDebug)
+			config := nirvana.NewDefaultConfig("", uint16(port))
 			api.Install(config, ml)
-			config.Logger.Infof("Listening on %s:%d", config.IP, config.Port)
+			log.Infof("Listening on %s:%d", config.IP, config.Port)
 			if err := nirvana.NewServer(config).Serve(); err != nil {
-				config.Logger.Fatal(err)
+				log.Fatal(err)
 			}
 			return nil
 		},

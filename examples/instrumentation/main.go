@@ -24,15 +24,15 @@ import (
 )
 
 func main() {
-	config := nirvana.NewDefaultConfig("", 8080, log.LevelDebug).
+	config := nirvana.NewDefaultConfig("", 8080).
 		Configure(
 			metrics.Path("/metrics"),
 			profiling.Path("/debug/pprof/"),
 			profiling.Contention(true),
 		)
 
-	config.Logger.Infof("Listening on %s:%d", config.IP, config.Port)
+	log.Infof("Listening on %s:%d", config.IP, config.Port)
 	if err := nirvana.NewServer(config).Serve(); err != nil {
-		config.Logger.Fatal(err)
+		log.Fatal(err)
 	}
 }
