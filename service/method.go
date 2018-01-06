@@ -17,7 +17,6 @@ limitations under the License.
 package service
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/caicloud/nirvana/definition"
@@ -66,14 +65,10 @@ func RegisterMethod(method definition.Method, httpMethod string, code int) error
 		}
 	}
 	if !found {
-		return fmt.Errorf("http method %s is invalid", httpMethod)
+		return invalidMethod.Error(httpMethod)
 	}
 	if code < 100 || code >= 600 {
-		return fmt.Errorf("http status code must be in [100,599]")
-	}
-	_, ok := mappings[method]
-	if ok {
-		return fmt.Errorf("method %s has been registered", method)
+		return invalidStatusCode.Error()
 	}
 	mappings[method] = statusMapping{
 		Code:       code,

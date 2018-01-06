@@ -18,7 +18,6 @@ package people
 
 import (
 	"context"
-	"reflect"
 	"sort"
 
 	"github.com/caicloud/nirvana/definition"
@@ -39,30 +38,27 @@ func listDefinition(people []model.Person) definition.Definition {
 			}
 			return people[start:end], nil
 		},
-		Consumes: []string{"application/json"},
 		Produces: []string{"application/json"},
 		Parameters: []definition.Parameter{
 			{
 				Source: definition.Query,
 				Name:   "after",
-				Type:   reflect.TypeOf(0),
 			},
 			{
 				Source:  definition.Query,
 				Name:    "first",
-				Type:    reflect.TypeOf(0),
 				Default: 10,
 				Operators: []definition.Operator{
-					validator.Var("gte=0"),
+					validator.Int("gte=0"),
 				},
 			},
 		},
 		Results: []definition.Result{
 			{
-				Type: definition.Data,
+				Destination: definition.Data,
 			},
 			{
-				Type: definition.Error,
+				Destination: definition.Error,
 			},
 		},
 	}

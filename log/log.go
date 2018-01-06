@@ -97,4 +97,8 @@ type Logger interface {
 	// Fatalln logs to the FATAL logs, then calls os.Exit(1).
 	// Arguments are handled in the manner of fmt.Println; a newline is appended if missing.
 	Fatalln(...interface{})
+	// clone clones current logger with new wrapper.
+	// A positive wrapper indicates how many wrappers outside the logger.
+	// A negative wrapper indicates how many wrappers should be stripped.
+	clone(wrapper int) Logger
 }

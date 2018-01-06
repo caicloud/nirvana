@@ -19,7 +19,6 @@ package people
 import (
 	"context"
 	"fmt"
-	"reflect"
 	"sort"
 
 	"github.com/caicloud/nirvana/definition"
@@ -38,21 +37,19 @@ func getByIdDefinition(people []model.Person) definition.Definition {
 			}
 			return model.Person{}, fmt.Errorf("not found")
 		},
-		Consumes: []string{"application/json"},
 		Produces: []string{"application/json"},
 		Parameters: []definition.Parameter{
 			{
 				Source: definition.Path,
 				Name:   "id",
-				Type:   reflect.TypeOf(0),
 			},
 		},
 		Results: []definition.Result{
 			{
-				Type: definition.Data,
+				Destination: definition.Data,
 			},
 			{
-				Type: definition.Error,
+				Destination: definition.Error,
 			},
 		},
 	}

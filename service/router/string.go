@@ -18,26 +18,25 @@ package router
 
 import (
 	"context"
-	"fmt"
 	"reflect"
 	"strings"
 )
 
-// StringNode describes a string router node.
-type StringNode struct {
-	Handler
-	Progeny
-	// Prefix is the fixed string to match path.
-	Prefix string
+// stringNode describes a string router node.
+type stringNode struct {
+	handler
+	children
+	// prefix is the fixed string to match path.
+	prefix string
 }
 
 // Target returns the matching target of the node.
-func (n *StringNode) Target() string {
-	return n.Prefix
+func (n *stringNode) Target() string {
+	return n.prefix
 }
 
 // Kind returns the kind of the router node.
-func (n *StringNode) Kind() RouteKind {
+func (n *stringNode) Kind() RouteKind {
 	return String
 }
 
@@ -46,57 +45,73 @@ func (n *StringNode) Kind() RouteKind {
 // The container can save key-value pair from the path.
 // If the router is the leaf node to match the path, it will return
 // the first executor which Inspect() returns true.
-func (n *StringNode) Match(ctx context.Context, c Container, path string) Executor {
-	if n.Prefix != "" && !strings.HasPrefix(path, n.Prefix) {
+func (n *stringNode) Match(ctx context.Context, c Container, path string) (Executor, error) {
+	if n.prefix != "" && !strings.HasPrefix(path, n.prefix) {
 		// No match
-		return nil
+		return nil, RouterNotFound.Error()
 	}
-	if len(n.Prefix) < len(path) {
+	if len(n.prefix) < len(path) {
 		// Match prefix
-		return n.Handler.Pack(n.Progeny.Match(ctx, c, path[len(n.Prefix):]))
+		executor, err := n.children.Match(ctx, c, path[len(n.prefix):])
+		if err != nil {
+			return nil, err
+		}
+		return n.handler.pack(executor)
 	}
 	// Match self
-	return n.Handler.UnionExecutor(ctx)
+	return n.handler.unionExecutor(ctx)
 }
 
 // Merge merges r to the current router. The type of r should be same
 // as the current one or it panics.
-func (n *StringNode) Merge(r Router) (Router, error) {
-	node, ok := r.(*StringNode)
+func (n *stringNode) Merge(r Router) (Router, error) {
+	node, ok := r.(*stringNode)
 	if !ok {
-		return nil, fmt.Errorf("unrecognized string router: %s", reflect.TypeOf(r).String())
+		return nil, UnknownRouterType.Error(r.Kind(), reflect.TypeOf(r).String())
 	}
 	commonPrefix := 0
-	for commonPrefix < len(n.Prefix) && commonPrefix < len(node.Prefix) {
-		if n.Prefix[commonPrefix] != node.Prefix[commonPrefix] {
+	for commonPrefix < len(n.prefix) && commonPrefix < len(node.prefix) {
+		if n.prefix[commonPrefix] != node.prefix[commonPrefix] {
 			break
 		}
 		commonPrefix++
 	}
 	if commonPrefix <= 0 {
-		return nil, fmt.Errorf("there is no common prefix for the two routers")
+		return nil, NoCommonPrefix.Error()
 	}
 	switch {
-	case commonPrefix == len(n.Prefix) && commonPrefix == len(node.Prefix):
-		n.Handler.Merge(&node.Handler)
-		n.Progeny.Merge(&node.Progeny)
-	case commonPrefix == len(n.Prefix):
-		node.Prefix = node.Prefix[commonPrefix:]
-		n.AddRouter(node)
-	case commonPrefix == len(node.Prefix):
+	case commonPrefix == len(n.prefix) && commonPrefix == len(node.prefix):
+		if err := n.handler.Merge(&node.handler); err != nil {
+			return nil, err
+		}
+		if err := n.children.merge(&node.children); err != nil {
+			return nil, err
+		}
+	case commonPrefix == len(n.prefix):
+		node.prefix = node.prefix[commonPrefix:]
+		if err := n.addRouter(node); err != nil {
+			return nil, err
+		}
+	case commonPrefix == len(node.prefix):
 		copy := *n
-		copy.Prefix = copy.Prefix[commonPrefix:]
+		copy.prefix = copy.prefix[commonPrefix:]
 		*n = *node
-		n.AddRouter(&copy)
+		if err := n.addRouter(&copy); err != nil {
+			return nil, err
+		}
 	default:
 		copy := *n
-		copy.Prefix = copy.Prefix[commonPrefix:]
-		node.Prefix = node.Prefix[commonPrefix:]
-		n.Handler = Handler{}
-		n.Progeny = Progeny{}
-		n.Prefix = n.Prefix[:commonPrefix]
-		n.AddRouter(&copy)
-		n.AddRouter(node)
+		copy.prefix = copy.prefix[commonPrefix:]
+		node.prefix = node.prefix[commonPrefix:]
+		n.handler = handler{}
+		n.children = children{}
+		n.prefix = n.prefix[:commonPrefix]
+		if err := n.addRouter(&copy); err != nil {
+			return nil, err
+		}
+		if err := n.addRouter(node); err != nil {
+			return nil, err
+		}
 	}
 	return n, nil
 }

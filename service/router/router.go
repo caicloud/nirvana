@@ -34,10 +34,15 @@ type RoutingChain interface {
 // carry on, call RoutingChain.Continue() and pass the context.
 type Middleware func(context.Context, RoutingChain) error
 
-// Executor is an executor for a request.
-type Executor interface {
+// Inspector can select an executor to execute.
+type Inspector interface {
 	// Inspect finds a valid executor to execute target context.
-	Inspect(context.Context) (Executor, bool)
+	// It returns an error if it can't find a valid executor.
+	Inspect(context.Context) (Executor, error)
+}
+
+// Executor executs with a context.
+type Executor interface {
 	// Execute executes with context.
 	Execute(context.Context) error
 }
@@ -75,15 +80,19 @@ type Router interface {
 	// The container can save key-value pair from the path.
 	// If the router is the leaf node to match the path, it will return
 	// the first executor which Inspect() returns true.
-	Match(ctx context.Context, c Container, path string) Executor
+	Match(ctx context.Context, c Container, path string) (Executor, error)
 	// AddMiddleware adds middleware to the router node.
 	// If the router matches a path, all middlewares in the router
 	// will be executed by the returned executor.
 	AddMiddleware(ms ...Middleware)
-	// AddExecutor adds executor to the router node.
-	// A router can hold many executors, but there is only one executor
-	// is selected for a match.
-	AddExecutor(es ...Executor)
+	// Middlewares returns all middlewares of the router.
+	// Don't modify the returned values.
+	Middlewares() []Middleware
+	// SetInspector sets inspector to the router node.
+	SetInspector(inspector Inspector)
+	// Inspector gets inspector from the router node.
+	// Don't modify the returned values.
+	Inspector() Inspector
 	// Merge merges r to the current router. The type of r should be same
 	// as the current one or it panics.
 	//
@@ -110,14 +119,14 @@ const (
 //  /segments/{segment}/resources/{resource}
 //  /segments/{segment:[a-z]{1,2}}.log/paths/{path:*}
 func Parse(path string) (Router, Router, error) {
-	paths, err := Split(path)
+	paths, err := split(path)
 	if err != nil {
 		return nil, nil, err
 	}
 	if len(paths) <= 0 {
-		return nil, nil, fmt.Errorf("invalid path")
+		return nil, nil, InvalidPath.Error()
 	}
-	segments, err := Reorganize(paths)
+	segments, err := reorganize(paths)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -125,7 +134,7 @@ func Parse(path string) (Router, Router, error) {
 	var leaf Router
 	var parent Router
 	for i, seg := range segments {
-		router, err := SegmentToRouter(seg)
+		router, err := segmentToRouter(seg)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -137,11 +146,13 @@ func Parse(path string) (Router, Router, error) {
 		}
 		if parent != nil {
 			if c, ok := parent.(interface {
-				AddRouter(router Router)
+				addRouter(router Router) error
 			}); ok {
-				c.AddRouter(router)
+				if err := c.addRouter(router); err != nil {
+					return nil, nil, err
+				}
 			} else {
-				return nil, nil, fmt.Errorf("router does not implement RouterContainer: %s", reflect.TypeOf(parent).String())
+				return nil, nil, InvalidParentRouter.Error(reflect.TypeOf(parent).String())
 			}
 		}
 		parent = router
@@ -149,56 +160,56 @@ func Parse(path string) (Router, Router, error) {
 	return root, leaf, nil
 }
 
-// SegmentToRouter converts segment to a router.
-func SegmentToRouter(seg *Segment) (Router, error) {
-	switch seg.Kind {
+// segmentToRouter converts segment to a router.
+func segmentToRouter(seg *segment) (Router, error) {
+	switch seg.kind {
 	case String:
-		return &StringNode{
-			Prefix: seg.Match,
+		return &stringNode{
+			prefix: seg.match,
 		}, nil
 	case Regexp:
-		if len(seg.Keys) == 1 && seg.Match == (&ExpSegment{FullMatchTarget, seg.Keys[0]}).Target() {
-			return &FullMatchRegexpNode{
-				Key: seg.Keys[0],
+		if len(seg.keys) == 1 && seg.match == (&expSegment{FullMatchTarget, seg.keys[0]}).Target() {
+			return &fullMatchRegexpNode{
+				key: seg.keys[0],
 			}, nil
 		}
 
-		node := &RegexpNode{
-			Exp: seg.Match,
+		node := &regexpNode{
+			exp: seg.match,
 		}
-		r, err := regexp.Compile("^" + seg.Match + "$")
+		r, err := regexp.Compile("^" + seg.match + "$")
 		if err != nil {
-			return nil, err
+			return nil, InvalidRegexp.Error(seg.match)
 		}
-		node.Regexp = r
+		node.regexp = r
 		names := r.SubexpNames()
 		j := 0
-		for i := 0; i < len(names) && j < len(seg.Keys); i++ {
-			if names[i] == seg.Keys[j] {
-				node.Indices = append(node.Indices, Index{names[i], i})
+		for i := 0; i < len(names) && j < len(seg.keys); i++ {
+			if names[i] == seg.keys[j] {
+				node.indices = append(node.indices, index{names[i], i})
 				j++
 			}
 		}
-		if j != len(seg.Keys) {
-			return nil, fmt.Errorf("unmatched keys: %+v", seg)
+		if j != len(seg.keys) {
+			return nil, UnmatchedSegmentKeys.Error(seg)
 		}
 		return node, nil
 
 	case Path:
-		return &PathNode{
-			Key: seg.Keys[0],
+		return &pathNode{
+			key: seg.keys[0],
 		}, nil
 	}
-	return nil, fmt.Errorf("unknown segment: %+v", seg)
+	return nil, UnknownSegment.Error(seg)
 }
 
-// Split splits string segments and regexp segments.
+// split splits string segments and regexp segments.
 //
 // For instance:
 //  /segments/{segment:[a-z]{1,2}}.log/paths/{path:*}
 // TO:
 //  /segments/ {segment:[a-z]{1,2}} .log/paths/ {path:*}
-func Split(path string) ([]string, error) {
+func split(path string) ([]string, error) {
 	result := make([]string, 0, 5)
 	lastElementPos := 0
 	braceCounter := 0
@@ -221,7 +232,7 @@ func Split(path string) ([]string, error) {
 		}
 	}
 	if braceCounter > 0 {
-		return nil, fmt.Errorf("unmatched braces")
+		return nil, UnmatchedPathBrace.Error()
 	}
 	if lastElementPos < len(path) {
 		result = append(result, path[lastElementPos:])
@@ -229,105 +240,105 @@ func Split(path string) ([]string, error) {
 	return result, nil
 }
 
-// Segment contains information to construct a router.
-type Segment struct {
-	// Match is the target string.
-	Match string
-	// Keys contains keys from segments.
-	Keys []string
-	// Kind is the router kind which the segment can be converted to.
-	Kind RouteKind
+// segment contains information to construct a router.
+type segment struct {
+	// match is the target string.
+	match string
+	// keys contains keys from segments.
+	keys []string
+	// kind is the router kind which the segment can be converted to.
+	kind RouteKind
 }
 
-// Reorganize reorganizes the form of paths.
+// reorganize reorganizes the form of paths.
 //
 // For instance:
 //  /segments/ {segment:[a-z]{1,2}} .log/paths/ {path:*}
 // To:
 //  {/segments/ {} String} {(?P<segment>[a-z]{1,2})\.log {segment} Regexp} {/paths/ {} String} { {path} Path}
-func Reorganize(paths []string) ([]*Segment, error) {
-	segments := make([]*Segment, 0, len(paths))
-	var segment *Segment
+func reorganize(paths []string) ([]*segment, error) {
+	segments := make([]*segment, 0, len(paths))
+	var target *segment
 	for i := 0; i < len(paths); i++ {
 		p := paths[i]
 		if !strings.HasPrefix(p, "{") {
-			if segment == nil {
+			if target == nil {
 				// String segment
-				segments = append(segments, &Segment{p, nil, String})
+				segments = append(segments, &segment{p, nil, String})
 			} else {
 				// Regexp segment
 				slashPos := strings.Index(p, "/")
 				if slashPos < 0 {
 					// No slash
-					segment.Match += regexp.QuoteMeta(p)
+					target.match += regexp.QuoteMeta(p)
 				} else {
-					segment.Match += regexp.QuoteMeta(p[:slashPos])
-					segments = append(segments, segment, &Segment{p[slashPos:], nil, String})
-					segment = nil
+					target.match += regexp.QuoteMeta(p[:slashPos])
+					segments = append(segments, target, &segment{p[slashPos:], nil, String})
+					target = nil
 				}
 			}
 		} else {
 			// Regexp segment
-			seg, err := ParseExpSegment(p)
+			seg, err := parseExpSegment(p)
 			if err != nil {
 				return nil, err
 			}
 			if seg.Tail() {
 				if i != len(paths)-1 {
-					return nil, fmt.Errorf("key %s should be last element in the path", seg.Key)
+					return nil, InvalidPathKey.Error(seg.key)
 				}
-				if segment != nil {
-					segments = append(segments, segment)
-					segment = nil
+				if target != nil {
+					segments = append(segments, target)
+					target = nil
 				}
-				segments = append(segments, &Segment{"", []string{seg.Key}, Path})
+				segments = append(segments, &segment{"", []string{seg.key}, Path})
 				break
 			}
-			if segment == nil {
-				segment = &Segment{"", []string{}, Regexp}
+			if target == nil {
+				target = &segment{"", []string{}, Regexp}
 			}
-			segment.Match += seg.Target()
-			segment.Keys = append(segment.Keys, seg.Key)
+			target.match += seg.Target()
+			target.keys = append(target.keys, seg.key)
 		}
 	}
-	if segment != nil {
-		segments = append(segments, segment)
+	if target != nil {
+		segments = append(segments, target)
 	}
 	return segments, nil
 }
 
-// ExpSegment describes a regexp segment.
-type ExpSegment struct {
-	// Exp is the regular expression.
-	Exp string
-	// Key is the key for the expression.
-	Key string
+// expSegment describes a regexp segment.
+type expSegment struct {
+	// exp is the regular expression.
+	exp string
+	// key is the key for the expression.
+	key string
 }
 
-// ParseExpSegment parses a regexp segment to ExpSegment.
-func ParseExpSegment(exp string) (*ExpSegment, error) {
+// parseExpSegment parses a regexp segment to ExpSegment.
+func parseExpSegment(exp string) (*expSegment, error) {
 	if !strings.HasPrefix(exp, "{") || !strings.HasSuffix(exp, "}") {
-		return nil, fmt.Errorf("exp does not have normative format: %s", exp)
+		return nil, InvalidRegexp.Error(exp)
 	}
 	exp = exp[1 : len(exp)-1]
 	pos := strings.Index(exp, ":")
-	seg := &ExpSegment{}
+	seg := &expSegment{}
 	if pos < 0 {
-		seg.Exp = FullMatchTarget
-		seg.Key = exp
+		seg.exp = FullMatchTarget
+		seg.key = exp
 	} else {
-		seg.Exp = exp[pos+1:]
-		seg.Key = exp[:pos]
+		seg.exp = exp[pos+1:]
+		seg.key = exp[:pos]
 	}
 	return seg, nil
 }
 
 // Tail returns whether the segment contains a tail match target.
-func (es *ExpSegment) Tail() bool {
-	return es.Exp == TailMatchTarget
+func (es *expSegment) Tail() bool {
+	return es.exp == TailMatchTarget
 }
 
 // Target returns the whole regular expression for the segment.
-func (es *ExpSegment) Target() string {
-	return fmt.Sprintf("(?P<%s>%s)", es.Key, es.Exp)
+func (es *expSegment) Target() string {
+	return fmt.Sprintf("(?P<%s>%s)", es.key, es.exp)
 }
