@@ -18,7 +18,7 @@ package application
 
 import "context"
 
-func CreateApplication(ctx context.Context, app *ApplicationV2) (*ApplicationV2, error) {
+func CreateApplication(ctx context.Context, app *Application) (*Application, error) {
 	app.Status.Phase = "Running"
 	return app, nil
 }

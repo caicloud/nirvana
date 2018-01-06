@@ -18,10 +18,11 @@ package router
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"reflect"
 	"testing"
+
+	"github.com/caicloud/nirvana/errors"
 )
 
 var (
@@ -30,13 +31,13 @@ var (
 	putExecs = []*TestExecutor{{"PUT", 202}}
 )
 
-func errorCompare(t *testing.T, got, wanted error) {
+func errorCompare(t *testing.T, got error, wanted errors.Factory) {
 	if wanted != nil {
 		if got == nil {
-			t.Fatalf("No expected error: %s", wanted.Error())
+			t.Fatalf("No expected error")
 		}
-		if got.Error() != wanted.Error() {
-			t.Fatalf("Untracked error: %s want %s", got.Error(), wanted.Error())
+		if !wanted.Derived(got) {
+			t.Fatalf("Untracked error: %s", got.Error())
 		}
 	} else {
 		if got != nil {
@@ -48,17 +49,17 @@ func errorCompare(t *testing.T, got, wanted error) {
 func TestReorganize(t *testing.T) {
 	var tab = []struct {
 		path   []string
-		result []*Segment
-		err    error
+		result []*segment
+		err    errors.Factory
 	}{
 		{
 			[]string{"/segments/segment/resources/resource"},
-			[]*Segment{{"/segments/segment/resources/resource", nil, String}},
+			[]*segment{{"/segments/segment/resources/resource", nil, String}},
 			nil,
 		},
 		{
 			[]string{"/segments/", "{segment}", "/resources/", "{resource}"},
-			[]*Segment{
+			[]*segment{
 				{"/segments/", nil, String},
 				{"(?P<segment>.*)", []string{"segment"}, Regexp},
 				{"/resources/", nil, String},
@@ -68,7 +69,7 @@ func TestReorganize(t *testing.T) {
 		},
 		{
 			[]string{"/segments/", "{segment:[a-z]{1,2}}", ".log", "{temp}", "sss/paths/", "{path:*}"},
-			[]*Segment{
+			[]*segment{
 				{"/segments/", nil, String},
 				{`(?P<segment>[a-z]{1,2})\.log(?P<temp>.*)sss`, []string{"segment", "temp"}, Regexp},
 				{"/paths/", nil, String},
@@ -79,16 +80,16 @@ func TestReorganize(t *testing.T) {
 		{
 			[]string{"/segments/", "{segment:[a-z]{1,2}}", ".log", "{temp", "sss/paths/", "{path:*}"},
 			nil,
-			fmt.Errorf("exp does not have normative format: %s", "{temp"),
+			InvalidRegexp,
 		},
 		{
 			[]string{"/segments/", "{segment:[a-z]{1,2}}", ".log", "{temp}", "{path:*}", "sss/paths/"},
 			nil,
-			fmt.Errorf("key %s should be last element in the path", "path"),
+			InvalidPathKey,
 		},
 		{
 			[]string{"/segments/", "{segment:[a-z]{1,2}}", ".log", "{temp}", "{path:*}"},
-			[]*Segment{
+			[]*segment{
 				{"/segments/", nil, String},
 				{`(?P<segment>[a-z]{1,2})\.log(?P<temp>.*)`, []string{"segment", "temp"}, Regexp},
 				{"", []string{"path"}, Path},
@@ -98,7 +99,7 @@ func TestReorganize(t *testing.T) {
 	}
 
 	for _, p := range tab {
-		result, err := Reorganize(p.path)
+		result, err := reorganize(p.path)
 		errorCompare(t, err, p.err)
 		if len(result) != len(p.result) {
 			t.Fatalf("Length is not equal for path: %v", p)
@@ -126,39 +127,39 @@ func TestParse(t *testing.T) {
 	var caseTabs = []struct {
 		path string
 		tab  []tab
-		err  error
+		err  errors.Factory
 	}{
 		{
 			path: "/segments/{cmd}/{segment:[a-z]{1,2}}.log{temp}sss/paths/{path:*}",
 			tab: []tab{
-				{&StringNode{}, "/segments/", 1, 0, false, false},
-				{&FullMatchRegexpNode{}, (&ExpSegment{FullMatchTarget, "cmd"}).Target(), 0, 1, false, false},
-				{&StringNode{}, "/", 1, 0, false, false},
-				{&RegexpNode{}, `(?P<segment>[a-z]{1,2})\.log(?P<temp>.*)sss`, 0, 1, false, false},
-				{&StringNode{}, "/paths/", 0, 0, true, false},
-				{&PathNode{}, "", 0, 0, false, true},
+				{&stringNode{}, "/segments/", 1, 0, false, false},
+				{&fullMatchRegexpNode{}, (&expSegment{FullMatchTarget, "cmd"}).Target(), 0, 1, false, false},
+				{&stringNode{}, "/", 1, 0, false, false},
+				{&regexpNode{}, `(?P<segment>[a-z]{1,2})\.log(?P<temp>.*)sss`, 0, 1, false, false},
+				{&stringNode{}, "/paths/", 0, 0, true, false},
+				{&pathNode{}, "", 0, 0, false, true},
 			},
 			err: nil,
 		},
 		{
 			path: "/segments/{{cmd}/{segment:[a-z]{1,2}}.log{temp}sss/paths/{path:*}",
 			tab:  nil,
-			err:  errors.New("unmatched braces"),
+			err:  UnmatchedPathBrace,
 		},
 		{
 			path: "",
 			tab:  nil,
-			err:  errors.New("invalid path"),
+			err:  InvalidPath,
 		},
 		{
 			path: "/segments/{cmd}/{segment:[a-z]{1,2}}.log{temp}sss/paths/{path:*}/why",
 			tab:  nil,
-			err:  fmt.Errorf("key %s should be last element in the path", "path"),
+			err:  InvalidPathKey,
 		},
 		{
 			path: "/segments/{cmd}/{segment:[a-z]{1,2}}.log{temp{why}}sss/paths/{path:*}",
 			tab:  nil,
-			err:  errors.New("error parsing regexp: invalid named capture: `(?P<temp{why}>`"),
+			err:  InvalidRegexp,
 		},
 	}
 
@@ -172,7 +173,7 @@ func TestParse(t *testing.T) {
 			}
 			t.Log(router.Target())
 			switch r := router.(type) {
-			case *PathNode:
+			case *pathNode:
 				if reflect.TypeOf(r) != reflect.TypeOf(tab.routerZeroValue) {
 					t.Fatalf("Invalid node type: %s", reflect.TypeOf(router).String())
 				}
@@ -181,72 +182,72 @@ func TestParse(t *testing.T) {
 						t.Fatalf("Invalid router: %s", reflect.TypeOf(router).String())
 					}
 				}
-			case *StringNode:
+			case *stringNode:
 				if reflect.TypeOf(r) != reflect.TypeOf(tab.routerZeroValue) {
 					t.Fatalf("Invalid node type: %s", reflect.TypeOf(router).String())
 				}
-				if len(r.RegexpRouters) != tab.lenRegexpChildren || len(r.StringRouters) != tab.lenStringChildren {
+				if len(r.regexpRouters) != tab.lenRegexpChildren || len(r.stringRouters) != tab.lenStringChildren {
 					t.Fatal("Invalid children router")
 				}
-				if len(r.RegexpRouters) != 0 {
-					router = r.RegexpRouters[0]
+				if len(r.regexpRouters) != 0 {
+					router = r.regexpRouters[0]
 				}
-				if len(r.StringRouters) != 0 {
-					router = r.StringRouters[0].Router
+				if len(r.stringRouters) != 0 {
+					router = r.stringRouters[0].router
 				}
 				if tab.hasPathChildren {
-					if r.PathRouter == nil {
+					if r.pathRouter == nil {
 						t.Fatal("Invalid children router")
 					}
-					router = r.PathRouter
+					router = r.pathRouter
 				}
 				if tab.isLeaf {
 					if r != leaf {
 						t.Fatalf("Invalid router: %s", reflect.TypeOf(router).String())
 					}
 				}
-			case *FullMatchRegexpNode:
+			case *fullMatchRegexpNode:
 				if reflect.TypeOf(r) != reflect.TypeOf(tab.routerZeroValue) {
 					t.Fatalf("Invalid node type: %s", reflect.TypeOf(router).String())
 				}
-				if len(r.RegexpRouters) != tab.lenRegexpChildren || len(r.StringRouters) != tab.lenStringChildren {
+				if len(r.regexpRouters) != tab.lenRegexpChildren || len(r.stringRouters) != tab.lenStringChildren {
 					t.Fatal("Invalid children router")
 				}
-				if len(r.RegexpRouters) != 0 {
-					router = r.RegexpRouters[0]
+				if len(r.regexpRouters) != 0 {
+					router = r.regexpRouters[0]
 				}
-				if len(r.StringRouters) != 0 {
-					router = r.StringRouters[0].Router
+				if len(r.stringRouters) != 0 {
+					router = r.stringRouters[0].router
 				}
 				if tab.hasPathChildren {
-					if r.PathRouter == nil {
+					if r.pathRouter == nil {
 						t.Fatal("Invalid children router")
 					}
-					router = r.PathRouter
+					router = r.pathRouter
 				}
 				if tab.isLeaf {
 					if r != leaf {
 						t.Fatalf("Invalid router: %s", reflect.TypeOf(router).String())
 					}
 				}
-			case *RegexpNode:
+			case *regexpNode:
 				if reflect.TypeOf(r) != reflect.TypeOf(tab.routerZeroValue) {
 					t.Fatalf("Invalid node type: %s", reflect.TypeOf(router).String())
 				}
-				if len(r.RegexpRouters) != tab.lenRegexpChildren || len(r.StringRouters) != tab.lenStringChildren {
+				if len(r.regexpRouters) != tab.lenRegexpChildren || len(r.stringRouters) != tab.lenStringChildren {
 					t.Fatal("Invalid children router")
 				}
-				if len(r.RegexpRouters) != 0 {
-					router = r.RegexpRouters[0]
+				if len(r.regexpRouters) != 0 {
+					router = r.regexpRouters[0]
 				}
-				if len(r.StringRouters) != 0 {
-					router = r.StringRouters[0].Router
+				if len(r.stringRouters) != 0 {
+					router = r.stringRouters[0].router
 				}
 				if tab.hasPathChildren {
-					if r.PathRouter == nil {
+					if r.pathRouter == nil {
 						t.Fatal("Invalid children router")
 					}
-					router = r.PathRouter
+					router = r.pathRouter
 				}
 				if tab.isLeaf {
 					if r != leaf {
@@ -264,29 +265,23 @@ func TestPathNodeMerge(t *testing.T) {
 		{"/api/{abc:*}", []*TestExecutor{{"PUT", 400}}, nil},
 	}
 
-	defer func() {
-		if x := recover(); x != nil {
-			if fmt.Sprint(x) != "failed to merge path router : unmatched path key: object abc" {
-				t.Fatal(x)
-			}
-		} else {
-			t.Fatal("should panic")
-		}
-	}()
-
 	var root Router
 	for _, d := range rds {
 		router, leaf, err := Parse(d.Path)
 		if err != nil {
 			t.Fatalf("Untracked error: %s", err.Error())
 		}
-		for _, exec := range d.Executor {
-			leaf.AddExecutor(exec)
-		}
+		leaf.SetInspector(TestInspector(d.Executor))
 		if root == nil {
 			root = router
 		} else {
-			root.Merge(router)
+			if _, err := root.Merge(router); err != nil {
+				if !UnmatchedRouterKey.Derived(err) {
+					t.Fatal(err)
+				}
+			} else {
+				t.Fatal("should return an error")
+			}
 		}
 	}
 }
@@ -303,14 +298,12 @@ func TestCommonPrefixMergeError(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Untracked error: %s", err.Error())
 		}
-		for _, exec := range d.Executor {
-			leaf.AddExecutor(exec)
-		}
+		leaf.SetInspector(TestInspector(d.Executor))
 		if root == nil {
 			root = router
 		} else {
 			_, err = root.Merge(router)
-			errorCompare(t, err, errors.New("there is no common prefix for the two routers"))
+			errorCompare(t, err, NoCommonPrefix)
 		}
 	}
 }
@@ -327,14 +320,12 @@ func TestRegexpMergeError(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Untracked error: %s", err.Error())
 		}
-		for _, exec := range d.Executor {
-			leaf.AddExecutor(exec)
-		}
+		leaf.SetInspector(TestInspector(d.Executor))
 		if root == nil {
 			root = router
 		} else {
 			_, err = root.Merge(router)
-			errorCompare(t, err, errors.New("unmatched full match key: api1 api"))
+			errorCompare(t, err, UnmatchedRouterKey)
 		}
 	}
 }
@@ -346,9 +337,7 @@ func makeRouter(t *testing.T, rds []TestRouterData) Router {
 		if err != nil {
 			t.Fatalf("Untracked error: %s %s", d.Path, err.Error())
 		}
-		for _, exec := range d.Executor {
-			leaf.AddExecutor(exec)
-		}
+		leaf.SetInspector(TestInspector(d.Executor))
 		leaf.AddMiddleware(d.Middleware...)
 		if root == nil {
 			root = router
@@ -370,9 +359,10 @@ func testMatch(t *testing.T, router Router, right []TestData, wrong []TestData) 
 	for _, d := range right {
 		values := NewTestValueContainer()
 		ctx := context.WithValue(context.Background(), contextKey("Type"), d.Type)
-		e := router.Match(ctx, values, d.Path)
-		if e == nil {
-			t.Fatalf("Can't match path: %s", d.Path)
+		e, err := router.Match(ctx, values, d.Path)
+		if err != nil {
+			t.Log(d.Result, d.Type)
+			t.Fatalf("Can't match path: %s, %v", d.Path, err)
 		}
 		for k, v := range d.Values {
 			pv, ok := values.Get(k)
@@ -382,7 +372,7 @@ func testMatch(t *testing.T, router Router, right []TestData, wrong []TestData) 
 		}
 		result := 0
 		ctx = context.WithValue(ctx, contextKey("Result"), &result)
-		err := e.Execute(ctx)
+		err = e.Execute(ctx)
 		if err != nil {
 			t.Fatalf("Untracked error: %s", err.Error())
 		}
@@ -393,8 +383,8 @@ func testMatch(t *testing.T, router Router, right []TestData, wrong []TestData) 
 	for _, d := range wrong {
 		values := NewTestValueContainer()
 		ctx := context.WithValue(context.Background(), contextKey("Type"), d.Type)
-		e := router.Match(ctx, values, d.Path)
-		if e != nil {
+		e, err := router.Match(ctx, values, d.Path)
+		if err == nil {
 			t.Logf("%+v", e)
 			t.Fatalf("Matched by mistake: %s", d.Path)
 		}
@@ -419,14 +409,11 @@ func TestMiddleWare(t *testing.T) {
 
 func TestRouter(t *testing.T) {
 	rds := []TestRouterData{
-		{"/api/v1/namespaces", []*TestExecutor{{"GET", 1}, {"DELETE", 1}}, nil},
+		{"/api/v1/namespaces", []*TestExecutor{{"GET", 1}, {"POST", 100}, {"HEAD", 100}, {"DELETE", 1}}, nil},
 		{"/api/v1/namespaces/{namespace}", []*TestExecutor{{"POST", 2}}, nil},
-		{"/api/v1/namespaces/{namespace2:one[3456]?}/subjects", []*TestExecutor{{"CONNECT", 200}}, nil},
+		{"/api/v1/namespaces/{namespace2:one[3456]?}/subjects", []*TestExecutor{{"CONNECT", 200}, {"GET", 201}}, nil},
 		{"/api/v1/namespaces/{namespace}/objects", []*TestExecutor{{"PUT", 3}}, nil},
-		{"/api/v1/namespaces/{namespace}/objects/{object:*}", []*TestExecutor{{"DELETE", 4}}, nil},
-		{"/api/v1/namespaces", []*TestExecutor{{"POST", 100}, {"HEAD", 100}}, nil},
-		{"/api/v1/namespaces/{namespace}/objects/{object:*}", []*TestExecutor{{"PUT", 400}}, nil},
-		{"/api/v1/namespaces/{namespace2:one[3456]?}/subjects", []*TestExecutor{{"GET", 201}}, nil},
+		{"/api/v1/namespaces/{namespace}/objects/{object:*}", []*TestExecutor{{"DELETE", 4}, {"PUT", 400}}, nil},
 		{"/api/v2/namespaces/{namespace2:one[3456]?}/subjects", []*TestExecutor{{"GET", 201}}, nil},
 		{"/api/v3", []*TestExecutor{{"GET", 203}}, nil},
 		{"/api/v4", []*TestExecutor{{"GET", 204}}, nil},
@@ -540,7 +527,6 @@ func TestFromChiTreeMoar(t *testing.T) {
 		{"/articles/{id}:delete", getExecs, nil},
 		{"/articles/{iidd}!sup", getExecs, nil},
 		{"/articles/{id}:{op}", getExecs, nil},
-		{"/articles/{id}:{op}", getExecs, nil},
 		{"/articles/{id}.json", getExecs, nil},
 		{"/articles/{id}", getExecs, nil},
 		{"/articles/{slug}", delExecs, nil},
@@ -650,17 +636,19 @@ func (tvc *TestValueContainer) Get(key string) (string, bool) {
 	return v, ok
 }
 
+var errUnmatched = fmt.Errorf("unmatched")
+
 type TestExecutor struct {
 	Type   string
 	Result int
 }
 
-func (te *TestExecutor) Inspect(c context.Context) (Executor, bool) {
+func (te *TestExecutor) Inspect(c context.Context) (Executor, error) {
 	ins := c.Value(contextKey("Type"))
 	if typ, ok := ins.(string); ok && typ == te.Type {
-		return te, true
+		return te, nil
 	}
-	return nil, false
+	return nil, errUnmatched
 }
 
 func (te *TestExecutor) Execute(c context.Context) error {
@@ -671,4 +659,16 @@ func (te *TestExecutor) Execute(c context.Context) error {
 		panic("can't find result from context")
 	}
 	return nil
+}
+
+type TestInspector []*TestExecutor
+
+func (ti TestInspector) Inspect(c context.Context) (Executor, error) {
+	for _, e := range ti {
+		target, err := e.Inspect(c)
+		if err != errUnmatched {
+			return target, err
+		}
+	}
+	return nil, errUnmatched
 }

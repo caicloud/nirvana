@@ -129,11 +129,11 @@ func TestExpandPanic3(t *testing.T) {
 }
 
 func TestNewRaw(t *testing.T) {
-	err := NewRaw(400, Reason("japari:NotFriend"), "${kind} is not in japari park", "anje").(*err)
+	err := NewFactory(400, "japari:NotFriend", "${kind} is not in japari park").Error("anje").(*err)
 	if err.Error() != "anje is not in japari park" ||
 		err.Code() != 400 ||
 		!reflect.DeepEqual(err.Message(), message{
-			Reason: Reason("japari:NotFriend"),
+			Reason: "japari:NotFriend",
 			Data: map[string]string{
 				"kind": "anje",
 			},
@@ -143,22 +143,22 @@ func TestNewRaw(t *testing.T) {
 	}
 }
 
-func TestCanNew(t *testing.T) {
-	friendNotFound := NotFound.NewFactory(Reason("japari:NotFriend"), "${kind} is not in japari park")
-	foodNotFound := NotFound.NewFactory(Reason("japari:NotFood"), "${food} is not in japari park now")
-	e1 := friendNotFound.New("anje")
-	e2 := foodNotFound.New("charlotte")
+func TestDerived(t *testing.T) {
+	friendNotFound := NotFound.Build("japari:NotFriend", "${kind} is not in japari park")
+	foodNotFound := NotFound.Build("japari:NotFood", "${food} is not in japari park now")
+	e1 := friendNotFound.Error("anje")
+	e2 := foodNotFound.Error("charlotte")
 	e3 := errors.New("anje is not in japari park")
 
-	if !friendNotFound.CanNew(e1) {
+	if !friendNotFound.Derived(e1) {
 		t.Fatal(e1)
 	}
 
-	if friendNotFound.CanNew(e2) {
+	if friendNotFound.Derived(e2) {
 		t.Fatal(e2)
 	}
 
-	if friendNotFound.CanNew(e3) {
+	if friendNotFound.Derived(e3) {
 		t.Fatal(e3)
 	}
 }

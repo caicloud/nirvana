@@ -17,14 +17,14 @@ limitations under the License.
 package main
 
 import (
-	"fmt"
-	"net/http"
 	"os"
 	"path"
 
+	"github.com/caicloud/nirvana"
 	"github.com/caicloud/nirvana/cli"
 	"github.com/caicloud/nirvana/examples/swapi/pkg/api"
 	"github.com/caicloud/nirvana/examples/swapi/pkg/loader"
+	"github.com/caicloud/nirvana/log"
 	"github.com/spf13/cobra"
 )
 
@@ -39,10 +39,13 @@ func main() {
 			if err != nil {
 				return err
 			}
-			s := api.CreateWebServer(ml)
-			hostAndPort := fmt.Sprintf(":%d", port)
-			fmt.Printf("start listening on %v\n", hostAndPort)
-			http.ListenAndServe(hostAndPort, s)
+
+			config := nirvana.NewDefaultConfig("", uint16(port))
+			api.Install(config, ml)
+			log.Infof("Listening on %s:%d", config.IP, config.Port)
+			if err := nirvana.NewServer(config).Serve(); err != nil {
+				log.Fatal(err)
+			}
 			return nil
 		},
 	})

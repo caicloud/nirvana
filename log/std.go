@@ -133,6 +133,16 @@ func (l *stdLogger) Fatalln(a ...interface{}) {
 	l.outputln(SeverityFatal, a...)
 }
 
+// clone clones current logger with new wrapper.
+// A positive wrapper indicates how many wrappers outside the logger.
+func (l *stdLogger) clone(wrapper int) Logger {
+	return &stdLogger{
+		level:   l.level,
+		stream:  l.stream,
+		wrapper: l.wrapper + wrapper,
+	}
+}
+
 func (l *stdLogger) output(severity Severity, a ...interface{}) {
 	l.write(prefix(severity, l.wrapper+2) + fmt.Sprint(a...))
 	l.exitIfFatal(severity)

@@ -18,24 +18,23 @@ package router
 
 import (
 	"context"
-	"fmt"
 	"reflect"
 )
 
-// PathNode matches all rest path.
-type PathNode struct {
-	Handler
-	// Key is the key for the rest path.
-	Key string
+// pathNode matches all rest path.
+type pathNode struct {
+	handler
+	// key is the key for the rest path.
+	key string
 }
 
 // Target returns the matching target of the node.
-func (n *PathNode) Target() string {
+func (n *pathNode) Target() string {
 	return ""
 }
 
 // Kind returns the kind of the router node.
-func (n *PathNode) Kind() RouteKind {
+func (n *pathNode) Kind() RouteKind {
 	return Path
 }
 
@@ -44,21 +43,23 @@ func (n *PathNode) Kind() RouteKind {
 // The container can save key-value pair from the path.
 // If the router is the leaf node to match the path, it will return
 // the first executor which Inspect() returns true.
-func (n *PathNode) Match(ctx context.Context, c Container, path string) Executor {
-	c.Set(n.Key, path)
-	return n.Handler.UnionExecutor(ctx)
+func (n *pathNode) Match(ctx context.Context, c Container, path string) (Executor, error) {
+	c.Set(n.key, path)
+	return n.handler.unionExecutor(ctx)
 }
 
 // Merge merges r to the current router. The type of r should be same
 // as the current one.
-func (n *PathNode) Merge(r Router) (Router, error) {
-	node, ok := r.(*PathNode)
+func (n *pathNode) Merge(r Router) (Router, error) {
+	node, ok := r.(*pathNode)
 	if !ok {
-		return nil, fmt.Errorf("unrecognized path router: %s", reflect.TypeOf(r).String())
+		return nil, UnknownRouterType.Error(r.Kind(), reflect.TypeOf(r).String())
 	}
-	if n.Key != node.Key {
-		return nil, fmt.Errorf("unmatched path key: %s %s", n.Key, node.Key)
+	if n.key != node.key {
+		return nil, UnmatchedRouterKey.Error(n.key, node.key)
 	}
-	n.Handler.Merge(&node.Handler)
+	if err := n.handler.Merge(&node.handler); err != nil {
+		return nil, err
+	}
 	return n, nil
 }

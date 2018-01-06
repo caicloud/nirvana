@@ -17,18 +17,13 @@ limitations under the License.
 package api
 
 import (
+	"github.com/caicloud/nirvana"
 	"github.com/caicloud/nirvana/examples/swapi/pkg/api/v1"
 	"github.com/caicloud/nirvana/examples/swapi/pkg/loader"
-	"github.com/caicloud/nirvana/service"
 )
 
-func CreateWebServer(model loader.ModelLoader) service.Server {
-	if err := service.RegisterDefaultEnvironment(); err != nil {
-		panic(err)
-	}
-	s := service.NewDefaultServer()
-	if err := s.AddDescriptors(v1.API(model)); err != nil {
-		panic(err)
-	}
-	return s
+func Install(config *nirvana.Config, model loader.ModelLoader) {
+	config.Configure(
+		nirvana.Descriptor(v1.API(model)),
+	)
 }

@@ -24,10 +24,10 @@ type ApplicationV1 struct {
 	Message   string `json:"message"`
 }
 
-type ApplicationV2 struct {
-	Metadata Metadata            `json:"metadata"`
-	Spec     ApplicationV2Spec   `json:"spec"`
-	Status   ApplicationV2Status `json:"status"`
+type Application struct {
+	Metadata Metadata          `json:"metadata"`
+	Spec     ApplicationSpec   `json:"spec"`
+	Status   ApplicationStatus `json:"status"`
 }
 
 type Metadata struct {
@@ -35,12 +35,12 @@ type Metadata struct {
 	Partition string `json:"partition"`
 }
 
-type ApplicationV2Spec struct {
+type ApplicationSpec struct {
 	Replica     int    `json:"replica"`
 	OtherFields string `json:"other"`
 }
 
-type ApplicationV2Status struct {
+type ApplicationStatus struct {
 	Phase   string `json:"phase"`
 	Message string `json:"message"`
 }

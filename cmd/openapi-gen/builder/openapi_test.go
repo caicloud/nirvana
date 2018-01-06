@@ -17,6 +17,7 @@ limitations under the License.
 package builder
 
 import (
+	"context"
 	"reflect"
 	"testing"
 
@@ -45,13 +46,13 @@ var def = definition.Definition{
 	},
 	Results: []definition.Result{
 		{
-			Type: definition.Meta,
-			Headers: map[string]string{
-				"xxx": "X-Xxx",
-			},
+			Destination: definition.Meta,
+			// Headers: map[string]string{
+			//     "xxx": "X-Xxx",
+			// },
 		},
-		{Type: definition.Data},
-		{Type: definition.Error},
+		{Destination: definition.Data},
+		{Destination: definition.Error},
 	},
 }
 
@@ -112,14 +113,14 @@ var (
 			StatusCodeResponses: map[int]spec.Response{
 				201: {
 					ResponseProps: spec.ResponseProps{
-						Headers: map[string]spec.Header{
-							"X-Xxx": {
-								SimpleSchema: spec.SimpleSchema{
-									Type:   "string",
-									Format: "",
-								},
-							},
-						},
+						// Headers: map[string]spec.Header{
+						//     "X-Xxx": {
+						//         SimpleSchema: spec.SimpleSchema{
+						//             Type:   "string",
+						//             Format: "",
+						//         },
+						//     },
+						// },
 						Schema: &spec.Schema{
 							SchemaProps: spec.SchemaProps{
 								Ref: spec.MustCreateRef("#/definitions/builder.TestOutput"),
@@ -141,7 +142,7 @@ var (
 	}
 )
 
-func Handler(agent string, start int, input *TestInput) (map[string]string, *TestOutput, error) {
+func Handler(ctx context.Context, agent string, start int, input *TestInput) (map[string]string, *TestOutput, error) {
 	return nil, nil, nil
 }
 

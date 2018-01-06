@@ -26,20 +26,18 @@ import (
 )
 
 func TestVar(t *testing.T) {
-	op := Var("gt=0,lt=10")
-	v, err := op.Operate(context.Background(), 5)
+	op := Int("gt=0,lt=10")
+	v, err := op.Operate(context.Background(), "", 5)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if !reflect.DeepEqual(v, 5) {
 		t.Fatalf("get %v want %v", v, 5)
 	}
-	infoer := op.(Infoer)
-	if !reflect.DeepEqual(infoer.Info(), Info{
-		Kind: KindVar,
-		Tag:  "gt=0,lt=10",
-	}) {
-		t.Fatal(infoer.Info())
+	validator := op.(Validator)
+	if validator.Category() != CategoryVar ||
+		validator.Tag() != "gt=0,lt=10" {
+		t.Fatalf("%+v", validator)
 	}
 }
 
@@ -47,19 +45,17 @@ func TestStruct(t *testing.T) {
 	var me = struct {
 		Name string `json:"name" validate:"required,printascii"`
 	}{"233"}
-	op := Struct()
-	v, err := op.Operate(context.Background(), me)
+	op := Struct(me)
+	v, err := op.Operate(context.Background(), "", me)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if !reflect.DeepEqual(v, me) {
-		t.Fatalf("get %v want %v", v, me)
+		t.Fatalf("got %v want %v", v, me)
 	}
-	infoer := op.(Infoer)
-	if !reflect.DeepEqual(infoer.Info(), Info{
-		Kind: KindStruct,
-	}) {
-		t.Fatal(infoer.Info())
+	validator := op.(Validator)
+	if validator.Category() != CategoryStruct {
+		t.Fatalf("%+v", validator)
 	}
 }
 
@@ -67,27 +63,22 @@ func TestNewCustom(t *testing.T) {
 	var anje = struct {
 		Name string
 	}{"anje"}
-	op := NewCustom(definition.OperatorFunc(func(ctx context.Context, object interface{}) (interface{}, error) {
-		obj := object.(struct {
-			Name string
-		})
-		if obj.Name != "anje" {
-			return nil, errors.BadRequest.NewFactory("badRequest:name", "${name} wrong").New("anje")
+	op := NewCustom(definition.OperatorFunc(OperatorKind, func(ctx context.Context, field string, object *struct{ Name string }) (*struct{ Name string }, error) {
+		if object.Name != "anje" {
+			return nil, errors.BadRequest.Build("badRequest:name", "${name} wrong").Error("anje")
 		}
 		return object, nil
 	}), "check name")
-	v, err := op.Operate(context.Background(), anje)
+	v, err := op.Operate(context.Background(), "", &anje)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !reflect.DeepEqual(v, anje) {
-		t.Fatalf("get %v want %v", v, anje)
+	if !reflect.DeepEqual(v, &anje) {
+		t.Fatalf("got %v want %v", v, anje)
 	}
-	infoer := op.(Infoer)
-	if !reflect.DeepEqual(infoer.Info(), Info{
-		Kind:        KindCustom,
-		Description: "check name",
-	}) {
-		t.Fatal(infoer.Info())
+	validator := op.(Validator)
+	if validator.Category() != CategoryCustom ||
+		validator.Description() != "check name" {
+		t.Fatalf("%+v", validator)
 	}
 }
