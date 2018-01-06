@@ -14,5 +14,5 @@
 # limitations under the License.
 
 gitbook build
-rm -rf ../docs
-mv _book ../docs
+rm -rf ../gitbook
+mv _book ../gitbook
