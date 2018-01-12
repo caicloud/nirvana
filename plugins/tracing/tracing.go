@@ -158,11 +158,8 @@ func middleware(tracer opentracing.Tracer) definition.Middleware {
 		httpCtx := service.HTTPContextFrom(ctx)
 		req := httpCtx.Request()
 		// extract span context from HTTP Headers
-		spanContext, err := tracer.Extract(opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(req.Header))
-		if err != nil {
-			// TODO: convert to nirvana error.
-			return err
-		}
+		// Don't check errors. if "spanContext" is nil, it will start a new trace id.
+		spanContext, _ := tracer.Extract(opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(req.Header)) // #nosec
 
 		// TODO(yejiayu): abstract path
 		span := tracer.StartSpan(req.URL.Path, ext.RPCServerOption(spanContext))
