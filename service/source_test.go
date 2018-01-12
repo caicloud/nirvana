@@ -18,7 +18,6 @@ package service
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"mime/multipart"
 	"reflect"
@@ -59,14 +58,19 @@ func (v *vc) Form(key string) ([]string, bool) {
 
 type file struct {
 	data []byte
+	read int
 }
 
 func (f *file) Read(p []byte) (n int, err error) {
-	if len(p) < len(f.data) {
-		return 0, fmt.Errorf("buffer is not enough")
+	if f.read >= len(f.data) {
+		return 0, io.EOF
 	}
-	copy(p, f.data)
-	return len(f.data), nil
+	written := copy(p, f.data[f.read:])
+	f.read += written
+	if f.read >= len(f.data) {
+		err = io.EOF
+	}
+	return written, err
 }
 func (f *file) ReadAt(p []byte, off int64) (n int, err error) {
 	panic("ReadAt is not implemented")
@@ -80,13 +84,13 @@ func (f *file) Close() error {
 
 func (v *vc) File(key string) (multipart.File, bool) {
 	if key == "test" {
-		return &file{[]byte("test file")}, true
+		return &file{[]byte("test file"), 0}, true
 	}
 	return nil, false
 }
 
 func (v *vc) Body() (reader io.ReadCloser, contentType string, ok bool) {
-	return &file{[]byte(`{"value":"test body"}`)}, definition.MIMEJSON, true
+	return &file{[]byte(`{"value":"test body"}`), 0}, definition.MIMEJSON, true
 }
 
 func TestPathParameterGenerator(t *testing.T) {

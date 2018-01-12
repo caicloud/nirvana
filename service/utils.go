@@ -83,3 +83,7 @@ var invalidAutoParameter = errors.InternalServerError.Build("Nirvana:Service:Inv
 var noParameterGenerator = errors.InternalServerError.Build("Nirvana:Service:NoParameterGenerator", "no parameter generator for source ${source}")
 var invalidFieldTag = errors.InternalServerError.Build("Nirvana:Service:InvalidFieldTag", "filed tag ${tag} is invalid")
 var noName = errors.InternalServerError.Build("Nirvana:Service:NoName", "${source} must have a name")
+var invalidTypeForConsumer = errors.InternalServerError.Build("Nirvana:Service:InvalidTypeForConsumer",
+	"consumer ${content} can't consume data for type ${type}")
+var invalidTypeForProducer = errors.InternalServerError.Build("Nirvana:Service:InvalidTypeForProducer",
+	"producer ${content} can't produce data for type ${type}")

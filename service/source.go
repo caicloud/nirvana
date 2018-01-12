@@ -247,6 +247,7 @@ func (g *BodyParameterGenerator) Validate(name string, defaultValue interface{},
 	}
 	kind := target.Kind()
 	switch {
+	case kind == reflect.String:
 	case kind == reflect.Slice:
 	case kind == reflect.Struct:
 	case kind == reflect.Ptr && target.Elem().Kind() == reflect.Struct:
@@ -295,10 +296,11 @@ func (g *BodyParameterGenerator) Generate(ctx context.Context, vc ValueContainer
 		return nil, nil
 	}
 	var value reflect.Value
+	// Create a pointer to target.
+	// Value is a pointer and it points to nil.
+	// consumer should fill it.
 	switch {
-	case kind == reflect.Slice:
-		value = reflect.MakeSlice(target, 0, 10)
-	case kind == reflect.Struct:
+	case kind == reflect.String || kind == reflect.Slice || kind == reflect.Struct:
 		value = reflect.New(target)
 	case kind == reflect.Ptr && target.Elem().Kind() == reflect.Struct:
 		value = reflect.New(target.Elem())
@@ -308,7 +310,7 @@ func (g *BodyParameterGenerator) Generate(ctx context.Context, vc ValueContainer
 	if err := consumer.Consume(reader, value.Interface()); err != nil {
 		return nil, err
 	}
-	if kind == reflect.Struct {
+	if kind == reflect.String || kind == reflect.Slice || kind == reflect.Struct {
 		return value.Elem().Interface(), nil
 	}
 	return value.Interface(), nil
