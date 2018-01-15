@@ -18,82 +18,129 @@ package errors
 
 import (
 	"fmt"
-	"net/http"
 )
 
-type Error interface {
-	Reason() Reason
-	Error() string
-}
-
 // Reason is an enumeration of possible failure causes. Each Reason
-// must map to a single HTTP status code, but multiple reasons may map to the
-// same HTTP status code.
+// must map to a format which is a string containing ${formatArgu1}.
+//
+// Following format is recommended:
+//   MuduleName[:SubmoduleName]:ShortErrorDescription
+// Examples:
+//   Reason "Nirvana:KindNotFound" may map to format "${kindName} was not found".
+//   Reason "Nirvana:SomeoneIsSleeping" may map to format "${name} is sleeping now"
 type Reason string
 
+// Factory can create error from a fixed format.
+type Factory interface {
+	// Error generates an error from v.
+	Error(v ...interface{}) error
+	// Derived checks if an error was derived from current factory.
+	Derived(e error) bool
+}
+
+// message can be marshaled for transferring.
+//
+// Example:
+// {
+//   "message": "name of something is to short",
+//   "reason": "SomeModule:NameTooShort",
+//   "data": {
+//     "name": "something"
+//   }
+// }
 type message struct {
-	// Required, a machine-readable description of the error.
-	Reason Reason `json:"reason"`
-	// Required when template is used in message or i18nMessage.
-	Data []interface{} `json:"data,omitempty"`
-	// Required for 4xx but optional for 5xx. Message is a human-readable description
-	// of the error. Message can be golang template.
+	// Reason is a unique key for an error in global environment.
+	Reason Reason `json:"reason,omitempty"`
+	// Message contains the detailed description of an error.
 	Message string `json:"message"`
+	// Data is used for i18n.
+	Data map[string]string `json:"data,omitempty"`
 }
 
-// err is an error intended to be used by all APIs to return error to clients.
+// err implements error interface.
 type err struct {
-	// Suggested HTTP return code for this error, 0 if not set. This field is optional.
-	// Caller can choose to use this code or choose to use another error code for client.
-	code int
-	// Format is used to generate message.
-	format string
-	// Useful message.
-	message message
+	message
+	factory *factory
 }
 
+// Code returns status code of the error.
 func (e *err) Code() int {
-	return e.code
+	return e.factory.code
 }
 
+// Message returns detailed message of the error.
 func (e *err) Message() interface{} {
-	return &e.message
+	return e.message
 }
 
-func (e *err) Reason() Reason {
-	return e.message.Reason
-}
-
+// Error returns error description.
 func (e *err) Error() string {
 	return e.message.Message
 }
 
-type formatter struct {
+// factory is an error factory.
+type factory struct {
 	code   int
 	reason Reason
-	// It should like
-	// 1. something named {0} is not found
-	// 2. something named {name} is not found
-	// Which one will win the battle?
 	format string
 }
 
-func (f *formatter) Format(a ...interface{}) Error {
+// Error generates an error from v.
+func (f *factory) Error(v ...interface{}) error {
+	msg := message{Reason: f.reason}
+	msg.Message, msg.Data = expand(f.format, v...)
 	return &err{
-		code:   f.code,
-		format: f.format,
-		message: message{
-			Reason:  f.reason,
-			Data:    a,
-			Message: fmt.Sprintf(f.format, a...),
-		},
+		message: msg,
+		factory: f,
 	}
 }
 
-func ResourceNotFound(resource string) Error {
-	return (&formatter{
-		code:   http.StatusNotFound,
-		reason: Reason(http.StatusText(http.StatusNotFound)),
-		format: "%s is not found",
-	}).Format(resource)
+// Derived checks if an error was derived from current factory.
+func (f *factory) Derived(e error) bool {
+	origin, ok := e.(*err)
+	return ok && origin.factory == f
+}
+
+// expand expands a format string like "name ${name} is too short" to "name japari is too short"
+// by replacing ${} with v... one by one.
+// Note that if len(v) < count of ${}, it will panic.
+func expand(format string, v ...interface{}) (msg string, data map[string]string) {
+	n := 0
+	var m map[string]string
+	buf := make([]byte, 0, len(format))
+
+	for i := 0; i < len(format); {
+		if format[i] == '$' && (i+1) < len(format) && format[i+1] == '{' {
+			b := make([]byte, 0, len(format)-i)
+			if i+2 == len(format) { // check "...${"
+				panic("unexpected EOF while looking for matching }")
+			}
+			ii := i + 2
+			for ii < len(format[i+2:])+i+2 {
+				if format[ii] != '}' {
+					b = append(b, format[ii])
+				} else {
+					break
+				}
+				ii++
+				if ii == len(format[i+2:])+i+2 { // check "...${..."
+					panic("unexpected EOF while looking for matching }")
+				}
+			}
+			i = ii + 1
+			if n == len(v) {
+				panic("not enough args")
+			}
+			if m == nil {
+				m = map[string]string{}
+			}
+			m[string(b)] = fmt.Sprint(v[n])
+			buf = append(buf, fmt.Sprint(v[n])...)
+			n++
+		} else {
+			buf = append(buf, format[i])
+			i++
+		}
+	}
+	return string(buf), m
 }

@@ -16,22 +16,65 @@ limitations under the License.
 
 package log
 
+// SilentLogger logs nothing.
 type SilentLogger struct{}
-type SilentVerboser struct{}
 
-func (*SilentVerboser) Info(...interface{})               {}
-func (*SilentVerboser) Infof(string, ...interface{})      {}
-func (*SilentVerboser) Infoln(...interface{})             {}
-func (*SilentLogger) V(v int) Verboser                    { return &SilentVerboser{} }
-func (*SilentLogger) Info(...interface{})                 {}
-func (*SilentLogger) Infof(string, ...interface{})        {}
-func (*SilentLogger) Infoln(...interface{})               {}
-func (*SilentLogger) Warning(v ...interface{})            {}
-func (*SilentLogger) Warningf(f string, v ...interface{}) {}
-func (*SilentLogger) Warningln(v ...interface{})          {}
-func (*SilentLogger) Error(v ...interface{})              {}
-func (*SilentLogger) Errorf(f string, v ...interface{})   {}
-func (*SilentLogger) Errorln(v ...interface{})            {}
-func (*SilentLogger) Fatal(v ...interface{})              {}
-func (*SilentLogger) Fatalf(f string, v ...interface{})   {}
-func (*SilentLogger) Fatalln(v ...interface{})            {}
+var silentLogger Logger = &SilentLogger{}
+
+// V reports whether verbosity at the call site is at least the requested level.
+// The returned value is a Verboser, which implements Info, Infof
+func (l *SilentLogger) V(Level) Verboser { return l }
+
+// Info logs to the INFO log.
+// Arguments are handled in the manner of fmt.Println; a newline is appended if missing.
+func (*SilentLogger) Info(...interface{}) {}
+
+// Infof logs to the INFO log.
+// Arguments are handled in the manner of fmt.Printf; a newline is appended if missing.
+func (*SilentLogger) Infof(string, ...interface{}) {}
+
+// Infoln logs to the INFO log.
+// Arguments are handled in the manner of fmt.Println; a newline is appended if missing.
+func (*SilentLogger) Infoln(...interface{}) {}
+
+// Warning logs to the WARNING logs.
+// Arguments are handled in the manner of fmt.Print; a newline is appended if missing.
+func (*SilentLogger) Warning(...interface{}) {}
+
+// Warningf logs to the WARNING logs.
+// Arguments are handled in the manner of fmt.Printf; a newline is appended if missing.
+func (*SilentLogger) Warningf(string, ...interface{}) {}
+
+// Warningln logs to the WARNING logs.
+// Arguments are handled in the manner of fmt.Println; a newline is appended if missing.
+func (*SilentLogger) Warningln(...interface{}) {}
+
+// Error logs to the ERROR logs.
+// Arguments are handled in the manner of fmt.Print; a newline is appended if missing.
+func (*SilentLogger) Error(...interface{}) {}
+
+// Errorf logs to the ERROR logs.
+// Arguments are handled in the manner of fmt.Printf; a newline is appended if missing.
+func (*SilentLogger) Errorf(string, ...interface{}) {}
+
+// Errorln logs to the ERROR logs.
+// Arguments are handled in the manner of fmt.Println; a newline is appended if missing.
+func (*SilentLogger) Errorln(...interface{}) {}
+
+// Fatal logs to the FATAL logs, then calls os.Exit(1).
+// Arguments are handled in the manner of fmt.Print; a newline is appended if missing.
+func (*SilentLogger) Fatal(v ...interface{}) {}
+
+// Fatalf logs to the FATAL logs, then calls os.Exit(1).
+// Arguments are handled in the manner of fmt.Printf; a newline is appended if missing.
+func (*SilentLogger) Fatalf(string, ...interface{}) {}
+
+// Fatalln logs to the FATAL logs, then calls os.Exit(1).
+// Arguments are handled in the manner of fmt.Println; a newline is appended if missing.
+func (*SilentLogger) Fatalln(v ...interface{}) {}
+
+// clone clones current logger with new wrapper.
+// A positive wrapper indicates how many wrappers outside the logger.
+func (l *SilentLogger) clone(wrapper int) Logger {
+	return l
+}

@@ -19,11 +19,56 @@ package definition
 import (
 	"context"
 	"reflect"
-
-	"github.com/caicloud/nirvana/router"
 )
 
-type Operator func(ctx context.Context, object interface{}) (interface{}, error)
+// Chain contains all subsequent actions.
+type Chain interface {
+	// Continue continues to execute the next subsequent actions.
+	Continue(context.Context) error
+}
+
+// Middleware describes the form of middlewares. If you want to
+// carry on, call Chain.Continue() and pass the context.
+type Middleware func(context.Context, Chain) error
+
+// Operator is used to operate an object and return an replacement object.
+//
+// For example:
+//  A converter:
+//    type ConverterForAnObject struct{}
+//    func (c *ConverterForAnObject) Kind() {return "converter"}
+//    func (c *ConverterForAnObject) In() reflect.Type {return definition.TypeOf(&ObjectV1{})}
+//    func (c *ConverterForAnObject) Out() reflect.Type {return definition.TypeOf(&ObjectV2{})}
+//    func (c *ConverterForAnObject) Operate(ctx context.Context, object interface{}) (interface{}, error) {
+//        objV2, err := convertObjectV1ToObjectV2(object.(*ObjectV1))
+//        return objV2, err
+//    }
+//
+//  A validator:
+//    type ValidatorForAnObject struct{}
+//    func (c *ValidatorForAnObject) Kind() {return "validator"}
+//    func (c *ValidatorForAnObject) In() reflect.Type {return definition.TypeOf(&Object{})}
+//    func (c *ValidatorForAnObject) Out() reflect.Type {return definition.TypeOf(&Object{})}
+//    func (c *ValidatorForAnObject) Operate(ctx context.Context, object interface{}) (interface{}, error) {
+//        if err := validate(object.(*Object)); err != nil {
+//            return nil, err
+//        }
+//        return object, nil
+//    }
+type Operator interface {
+	// Kind indicates operator type.
+	Kind() string
+	// In returns the type of the only object parameter of operator.
+	// The type must be a concrete struct or built-in type. It should
+	// not be interface unless it's a file or stream reader.
+	In() reflect.Type
+	// Out returns the type of the only object result of operator.
+	// The type must be a concrete struct or built-in type. It should
+	// not be interface unless it's a file or stream reader.
+	Out() reflect.Type
+	// Operate operates an object and return one.
+	Operate(ctx context.Context, field string, object interface{}) (interface{}, error)
+}
 
 // Method is an alternative of HTTP method. It's more clearer than HTTP method.
 // A definition method binds a certain HTTP method and a success status code.
@@ -70,9 +115,6 @@ const (
 	File Source = "File"
 	// Body means value is from request body.
 	Body Source = "Body"
-	// Prefab means value is from a prefab generator.
-	// May a prefab will combine many data to generate value.
-	Prefab Source = "Prefab"
 	// Auto identifies a struct and generate field values by field tag.
 	//
 	// Tag name is "source". Its value format is "Source,Name".
@@ -83,24 +125,31 @@ const (
 	//     ContentType string `source:"Header,Content-Type"`
 	// }
 	Auto Source = "Auto"
+	// Prefab means value is from a prefab generator.
+	// A prefab combines data to generate value.
+	Prefab Source = "Prefab"
 )
 
-// Type indicates the target type to place function results.
-type Type string
+// Destination indicates the target type to place function results.
+type Destination string
 
 const (
-	// Meta means result will be set into  header of response.
-	Meta Type = "Meta"
-	// Data means result will be set into body of response.
-	Data Type = "Data"
-	// Error means the result is an error and should be treat specially.
-	Error Type = "Error"
+	// Meta means result will be set into the header of response.
+	Meta Destination = "Meta"
+	// Data means result will be set into the body of response.
+	Data Destination = "Data"
+	// Error means the result is an error and should be treated specially.
+	// An error occurs indicates that there is no data to return. So the
+	// error should be treated as data and be writed back to client.
+	Error Destination = "Error"
 )
 
 // Example is just an example.
 type Example struct {
+	// Description describes the example.
 	Description string
-	Instance    interface{}
+	// Instance is a custom data.
+	Instance interface{}
 }
 
 // Parameter describes a function parameter.
@@ -110,17 +159,8 @@ type Parameter struct {
 	// Name is the name to get value from a request.
 	// ex. a query name, a header key, etc.
 	Name string
-	// Type is used to override function parameter type.
-	// If you want to override the type in function parameter, you can specify it here.
-	// When the type is same as function parameter type, the field can be ignored.
-	// If the type is not compatible with function parameter type, you must add
-	// a operator to convert it or it will panic.
-	Type reflect.Type
 	// Default value is used when a request does not provide a value
 	// for the parameter.
-	// If parameter type is set, the default value must can be assigned to that type.
-	// If parameter type is not set, the default value must can be assigned to
-	// function parameter type.
 	Default interface{}
 	// Operators can modify and validate the target value.
 	// Parameter value is passed to the first operator, then
@@ -129,23 +169,37 @@ type Parameter struct {
 	Operators []Operator
 	// Description describes the parameter.
 	Description string
-	// Examples contains many examples for the parameter.
-	Examples []Example
+}
+
+// DefaultValue sets default value for the parameter.
+func (p Parameter) DefaultValue(value interface{}) Parameter {
+	p.Default = value
+	return p
+}
+
+// Operator adds operators to current parameter.
+func (p Parameter) Operator(operators ...Operator) Parameter {
+	p.Operators = append(p.Operators, operators...)
+	return p
 }
 
 // Result describes how to handle a result from function results.
 type Result struct {
-	// Type is the target for the result. Different types make different behavior.
-	Type Type
+	// Destination is the target for the result. Different types make different behavior.
+	Destination Destination
 	// Operators can modify the result value.
 	// Result value is passed to the first operator, then
 	// previous operator's result is as next operator's parameter.
-	// The result of last operator will be passed to type handler.
+	// The result of last operator will be passed to destination handler.
 	Operators []Operator
 	// Description describes the result.
 	Description string
-	// Examples contains many examples for the result.
-	Examples []Example
+}
+
+// Operator adds operators to current result.
+func (r Result) Operator(operators ...Operator) Result {
+	r.Operators = append(r.Operators, operators...)
+	return r
 }
 
 // Definition defines an API handler.
@@ -170,6 +224,36 @@ type Definition struct {
 	Examples []Example
 }
 
+// Consume adds consumes.
+func (d Definition) Consume(cs ...string) Definition {
+	d.Consumes = append(d.Consumes, cs...)
+	return d
+}
+
+// Produce adds produces.
+func (d Definition) Produce(cs ...string) Definition {
+	d.Produces = append(d.Produces, cs...)
+	return d
+}
+
+// Parameter adds parameters.
+func (d Definition) Parameter(ps ...Parameter) Definition {
+	d.Parameters = append(d.Parameters, ps...)
+	return d
+}
+
+// Result adds results.
+func (d Definition) Result(rs ...Result) Definition {
+	d.Results = append(d.Results, rs...)
+	return d
+}
+
+// Example adds examples.
+func (d Definition) Example(es ...Example) Definition {
+	d.Examples = append(d.Examples, es...)
+	return d
+}
+
 // Descriptor describes a descriptor for API definitions.
 type Descriptor struct {
 	// Path is the url path. It will inherit parent's path.
@@ -177,18 +261,50 @@ type Descriptor struct {
 	// If parent path is "/api/v1", current is "/some",
 	// It means current definitions handles "/api/v1/some".
 	Path string
-	// Consumes indicates content types children handlers can consume.
+	// Consumes indicates content types that current definitions
+	// and child definitions can consume.
 	// It will override parent descriptor's consumes.
 	Consumes []string
-	// Produces indicates content types children handlers can produce.
+	// Produces indicates content types that current definitions
+	// and child definitions can produce.
 	// It will override parent descriptor's produces.
 	Produces []string
 	// Middlewares contains path middlewares.
-	Middlewares []router.Middleware
-	// Definitions contains handlers for current path.
+	Middlewares []Middleware
+	// Definitions contains definitions for current path.
 	Definitions []Definition
 	// Children is used to place sub-descriptors.
 	Children []Descriptor
 	// Description describes the usage of the path.
 	Description string
+}
+
+// Consume adds consumes.
+func (d Descriptor) Consume(cs ...string) Descriptor {
+	d.Consumes = append(d.Consumes, cs...)
+	return d
+}
+
+// Produce adds produces.
+func (d Descriptor) Produce(ps ...string) Descriptor {
+	d.Produces = append(d.Produces, ps...)
+	return d
+}
+
+// Middleware adds middlewares.
+func (d Descriptor) Middleware(ms ...Middleware) Descriptor {
+	d.Middlewares = append(d.Middlewares, ms...)
+	return d
+}
+
+// Definition adds definitions.
+func (d Descriptor) Definition(defs ...Definition) Descriptor {
+	d.Definitions = append(d.Definitions, defs...)
+	return d
+}
+
+// Descriptor adds descriptors as children.
+func (d Descriptor) Descriptor(descs ...Descriptor) Descriptor {
+	d.Children = append(d.Children, descs...)
+	return d
 }

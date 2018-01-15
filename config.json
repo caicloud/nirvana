@@ -5,18 +5,23 @@
     "vet",
     "gotype",
     "safesql",
-    "staticcheck",
     "errcheck",
     "goconst",
     "goimports",
     "varcheck",
     "gas",
+    "megacheck",
     "lll",
     "unconvert",
     "misspell",
+    "golint",
     "deadcode",
     "unconvert"
   ],
+  "Aggregate": true,
+  "WarnUnmatchedNolint": true,
   "LineLength": 160,
-  "Exclude": ["examples", "docs", "website"]
+  "Exclude": ["comment or be unexported"],
+  "Deadline": "300s",
+  "Skip": ["examples", "docs", "website"]
 }

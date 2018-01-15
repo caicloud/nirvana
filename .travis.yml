@@ -1,7 +1,6 @@
 language: go
 
 go:
-  - 1.7
   - 1.8
   - 1.9
 
@@ -14,3 +13,5 @@ before_install:
 script:
   - gometalinter --config=config.json ./...
   - goveralls -service=travis-ci
+  - hack/verify-govet.sh
+  - hack/verify-gofmt.sh

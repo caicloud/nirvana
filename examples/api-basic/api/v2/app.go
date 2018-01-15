@@ -25,25 +25,13 @@ func init() {
 	register(app)
 }
 
-var app = definition.Descriptor{
-	Path: "/applications",
-	Definitions: []definition.Definition{
-		{
-			Method:   definition.Create,
-			Function: application.CreateApplication,
-			Parameters: []definition.Parameter{
-				{
-					Source: definition.Body,
-				},
-			},
-			Results: []definition.Result{
-				{
-					Type: definition.Data,
-				},
-				{
-					Type: definition.Error,
-				},
-			},
-		},
-	},
-}
+var app = definition.DescriptorFor("/applications", "Application API").
+	Definition(
+		definition.CreateDefinitionFor(application.CreateApplication, "Create Application").
+			Parameter(
+				definition.BodyParameterFor("Application V2 json object"),
+			).
+			Result(
+				definition.DataErrorResults("Application V2 json object")...,
+			),
+	)
