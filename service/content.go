@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"io"
+	"io/ioutil"
 	"reflect"
 	"strconv"
 
@@ -45,22 +46,20 @@ type Producer interface {
 
 var consumers = map[string]Consumer{
 	definition.MIMENone:        &NoneSerializer{},
-	definition.MIMEText:        &NoneSerializer{},
+	definition.MIMEText:        &TextSerializer{},
 	definition.MIMEJSON:        &JSONSerializer{},
 	definition.MIMEXML:         &XMLSerializer{},
-	definition.MIMEOctetStream: &NoneSerializer{},
-	definition.MIMEURLEncoded:  &NoneSerializer{},
-	definition.MIMEFormData:    &NoneSerializer{},
+	definition.MIMEOctetStream: &OctetStreamSerializer{},
+	definition.MIMEURLEncoded:  &URLEncodedConsumer{},
+	definition.MIMEFormData:    &FormDataConsumer{},
 }
 
 var producers = map[string]Producer{
 	definition.MIMENone:        &NoneSerializer{},
-	definition.MIMEText:        &NoneSerializer{},
+	definition.MIMEText:        &TextSerializer{},
 	definition.MIMEJSON:        &JSONSerializer{},
 	definition.MIMEXML:         &XMLSerializer{},
-	definition.MIMEOctetStream: &NoneSerializer{},
-	definition.MIMEURLEncoded:  &NoneSerializer{},
-	definition.MIMEFormData:    &NoneSerializer{},
+	definition.MIMEOctetStream: &OctetStreamSerializer{},
 }
 
 // AllConsumers returns all consumers.
@@ -129,16 +128,118 @@ func (s *NoneSerializer) ContentType() string {
 
 // Consume does nothing.
 func (s *NoneSerializer) Consume(r io.Reader, v interface{}) error {
-	return nil
+	return invalidTypeForConsumer.Error(s.ContentType(), reflect.TypeOf(v))
 }
 
 // Produce does nothing.
 func (s *NoneSerializer) Produce(w io.Writer, v interface{}) error {
-	return nil
+	return invalidTypeForProducer.Error(s.ContentType(), reflect.TypeOf(v))
+}
+
+type rawSerializer struct{}
+
+// consume reads data and converts it to string, []byte.
+func (s *rawSerializer) consume(contentType string, r io.Reader, v interface{}) error {
+	switch target := v.(type) {
+	case *string:
+		data, err := ioutil.ReadAll(r)
+		if err != nil {
+			return err
+		}
+		*target = string(data)
+		return nil
+	case *[]byte:
+		data, err := ioutil.ReadAll(r)
+		if err != nil {
+			return err
+		}
+		*target = data
+		return nil
+	}
+	return invalidTypeForConsumer.Error(contentType, reflect.TypeOf(v))
+}
+
+// produce writes v to writer. v should be string, []byte, io.Reader.
+func (s *rawSerializer) produce(contentType string, w io.Writer, v interface{}) error {
+	if r, ok := v.(io.Reader); ok {
+		_, err := io.Copy(w, r)
+		return err
+	}
+	switch source := v.(type) {
+	case string:
+		_, err := io.WriteString(w, source)
+		return err
+	case []byte:
+		_, err := w.Write(source)
+		return err
+	}
+	return invalidTypeForProducer.Error(contentType, reflect.TypeOf(v))
+}
+
+// TextSerializer implements Consumer and Producer for content type "text/plain"
+type TextSerializer struct{ rawSerializer }
+
+// ContentType returns plain text MIME type.
+func (s *TextSerializer) ContentType() string {
+	return definition.MIMEText
+}
+
+// Consume reads data and converts it to string, []byte.
+func (s *TextSerializer) Consume(r io.Reader, v interface{}) error {
+	return s.consume(s.ContentType(), r, v)
+}
+
+// Produce writes v to writer. v should be string, []byte, io.Reader.
+func (s *TextSerializer) Produce(w io.Writer, v interface{}) error {
+	return s.produce(s.ContentType(), w, v)
+}
+
+// OctetStreamSerializer implements Consumer and Producer for content type "application/octet-stream"
+type OctetStreamSerializer struct{ rawSerializer }
+
+// ContentType returns octet stream MIME type.
+func (s *OctetStreamSerializer) ContentType() string {
+	return definition.MIMEOctetStream
+}
+
+// Consume reads data and converts it to string, []byte.
+func (s *OctetStreamSerializer) Consume(r io.Reader, v interface{}) error {
+	return s.consume(s.ContentType(), r, v)
+}
+
+// Produce writes v to writer. v should be string, []byte, io.Reader.
+func (s *OctetStreamSerializer) Produce(w io.Writer, v interface{}) error {
+	return s.produce(s.ContentType(), w, v)
+}
+
+// URLEncodedConsumer implements Consumer for content type "application/x-www-form-urlencoded"
+type URLEncodedConsumer struct{ rawSerializer }
+
+// ContentType returns url encoded MIME type.
+func (s *URLEncodedConsumer) ContentType() string {
+	return definition.MIMEURLEncoded
+}
+
+// Consume reads data and converts it to string, []byte.
+func (s *URLEncodedConsumer) Consume(r io.Reader, v interface{}) error {
+	return s.consume(s.ContentType(), r, v)
+}
+
+// FormDataConsumer implements Consumer for content type "multipart/form-data"
+type FormDataConsumer struct{ rawSerializer }
+
+// ContentType returns form data MIME type.
+func (s *FormDataConsumer) ContentType() string {
+	return definition.MIMEFormData
+}
+
+// Consume reads data and converts it to string, []byte.
+func (s *FormDataConsumer) Consume(r io.Reader, v interface{}) error {
+	return s.consume(s.ContentType(), r, v)
 }
 
 // JSONSerializer implements Consumer and Producer for content type "application/json".
-type JSONSerializer struct{}
+type JSONSerializer struct{ rawSerializer }
 
 // ContentType returns json MIME type.
 func (s *JSONSerializer) ContentType() string {
@@ -147,16 +248,28 @@ func (s *JSONSerializer) ContentType() string {
 
 // Consume unmarshals json from r into v.
 func (s *JSONSerializer) Consume(r io.Reader, v interface{}) error {
+	switch v.(type) {
+	case *string:
+		return s.consume(s.ContentType(), r, v)
+	case *[]byte:
+		return s.consume(s.ContentType(), r, v)
+	}
 	return json.NewDecoder(r).Decode(v)
 }
 
 // Produce marshals v to json and write to w.
 func (s *JSONSerializer) Produce(w io.Writer, v interface{}) error {
+	switch v.(type) {
+	case string:
+		return s.produce(s.ContentType(), w, v)
+	case []byte:
+		return s.produce(s.ContentType(), w, v)
+	}
 	return json.NewEncoder(w).Encode(v)
 }
 
 // XMLSerializer implements Consumer and Producer for content type "application/xml".
-type XMLSerializer struct{}
+type XMLSerializer struct{ rawSerializer }
 
 // ContentType returns xml MIME type.
 func (s *XMLSerializer) ContentType() string {
@@ -165,11 +278,23 @@ func (s *XMLSerializer) ContentType() string {
 
 // Consume unmarshals xml from r into v.
 func (s *XMLSerializer) Consume(r io.Reader, v interface{}) error {
+	switch v.(type) {
+	case *string:
+		return s.consume(s.ContentType(), r, v)
+	case *[]byte:
+		return s.consume(s.ContentType(), r, v)
+	}
 	return xml.NewDecoder(r).Decode(v)
 }
 
 // Produce marshals v to xml and write to w.
 func (s *XMLSerializer) Produce(w io.Writer, v interface{}) error {
+	switch v.(type) {
+	case string:
+		return s.produce(s.ContentType(), w, v)
+	case []byte:
+		return s.produce(s.ContentType(), w, v)
+	}
 	return xml.NewEncoder(w).Encode(v)
 }
 
