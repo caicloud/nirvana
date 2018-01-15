@@ -19,6 +19,7 @@ package service
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -150,6 +151,161 @@ func TestServer(t *testing.T) {
 	target := `{"name":"asdasd","namespace":"system","target":"nothing","target2":1,"target1":false}` + "\n"
 	if result != target {
 		t.Fatalf("Response does not match: %s", result)
+	}
+}
+
+var childrenDesc = definition.Descriptor{
+	Path:        "",
+	Definitions: []definition.Definition{},
+	Consumes:    []string{definition.MIMEJSON},
+	Produces:    []string{definition.MIMEJSON},
+	Children: []definition.Descriptor{
+		{
+			Path: "/api/v1",
+			Children: []definition.Descriptor{
+				{
+					Path: "",
+					Definitions: []definition.Definition{
+						{
+							Method: definition.Get,
+							Function: func(ctx context.Context) string {
+								return ""
+							},
+							Results: []definition.Result{
+								{Destination: definition.Data},
+							},
+						},
+					},
+					Children: []definition.Descriptor{
+						{
+							Path: "/ping",
+							Definitions: []definition.Definition{
+								{
+									Method:   definition.Get,
+									Function: echoHandle,
+									Results: []definition.Result{
+										{Destination: definition.Data},
+										{Destination: definition.Error},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	},
+}
+
+type echoResult struct {
+	Message string `json:"message"`
+}
+
+func echoHandle(ctx context.Context) (*echoResult, error) {
+	return &echoResult{
+		Message: "pong",
+	}, nil
+}
+
+func TestChildrenPath(t *testing.T) {
+	u, _ := url.Parse("/api/v1/ping")
+
+	req := &http.Request{
+		Method: "GET",
+		URL:    u,
+		Header: http.Header{
+			"Content-Type": []string{definition.MIMEJSON},
+			"Accept":       []string{definition.MIMEJSON},
+		},
+	}
+	builder := NewBuilder()
+	builder.SetModifier(FirstContextParameter())
+	err := builder.AddDescriptor(childrenDesc)
+	if err != nil {
+		t.Fatal(err)
+	}
+	s, err := builder.Build()
+	if err != nil {
+		t.Fatal(err)
+	}
+	req = req.WithContext(context.Background())
+	resp := newRW()
+	s.ServeHTTP(resp, req)
+
+	var result echoResult
+	if err := json.NewDecoder(resp.buf).Decode(&result); err != nil {
+		t.Fatal(err)
+	}
+
+	if resp.code != 200 && result.Message != "pong" {
+		t.Fatalf("Response code should be 200, but got: %d", resp.code)
+	}
+}
+
+var homeDesc = definition.Descriptor{
+	Path:        "",
+	Definitions: []definition.Definition{},
+	Consumes:    []string{definition.MIMEJSON},
+	Produces:    []string{definition.MIMEJSON},
+	Children: []definition.Descriptor{
+		{
+			Path: "/",
+			Definitions: []definition.Definition{
+				{
+					Method:   definition.Get,
+					Function: homeHandle,
+					Results: []definition.Result{
+						{Destination: definition.Data},
+						{Destination: definition.Error},
+					},
+				},
+			},
+		},
+	},
+}
+
+type homeResult struct {
+	Message string `json:"message"`
+}
+
+func homeHandle(ctx context.Context) (*homeResult, error) {
+	return &homeResult{
+		Message: "home",
+	}, nil
+}
+
+func TestHomePath(t *testing.T) {
+	u, _ := url.Parse("/")
+
+	req := &http.Request{
+		Method: "GET",
+		URL:    u,
+		Header: http.Header{
+			"Content-Type": []string{definition.MIMEJSON},
+			"Accept":       []string{definition.MIMEJSON},
+		},
+	}
+	builder := NewBuilder()
+	builder.SetModifier(FirstContextParameter())
+	err := builder.AddDescriptor(homeDesc)
+	if err != nil {
+		t.Fatal(err)
+	}
+	s, err := builder.Build()
+	if err != nil {
+		t.Fatal(err)
+	}
+	req = req.WithContext(context.Background())
+	resp := newRW()
+	s.ServeHTTP(resp, req)
+
+	var result homeResult
+	if err := json.NewDecoder(resp.buf).Decode(&result); err != nil {
+		t.Fatal(err)
+	}
+
+	if resp.code != 200 && result.Message != "home" {
+		t.Fatalf("Response code should be 200, but got: %d", resp.code)
 	}
 }
 

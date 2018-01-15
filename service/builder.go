@@ -89,7 +89,15 @@ func (b *builder) AddDescriptor(descriptors ...definition.Descriptor) error {
 }
 
 func (b *builder) addDescriptor(prefix string, consumes []string, produces []string, descriptor definition.Descriptor) {
-	path := strings.Join([]string{prefix, strings.Trim(descriptor.Path, "/")}, "/")
+	trimPath := strings.Trim(descriptor.Path, "/")
+	path := strings.Join([]string{prefix, trimPath}, "/")
+
+	// If the pre path is not the root path and the current path is an empty string.
+	if prefix != "" && trimPath == "" && len(descriptor.Definitions) > 0 {
+		b.logger.Warningf("%s descriptor.Path not a root path and is no specific path."+
+			"If you don't enable RedirectTrailingSlash filter, Definitions will not be executed", descriptor.Description)
+	}
+
 	if len(descriptor.Middlewares) > 0 || len(descriptor.Definitions) > 0 {
 		bd, ok := b.bindings[path]
 		if !ok {
@@ -118,7 +126,7 @@ func (b *builder) addDescriptor(prefix string, consumes []string, produces []str
 		produces = descriptor.Produces
 	}
 	for _, child := range descriptor.Children {
-		b.addDescriptor(path, consumes, produces, child)
+		b.addDescriptor(strings.TrimRight(path, "/"), consumes, produces, child)
 	}
 }
 
