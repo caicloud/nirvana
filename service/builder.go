@@ -89,15 +89,7 @@ func (b *builder) AddDescriptor(descriptors ...definition.Descriptor) error {
 }
 
 func (b *builder) addDescriptor(prefix string, consumes []string, produces []string, descriptor definition.Descriptor) {
-	trimPath := strings.Trim(descriptor.Path, "/")
-	path := strings.Join([]string{prefix, trimPath}, "/")
-
-	// If the pre path is not the root path and the current path is an empty string.
-	if prefix != "" && trimPath == "" && len(descriptor.Definitions) > 0 {
-		b.logger.Warningf("%s descriptor.Path not a root path and is no specific path."+
-			"If you don't enable RedirectTrailingSlash filter, Definitions will not be executed", descriptor.Description)
-	}
-
+	path := strings.Join([]string{prefix, strings.Trim(descriptor.Path, "/")}, "/")
 	if len(descriptor.Middlewares) > 0 || len(descriptor.Definitions) > 0 {
 		bd, ok := b.bindings[path]
 		if !ok {
@@ -176,6 +168,11 @@ func (b *builder) Build() (Service, error) {
 			return nil, err
 		}
 		if len(bd.definitions) > 0 {
+			// RedirectTrailingSlash would redirect "/somepath/" to "/somepath". Any definition under "/somepath/"
+			// will never be executed.
+			if len(path) > 1 && strings.HasSuffix(path, "/") {
+				b.logger.Warningf("If RedirectTrailingSlash filter is enabled, following %d definition(s) would not be executed", len(bd.definitions))
+			}
 			inspector := newInspector(path, b.logger)
 			for _, d := range bd.definitions {
 				b.logger.V(log.LevelDebug).Infof("  Method: %s Consumes: %v Produces: %v",
@@ -185,6 +182,7 @@ func (b *builder) Build() (Service, error) {
 					return nil, err
 				}
 			}
+
 			leaf.SetInspector(inspector)
 		}
 		if len(bd.middlewares) > 0 {
