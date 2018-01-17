@@ -357,6 +357,21 @@ func (g *PrefabParameterGenerator) Generate(ctx context.Context, vc ValueContain
 // }
 type AutoParameterGenerator struct{}
 
+type autoTagParams map[paramsKey]string
+type paramsKey string
+
+const (
+	keyDefault paramsKey = "default"
+)
+
+func (params autoTagParams) get(key paramsKey) string {
+	return params[key]
+}
+
+func (params autoTagParams) set(key paramsKey, value string) {
+	params[key] = value
+}
+
 func (g *AutoParameterGenerator) Source() definition.Source { return definition.Auto }
 func (g *AutoParameterGenerator) Validate(name string, defaultValue interface{}, target reflect.Type) error {
 	err := assignable(defaultValue, target)
@@ -367,7 +382,7 @@ func (g *AutoParameterGenerator) Validate(name string, defaultValue interface{},
 		return invalidAutoParameter.Error(target)
 	}
 	f := func(index []int, field reflect.StructField) error {
-		source, name, err := g.split(field.Tag.Get("source"))
+		source, name, params, err := g.split(field.Tag.Get("source"))
 		if err != nil {
 			return err
 		}
@@ -375,7 +390,20 @@ func (g *AutoParameterGenerator) Validate(name string, defaultValue interface{},
 		if generator == nil {
 			return noParameterGenerator.Error(source)
 		}
-		return generator.Validate(name, nil, field.Type)
+
+		var value interface{}
+		defaultValue := params.get(keyDefault)
+		if defaultValue != "" {
+			if c := ConverterFor(field.Type); c != nil {
+				var err error
+				value, err = c(context.Background(), []string{defaultValue})
+				if err != nil {
+					return err
+				}
+			}
+		}
+
+		return generator.Validate(name, value, field.Type)
 	}
 	if target.Kind() == reflect.Struct {
 		err = g.enum([]int{}, target, f)
@@ -385,15 +413,38 @@ func (g *AutoParameterGenerator) Validate(name string, defaultValue interface{},
 	return err
 }
 
-func (g *AutoParameterGenerator) split(tag string) (source string, name string, err error) {
+func (g *AutoParameterGenerator) split(tag string) (source, name string, atp autoTagParams, err error) {
+	atp = make(autoTagParams)
 	result := strings.Split(tag, ",")
-	if len(result) == 1 {
-		return result[0], "", nil
+
+	length := len(result)
+
+	if length < 1 {
+		return "", "", nil, invalidFieldTag.Error(tag)
 	}
-	if len(result) != 2 {
-		return "", "", invalidFieldTag.Error(tag)
+
+	if length >= 1 {
+		source = strings.Title(strings.ToLower(strings.TrimSpace(result[0])))
 	}
-	return result[0], result[1], nil
+	if length >= 2 {
+		name = strings.TrimSpace(result[1])
+	}
+	if length >= 3 {
+		params := result[2:]
+
+		for _, param := range params {
+			keyValue := strings.Split(param, "=")
+			if len(keyValue) == 2 {
+				key := paramsKey(strings.TrimSpace(keyValue[0]))
+				value := strings.TrimSpace(keyValue[1])
+				if key == keyDefault {
+					atp.set(key, value)
+				}
+			}
+		}
+	}
+
+	return
 }
 
 func (g *AutoParameterGenerator) Generate(ctx context.Context, vc ValueContainer, consumers []Consumer, name string, target reflect.Type) (interface{}, error) {
@@ -415,7 +466,7 @@ func (g *AutoParameterGenerator) Generate(ctx context.Context, vc ValueContainer
 
 func (g *AutoParameterGenerator) generate(ctx context.Context, vc ValueContainer, consumers []Consumer, value reflect.Value) error {
 	f := func(index []int, field reflect.StructField) error {
-		source, name, err := g.split(field.Tag.Get("source"))
+		source, name, params, err := g.split(field.Tag.Get("source"))
 		if err != nil {
 			return err
 		}
@@ -427,7 +478,19 @@ func (g *AutoParameterGenerator) generate(ctx context.Context, vc ValueContainer
 		if err != nil {
 			return err
 		}
-		value.FieldByIndex(index).Set(reflect.ValueOf(ins))
+
+		defaultValue := params.get(keyDefault)
+		if ins == nil && defaultValue != "" {
+			if c := ConverterFor(field.Type); c != nil {
+				// After passing the validation phase, here will never return an error
+				ins, _ = c(ctx, []string{defaultValue}) // #nosec
+			}
+		}
+
+		if ins != nil {
+			value.FieldByIndex(index).Set(reflect.ValueOf(ins))
+		}
+
 		return nil
 	}
 	return g.enum([]int{}, value.Type(), f)

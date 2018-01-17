@@ -361,8 +361,12 @@ func (e *executor) Execute(ctx context.Context) (err error) {
 		if err != nil {
 			return writeError(ctx, e.producers, err)
 		}
-		if result == nil && p.defaultValue != nil {
-			result = p.defaultValue
+		if result == nil {
+			if p.defaultValue != nil {
+				result = p.defaultValue
+			} else {
+				result = reflect.Zero(p.targetType).Interface()
+			}
 		}
 		for _, operator := range p.operators {
 			result, err = operator.Operate(ctx, p.name, result)

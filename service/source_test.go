@@ -233,13 +233,17 @@ func TestPrefabParameterGenerator(t *testing.T) {
 }
 
 type as struct {
-	Path    string          `source:"Path,test"`
-	Query   string          `source:"Query,test"`
-	Header  string          `source:"Header,test"`
-	Form    string          `source:"Form,test"`
-	File    io.Reader       `source:"File,test"`
-	Body    *ts             `source:"Body"`
-	Context context.Context `source:"Prefab,context"`
+	Hello     string          `source:"path, hello, default=world"`
+	IsDefault bool            `source:"path,isDefault, default=true,test=10"`
+	Age       int             `source:"Path,age"`
+	Name      string          `source:"Path,name"`
+	Path      string          `source:"Path,test"`
+	Query     string          `source:"query,test"`
+	Header    string          `source:"header,test"`
+	Form      string          `source:"form,test"`
+	File      io.Reader       `source:"File,test"`
+	Body      *ts             `source:"Body"`
+	Context   context.Context `source:"Prefab,context"`
 }
 
 func TestAutoParameterGenerator(t *testing.T) {
@@ -257,6 +261,8 @@ func TestAutoParameterGenerator(t *testing.T) {
 	}
 	t.Logf("%+v", result)
 	if r, ok := result.(*as); !ok ||
+		r.Hello != "world" ||
+		!r.IsDefault ||
 		r.Path != "path" ||
 		r.Query != "query" ||
 		r.Header != "header" ||
@@ -267,4 +273,18 @@ func TestAutoParameterGenerator(t *testing.T) {
 		r.Body.Value != "test body" {
 		t.Fatalf("BodyParameterGenerator result is not correct: %+v", result)
 	}
+}
+
+func TestInvalidAutoParameter(t *testing.T) {
+	g := &AutoParameterGenerator{}
+	if g.Source() != definition.Auto {
+		t.Fatalf("AutoParameterGenerator has a wrong source: %s", g.Source())
+	}
+	target := reflect.TypeOf(1)
+	err := g.Validate("test", "test", target)
+	if err == nil {
+		t.Fatal("TestInvalidAutoParameter: Validate should return an error")
+	}
+
+	t.Log(err)
 }

@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -305,6 +306,96 @@ func TestHomePath(t *testing.T) {
 	}
 
 	if resp.code != 200 && result.Message != "home" {
+		t.Fatalf("Response code should be 200, but got: %d", resp.code)
+	}
+}
+
+type User struct {
+	Username string `source:"Header,Username"`
+	Password string `source:"Header,Password"`
+}
+
+var defaultParamsDesc = definition.Descriptor{
+	Definitions: []definition.Definition{},
+	Consumes:    []string{definition.MIMEJSON},
+	Produces:    []string{definition.MIMEJSON},
+	Children: []definition.Descriptor{
+		{
+			Path: "/default",
+			Definitions: []definition.Definition{
+				{
+					Method:   definition.Get,
+					Function: defaultParamsHandler,
+					Parameters: []definition.Parameter{
+						{
+							Source:  definition.Query,
+							Name:    "q1",
+							Default: "q1",
+						},
+						{
+							Source: definition.Query,
+							Name:   "q2",
+						},
+						{
+							Source: definition.Header,
+							Name:   "X-Tenant",
+						},
+						{
+							Source: definition.Header,
+							Name:   "X-Tenant2",
+						},
+						{
+							Source: definition.Auto,
+							Name:   "user",
+						},
+					},
+					Results: []definition.Result{
+						{Destination: definition.Data},
+						{Destination: definition.Error},
+					},
+				},
+			},
+		},
+	},
+}
+
+func defaultParamsHandler(ctx context.Context, q1, q2, tenant, tenant2 string, u *User) (string, error) {
+	if q1 == "q1" && q2 == "" && tenant == "" && tenant2 == "tenant2" && u.Username == "name" && u.Password == "pwd" {
+		return "match", nil
+	}
+	return "", errors.New("not match params")
+
+}
+
+func TestDefaultParams(t *testing.T) {
+	u, _ := url.Parse("/default")
+
+	req := &http.Request{
+		Method: "GET",
+		URL:    u,
+		Header: http.Header{
+			"Content-Type": []string{definition.MIMEJSON},
+			"Accept":       []string{definition.MIMEJSON},
+			"X-Tenant2":    []string{"tenant2"},
+			"Username":     []string{"name"},
+			"Password":     []string{"pwd"},
+		},
+	}
+	builder := NewBuilder()
+	builder.SetModifier(FirstContextParameter())
+	err := builder.AddDescriptor(defaultParamsDesc)
+	if err != nil {
+		t.Fatal(err)
+	}
+	s, err := builder.Build()
+	if err != nil {
+		t.Fatal(err)
+	}
+	req = req.WithContext(context.Background())
+	resp := newRW()
+	s.ServeHTTP(resp, req)
+
+	if resp.code != 200 && resp.buf.String() != "match" {
 		t.Fatalf("Response code should be 200, but got: %d", resp.code)
 	}
 }
