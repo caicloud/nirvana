@@ -23,6 +23,7 @@ import (
 	"mime/multipart"
 	"net"
 	"net/http"
+	"net/textproto"
 	"net/url"
 )
 
@@ -139,7 +140,7 @@ func (c *container) Query(key string) ([]string, bool) {
 
 // Header returns value by header key.
 func (c *container) Header(key string) ([]string, bool) {
-	h := c.request.Header[key]
+	h := c.request.Header[textproto.CanonicalMIMEHeaderKey(key)]
 	return h, len(h) > 0
 }
 
