@@ -254,7 +254,11 @@ func (s *JSONSerializer) Consume(r io.Reader, v interface{}) error {
 	case *[]byte:
 		return s.consume(s.ContentType(), r, v)
 	}
-	return json.NewDecoder(r).Decode(v)
+	err := json.NewDecoder(r).Decode(v)
+	if err == io.EOF {
+		return nil
+	}
+	return err
 }
 
 // Produce marshals v to json and write to w.
@@ -284,7 +288,11 @@ func (s *XMLSerializer) Consume(r io.Reader, v interface{}) error {
 	case *[]byte:
 		return s.consume(s.ContentType(), r, v)
 	}
-	return xml.NewDecoder(r).Decode(v)
+	err := xml.NewDecoder(r).Decode(v)
+	if err == io.EOF {
+		return nil
+	}
+	return err
 }
 
 // Produce marshals v to xml and write to w.
