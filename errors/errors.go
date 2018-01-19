@@ -17,6 +17,7 @@ limitations under the License.
 package errors
 
 import (
+	"encoding/xml"
 	"fmt"
 )
 
@@ -38,6 +39,33 @@ type Factory interface {
 	Derived(e error) bool
 }
 
+// dataMap is a wrapper for marshalling map into XML. Standard package can't
+// generate XML for map.
+type dataMap map[string]string
+
+// MarshalXML marshals data map into XML.
+func (dm dataMap) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
+	tokens := []xml.Token{start}
+	for key, value := range dm {
+		t := xml.StartElement{
+			Name: xml.Name{
+				Local: key,
+			},
+		}
+		tokens = append(tokens, t, xml.CharData(value), xml.EndElement{Name: t.Name})
+	}
+	tokens = append(tokens, xml.EndElement{Name: start.Name})
+
+	for _, t := range tokens {
+		err := e.EncodeToken(t)
+		if err != nil {
+			return err
+		}
+	}
+
+	return e.Flush()
+}
+
 // message can be marshaled for transferring.
 //
 // Example:
@@ -50,11 +78,11 @@ type Factory interface {
 // }
 type message struct {
 	// Reason is a unique key for an error in global environment.
-	Reason Reason `json:"reason,omitempty"`
+	Reason Reason `json:"reason,omitempty" xml:",omitempty"`
 	// Message contains the detailed description of an error.
 	Message string `json:"message"`
 	// Data is used for i18n.
-	Data map[string]string `json:"data,omitempty"`
+	Data dataMap `json:"data,omitempty" xml:",omitempty"`
 }
 
 // err implements error interface.
