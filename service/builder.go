@@ -203,9 +203,6 @@ func (b *builder) Build() (Service, error) {
 		logger:    b.logger,
 		producers: AllProducers(),
 	}
-	for _, p := range producers {
-		s.producers = append(s.producers, p)
-	}
 	s.pool.New = newHTTPContext
 	return s, nil
 }
