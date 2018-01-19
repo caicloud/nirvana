@@ -80,7 +80,7 @@ func ConsumerFor(contentType string) Consumer {
 func AllProducers() []Producer {
 	ps := make([]Producer, 0, len(producers))
 	// JSON always the first one in producers.
-	// The first one will be choosed when accept types
+	// The first one will be chosen when accept types
 	// are not recognized.
 	if p := producers[definition.MIMEJSON]; p != nil {
 		ps = append(ps, p)
