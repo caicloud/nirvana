@@ -113,6 +113,7 @@ func wapper(c *nirvana.Config, f func(c *config)) {
 		cfg = conf.(*config)
 	}
 	f(cfg)
+	opentracing.SetGlobalTracer(cfg.tracer)
 	c.Set(ExternalConfigName, cfg)
 }
 
