@@ -40,7 +40,7 @@ func (t kind) Build(reason Reason, format string) Factory {
 
 // Error immediately creates an error without reason.
 func (t kind) Error(format string, v ...interface{}) error {
-	msg, data := expand(format, v)
+	msg, data := expand(format, v...)
 	return &err{
 		message: message{
 			Message: msg,

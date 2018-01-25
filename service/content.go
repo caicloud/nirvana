@@ -80,7 +80,7 @@ func ConsumerFor(contentType string) Consumer {
 func AllProducers() []Producer {
 	ps := make([]Producer, 0, len(producers))
 	// JSON always the first one in producers.
-	// The first one will be choosed when accept types
+	// The first one will be chosen when accept types
 	// are not recognized.
 	if p := producers[definition.MIMEJSON]; p != nil {
 		ps = append(ps, p)
@@ -254,7 +254,11 @@ func (s *JSONSerializer) Consume(r io.Reader, v interface{}) error {
 	case *[]byte:
 		return s.consume(s.ContentType(), r, v)
 	}
-	return json.NewDecoder(r).Decode(v)
+	err := json.NewDecoder(r).Decode(v)
+	if err == io.EOF {
+		return nil
+	}
+	return err
 }
 
 // Produce marshals v to json and write to w.
@@ -284,7 +288,11 @@ func (s *XMLSerializer) Consume(r io.Reader, v interface{}) error {
 	case *[]byte:
 		return s.consume(s.ContentType(), r, v)
 	}
-	return xml.NewDecoder(r).Decode(v)
+	err := xml.NewDecoder(r).Decode(v)
+	if err == io.EOF {
+		return nil
+	}
+	return err
 }
 
 // Produce marshals v to xml and write to w.
