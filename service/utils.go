@@ -87,3 +87,7 @@ var invalidTypeForConsumer = errors.InternalServerError.Build("Nirvana:Service:I
 	"consumer ${content} can't consume data for type ${type}")
 var invalidTypeForProducer = errors.InternalServerError.Build("Nirvana:Service:InvalidTypeForProducer",
 	"producer ${content} can't produce data for type ${type}")
+var invalidOperatorInType = errors.InternalServerError.Build("Nirvana:Service:InvalidOperatorInType",
+	"the type ${type} is not compatible to the in type of the ${index} operator")
+var invalidOperatorOutType = errors.InternalServerError.Build("Nirvana:Service:InvalidOperatorOutType",
+	"the out type of the ${index} operator is not compatible to the type ${type}")
