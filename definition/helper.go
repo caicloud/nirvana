@@ -196,7 +196,8 @@ func ErrorResult() Result {
 
 // OperatorFunc creates operator by function.
 // function must has signature:
-//  func f(context.Context, AnyType) (AnyType, error)
+//  func f(context.Context, string, AnyType) (AnyType, error)
+// The second parameter is a string that is used to identify field.
 // AnyType can be any type in go. But struct type and
 // built-in data type is recommended.
 func OperatorFunc(kind string, f interface{}) Operator {
