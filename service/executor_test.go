@@ -43,7 +43,7 @@ func TestAddDefinition(t *testing.T) {
 			definition.Definition{
 				Method: definition.Get,
 			},
-			definitionNoComsumes,
+			definitionNoConsumes,
 		},
 		{
 			definition.Definition{
@@ -77,7 +77,7 @@ func TestAddDefinition(t *testing.T) {
 				Function: func() {
 				},
 			},
-			definitionNoComsumer,
+			definitionNoConsumer,
 		},
 		{
 			definition.Definition{

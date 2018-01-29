@@ -50,7 +50,7 @@ func (i *inspector) addDefinition(d definition.Definition) error {
 		return definitionNoMethod.Error(d.Method, i.path)
 	}
 	if len(d.Consumes) <= 0 {
-		return definitionNoComsumes.Error(d.Method, i.path)
+		return definitionNoConsumes.Error(d.Method, i.path)
 	}
 	if len(d.Produces) <= 0 {
 		return definitionNoProduces.Error(d.Method, i.path)
@@ -79,7 +79,7 @@ func (i *inspector) addDefinition(d definition.Definition) error {
 			c.consumers = append(c.consumers, consumer)
 			consumes[consumer.ContentType()] = true
 		} else {
-			return definitionNoComsumer.Error(ct, d.Method, i.path)
+			return definitionNoConsumer.Error(ct, d.Method, i.path)
 		}
 	}
 	if consumeAll {
