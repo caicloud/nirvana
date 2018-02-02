@@ -22,7 +22,6 @@ package api
 
 import (
 	common "github.com/caicloud/nirvana/utils/openapi/common"
-	"github.com/go-openapi/spec"
 )
 
 // GetOpenAPIDefinitions defines function to get OpenAPI definition
