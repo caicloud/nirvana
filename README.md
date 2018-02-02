@@ -1,4 +1,6 @@
-# nirvana
+# Nirvana
+
+<img align="right" width="225px" src="https://user-images.githubusercontent.com/2191361/35680342-08918456-0795-11e8-8dcd-96a698939e7c.png">
 
 [![Build Status](https://travis-ci.org/caicloud/nirvana.svg?branch=master)](https://travis-ci.org/caicloud/nirvana)
 [![Coverage Status](https://coveralls.io/repos/github/caicloud/nirvana/badge.svg?branch=master)](https://coveralls.io/github/caicloud/nirvana?branch=master)
@@ -6,54 +8,30 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/caicloud/nirvana)](https://goreportcard.com/report/github.com/caicloud/nirvana)
 [![Code Health](https://landscape.io/github/caicloud/nirvana/master/landscape.svg?style=flat)](https://landscape.io/github/caicloud/nirvana/master)
 
-## Introduction
+Nirvana is a golang API framework designed for productivity and usability. It aims to be the building block for
+all golang services in Caicloud. The high-level goals and features include:
 
-nirvana is a golang http framework designed with productivity and usability in mind. It aims to be
-the building block for all golang services in Caicloud. The high-level goals are:
+- consistent API behavior, structure and layout across all golang projects
+- improve engineering productivity with openAPI and client generation, etc
+- validation can be added by declaring validation method as part of struct definition
+- out-of-box instrumentation support, e.g. metrics, profiling, tracing, etc
+- easy and standard configuration management, as well as standard cli interface
 
-- Reduce api level errors and inconsistency
-- Improve engineering productivity via removing repeated work, adding code generation, etc
-- Adding new resource type should only require defining struct definition
-- Adding validation should only require declaring validation method as part of struct definition
-- Consistent behavior, structure and layout across all golang server projects
+Nirvana is also extensible and performant, with the goal to support fast developmenet velocity.
 
-## Features
+## Installation
 
-Following is a list of requirements we've seen from writing golang services. Some of these features
-are general ones while some are specific to Caicloud. Note this is not an exhaustive list.
+```
+go get -u github.com/caicloud/nirvana
+```
 
-**Routing, Request & Response**
+## Getting Started
 
-- Routes mapping from request to function
-- Routes grouping
-- Request/Response API object marshal/unmarshal
-- General middleware support with sane default (logging, recovery, tracing)
-- Contextual process chain and parameter injection
-- Enforcing API error convention
+### API Quick Start
 
-**Instrumentation**
+In Nirvana, APIs are defined via `definition.Descriptor`. We will not introduce details of the concept `Descriptor`,
+instead, let's take a look at a contrived example:
 
-- Provide default metrics at well-known endpoints for prometheus to scrape
-- Tracing is provided by default to allow better troubleshooting
-- Profiling can be enabled in debug mode for troubleshootting
-
-**Validation**
-
-- Provide default validation on api types with struct tags
-- Support custom validations defined by developers on api types
-- Support validation on all parameters (path, query, etc)
-
-**Usability**
-
-- A working project should be brought up with few lines using the framework
-- Framework must automatically follow engineering conventions to help developers focus on business logic
-- OpenAPI (swagger 2.0) specification can be generated automatically with no extra work
-- Provides a well-established layout conforming to golang project layout
-- Easy and standard configuration management
-- A reasonable support for websocket
-
-## Get Started
-In Nirvana, All APIs are described by `definition.Descriptor`. Before explaining, An example would let you have a straightforward sense.
 ```go
 // API descriptor.
 var echo = definition.Descriptor{
@@ -85,17 +63,11 @@ var echo = definition.Descriptor{
 		},
 	},
 }
-
-// API function.
-func Echo(ctx context.Context, msg string) (string, error) {
-	return msg, nil
-}
 ```
-It's an echo API descriptor. It may be a bit complex at your first sight, but it should be extremely obvious after you understanding the structure.
 
-First, look at the API function `Echo`. It receives two parameters and returns two results. As the default config, `context.Context` always is the first parameter in API function. Apart form the first parameter, the usage of other parts is normal. As you see, it's an `Echo` function.
+This is an echo server API descriptor. The descriptor is a bit complex at first glance, but is actually quite
+simple. Below is a partially translated HTTP language:
 
-As the name of `Descriptor`, it describes what an API is. The API only receives requests like:
 ```
 HTTP Path: /echo[?msg=]
 HTTP Method: Get
@@ -103,9 +75,23 @@ HTTP Headers:
     Content-Type: Any Type
     Accept: text/plain or */*
 ```
-When a request is coming, Nirvana would parse it and generate function parameters for API function by `Definition.Parameters`. Parameters are converted to the type defined in API function from request. After the execution of API function, Nirvana collects the results and writes to request. `Definition.Produces` decides the format of the result.
 
-After defining API descriptors, the remaining work is creating an server to serve requests:
+The request handler `Echo` receives two parameters and returns two results, as defined in our descriptor.
+Note the first parameter is always `context.Context` - it is injected by default config.
+
+```go
+// API function.
+func Echo(ctx context.Context, msg string) (string, error) {
+	return msg, nil
+}
+```
+
+Nirvana will parse incoming request and generate function parameters for `Echo` function as defined via
+`Definition.Parameters` - parameters will be converted into the exact type defined in `Echo`. Once done,
+Nirvana collects the results and sends back response.
+
+With our API descriptors ready, we can now create a server to serve requests:
+
 ```go
 package main
 
@@ -126,6 +112,167 @@ func main() {
 	}
 }
 ```
-Nirvana server has a plugin machanism. All plugins are registered into config. The server will install them when the server is starting.
-`nirvana.Descriptor()` is a plugin method for installing API descriptors into config. After server starting, you could test echo API by `http://localhost:8080/echo?msg=test`.
 
+Now run the server and test it:
+
+```
+go run ./examples/getting-started/basics/echo.go
+INFO  0202-16:34:38.663+08 echo.go:65 | Listening on :8080
+INFO  0202-16:34:38.663+08 builder.go:163 | Definitions: 1 Middlewares: 0 Path: /echo
+INFO  0202-16:34:38.663+08 builder.go:178 |   Method: Get Consumes: [*/*] Produces: [text/plain]
+```
+
+In another terminal:
+
+```
+$ curl "http://localhost:8080/echo?msg=test"
+test
+```
+
+For full example code, see [basics](./examples/getting-started/basics).
+
+### Validate it!
+
+Now you are tired of echoing non-sense testing message and want to only reply message longer than 10 characters, such
+validation can be easily added when defining your descriptor:
+
+```go
+Parameters: []definition.Parameter{
+	{
+		Source:      definition.Query,
+		Name:        "msg",
+		Description: "Corresponding to the second parameter",
+		Operators:   []definition.Operator{validator.String("gt=10")},
+	},
+},
+```
+
+`Operator` is a concept in Nirvana to allow framework user to operate on input request; validation is one of several
+pre-defined operators. Another example of `operator` is `convertor`, which allows user to convert between different
+versions of an input.
+
+Under the hood, Nirvana uses [go-playground/validator.v9](https://github.com/go-playground/validator) for validation,
+which defines a list of useful tags. It also supports custom validation. Nirvana integrates smoothly with the package,
+see user guide for more advanced usage.
+
+Now run our new echo server and verify validation works:
+
+```
+$ go run echo.go
+INFO  0202-11:18:50.235+08 echo.go:67 | Listening on :8080
+INFO  0202-11:18:50.235+08 builder.go:163 | Definitions: 1 Middlewares: 0 Path: /echo
+INFO  0202-11:18:50.235+08 builder.go:178 |   Method: Get Consumes: [*/*] Produces: [text/plain]
+```
+
+In another terminal:
+
+```
+$ curl "http://localhost:8080/echo?msg=test"
+Key: '' Error:Field validation for '' failed on the 'gt' tag
+
+$ curl "http://localhost:8080/echo?msg=testtesttest"
+testtesttest
+```
+
+It works! The above example teaches us two facts:
+
+1. Adding validation support with Nirvana is very simple
+2. 10 characters validation is not enough to prevent spam :) (checkout guide below to add your own validation)
+
+For full example code, see [validator](./examples/getting-started/validator).
+
+### Is it popular?
+
+It's time to expose some metrics to help understand and diagonse our service! Nirvana has out-of-box support for
+instrumentation, to enable exposing request metrics, just add one more configuration:
+
+```go
+config := nirvana.NewDefaultConfig("", 8080).
+	Configure(
+		metrics.Path("/metrics"),
+	)
+```
+
+The actual configuration is done with `metrics` plugin. `plugin` is another concept in Nirvana - we can always
+add more functionalities to Nirvana via plugin, and each plugin can be individually enabled or disabled. How
+plugins are implemented depends on plugin author. For example, some plugins are simply static configuration,
+while some are more complex middlewares. All plugins are registered into config. The server will install them
+when the server starts.
+
+Now if we start our server again and query endpoint `http://localhost:8080/metrics`, we'll see a wealth of
+information, which are exposed as [prometheus](https://prometheus.io) format.
+
+TODO(ddysher): add default metrics, caitong
+
+For full example code, see [metrics](./examples/getting-started/metrics).
+
+### Show me the docs
+
+You want more people to use the service. To make it easy for them, you need API documentations. Nirvana has
+built-in support to generate openAPI documentation. To generate the docs, you need to first define where types
+come from, in our example, it's in the main package:
+
+```go
+// Package main is definition of api
+// +caicloud:openapi=true
+package main
+```
+
+Create a sub-package `api` to hold generated definitions, then generate them:
+
+```
+go run ${GOPATH}/src/github.com/caicloud/nirvana/cmd/openapi-gen/main.go \
+-i github.com/caicloud/nirvana/examples/getting-started/openapi \
+-p github.com/caicloud/nirvana/examples/getting-started/openapi/api
+```
+
+Now we have generated definition, we can add generation support in the main function:
+
+```go
+swagger, err := builder.BuildOpenAPISpec(&echo, &common.Config{
+	Info: &spec.Info{
+		InfoProps: spec.InfoProps{
+			Title:       "echo server openAPI",
+			Description: "This is open API documentation of echo server",
+			Contact: &spec.ContactInfo{
+				Name: "nirvana",
+				URL:  "https://gonirvana.io",
+			},
+			License: &spec.License{
+				Name: "Apache License, Version 2.0",
+				URL:  "http://www.apache.org/licenses/LICENSE-2.0",
+			},
+			Version: "v1.0.0",
+		},
+	},
+	GetDefinitions: api.GetOpenAPIDefinitions,
+})
+if err != nil {
+	panic(err)
+}
+encoder := json.NewEncoder(os.Stdout)
+if err := encoder.Encode(swagger); err != nil {
+	panic(err)
+}
+```
+
+Now run the following command, we can generate our swagger.json file. Put it into https://editor.swagger.io/,
+we'll be able to view our generated API docs.
+
+```
+go run echo.go > /tmp/swagger.json
+```
+
+TODO(ddysher): there's quite a bit manual setup to generate openAPI docs, liubo
+
+### Make it configurable
+
+@zoumo move here
+
+### I want more
+
+TODO
+
+## User Guide
+
+TODO
