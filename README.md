@@ -183,7 +183,7 @@ For full example code, see [validator](./examples/getting-started/validator).
 
 ### Is it popular?
 
-It's time to expose some metrics to help understand and diagonse our service! Nirvana has out-of-box support for
+It's time to expose some metrics to help understand and diagnose our service! Nirvana has out-of-box support for
 instrumentation, to enable exposing request metrics, just add one more configuration:
 
 ```go
