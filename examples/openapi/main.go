@@ -28,6 +28,7 @@ import (
 )
 
 func main() {
+	// v1.Desc need to be changed to your own Desc struct.
 	swagger, err := builder.BuildOpenAPISpec(&v1.Desc, &common.Config{
 		Info: &spec.Info{
 			InfoProps: spec.InfoProps{
@@ -45,6 +46,7 @@ func main() {
 				Version: "v1.0.0",
 			},
 		},
+		// Your own generated struct.
 		GetDefinitions: api.GetOpenAPIDefinitions,
 	})
 	if err != nil {
