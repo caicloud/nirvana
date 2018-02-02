@@ -50,7 +50,7 @@ func (i *inspector) addDefinition(d definition.Definition) error {
 		return definitionNoMethod.Error(d.Method, i.path)
 	}
 	if len(d.Consumes) <= 0 {
-		return definitionNoComsumes.Error(d.Method, i.path)
+		return definitionNoConsumes.Error(d.Method, i.path)
 	}
 	if len(d.Produces) <= 0 {
 		return definitionNoProduces.Error(d.Method, i.path)
@@ -79,7 +79,7 @@ func (i *inspector) addDefinition(d definition.Definition) error {
 			c.consumers = append(c.consumers, consumer)
 			consumes[consumer.ContentType()] = true
 		} else {
-			return definitionNoComsumer.Error(ct, d.Method, i.path)
+			return definitionNoConsumer.Error(ct, d.Method, i.path)
 		}
 	}
 	if consumeAll {
@@ -189,6 +189,12 @@ func (i *inspector) generateParameters(funcName string, typ reflect.Type, ps []d
 			i.logger.Errorf("Can't validate %s parameter of function %s: %s", order(index+1), funcName, err.Error())
 			return nil, err
 		}
+		if len(param.operators) > 0 {
+			if err := i.validateOperators(param.targetType, typ.In(index), param.operators); err != nil {
+				i.logger.Errorf("Can't validate operators for %s parameter of function %s: %s", order(index+1), funcName, err.Error())
+				return nil, err
+			}
+		}
 		parameters = append(parameters, param)
 	}
 	return parameters, nil
@@ -202,14 +208,23 @@ func (i *inspector) generateResults(funcName string, typ reflect.Type, rs []defi
 	for index, r := range rs {
 		handler := DestinationHandlerFor(r.Destination)
 		if handler == nil {
-			return nil, noDestinationHandler.Error(r.Description)
+			return nil, noDestinationHandler.Error(r.Destination)
 		}
 		result := result{
 			index:     index,
 			handler:   handler,
 			operators: r.Operators,
 		}
-		if err := handler.Validate(typ.Out(index)); err != nil {
+		outType := typ.Out(index)
+		if len(result.operators) > 0 {
+			LastOperatorOutType := result.operators[len(result.operators)-1].Out()
+			if err := i.validateOperators(outType, LastOperatorOutType, result.operators); err != nil {
+				i.logger.Errorf("Can't validate operators for %s result of function %s: %s", order(index+1), funcName, err.Error())
+				return nil, err
+			}
+			outType = LastOperatorOutType
+		}
+		if err := handler.Validate(outType); err != nil {
 			// Order from 0 is odd. So index+1.
 			i.logger.Errorf("Can't validate %s result of function %s: %s", order(index+1), funcName, err.Error())
 			return nil, err
@@ -219,6 +234,32 @@ func (i *inspector) generateResults(funcName string, typ reflect.Type, rs []defi
 	sort.Sort(resultsSorter(results))
 	return results, nil
 
+}
+
+// validateOperators checks if the chain is valid:
+//   in -> operators[0].In()
+//   operators[0].Out() -> operators[1].In()
+//   ...
+//   operators[N].Out() -> out
+func (i *inspector) validateOperators(in, out reflect.Type, operators []definition.Operator) error {
+	if len(operators) <= 0 {
+		return nil
+	}
+	index := 0
+	for ; index < len(operators); index++ {
+		operator := operators[index]
+		if !in.AssignableTo(operator.In()) {
+			// The out type of operator[index-1] is not compatible to operator[index].
+			return invalidOperatorInType.Error(in, order(index+1))
+		}
+		in = operator.Out()
+	}
+	typ := operators[index-1].Out()
+	if !typ.AssignableTo(out) {
+		// The last operator is not compatible to out type.
+		return invalidOperatorOutType.Error(order(index), out)
+	}
+	return nil
 }
 
 type resultsSorter []result

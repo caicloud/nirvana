@@ -59,9 +59,9 @@ func FirstContextParameter() DefinitionModifier {
 	}
 }
 
-// ConsumeAllIfComsumesIsEmpty adds definition.MIMEAll to consumes if consumes
+// ConsumeAllIfConsumesIsEmpty adds definition.MIMEAll to consumes if consumes
 // is empty.
-func ConsumeAllIfComsumesIsEmpty() DefinitionModifier {
+func ConsumeAllIfConsumesIsEmpty() DefinitionModifier {
 	return func(d *definition.Definition) {
 		if len(d.Consumes) <= 0 {
 			d.Consumes = []string{definition.MIMEAll}

@@ -53,12 +53,12 @@ var invalidProducer = errors.InternalServerError.Build("Nirvana:Service:InvalidP
 var noConnectionHijacker = errors.InternalServerError.Build("Nirvana:Service:NoConnectionHijacker",
 	"underlying http.ResponseWriter does not implement http.Hijacker")
 var definitionNoMethod = errors.InternalServerError.Build("Nirvana:Service:DefinitionNoMethod", "no http method in [${method}]${path}")
-var definitionNoComsumes = errors.InternalServerError.Build("Nirvana:Service:DefinitionNoComsumes", "no content type to consume in [${method}]${path}")
+var definitionNoConsumes = errors.InternalServerError.Build("Nirvana:Service:DefinitionNoConsumes", "no content type to consume in [${method}]${path}")
 var definitionNoProduces = errors.InternalServerError.Build("Nirvana:Service:DefinitionNoProduces", "no content type to produce in [${method}]${path}")
 var definitionNoFunction = errors.InternalServerError.Build("Nirvana:Service:DefinitionNoFunction", "no function in [${method}]${path}")
 var definitionInvalidFunctionType = errors.InternalServerError.Build("Nirvana:Service:DefinitionInvalidFunctionType",
 	"${type} is not function in [${method}]${path}")
-var definitionNoComsumer = errors.InternalServerError.Build("Nirvana:Service:DefinitionNoComsumer",
+var definitionNoConsumer = errors.InternalServerError.Build("Nirvana:Service:DefinitionNoConsumer",
 	"no consumer for content type ${type} in [${method}]${path}")
 var definitionNoProducer = errors.InternalServerError.Build("Nirvana:Service:DefinitionNoProducer",
 	"no producer for content type ${type} in [${method}]${path}")
@@ -87,3 +87,7 @@ var invalidTypeForConsumer = errors.InternalServerError.Build("Nirvana:Service:I
 	"consumer ${content} can't consume data for type ${type}")
 var invalidTypeForProducer = errors.InternalServerError.Build("Nirvana:Service:InvalidTypeForProducer",
 	"producer ${content} can't produce data for type ${type}")
+var invalidOperatorInType = errors.InternalServerError.Build("Nirvana:Service:InvalidOperatorInType",
+	"the type ${type} is not compatible to the in type of the ${index} operator")
+var invalidOperatorOutType = errors.InternalServerError.Build("Nirvana:Service:InvalidOperatorOutType",
+	"the out type of the ${index} operator is not compatible to the type ${type}")

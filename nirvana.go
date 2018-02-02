@@ -95,7 +95,7 @@ func (c *Config) forEach(f func(name string, config interface{}) error) error {
 // Default config contains:
 //  Filters: RedirectTrailingSlash, FillLeadingSlash, ParseRequestForm.
 //  Modifiers: FirstContextParameter, EmptyConsumeForHTTPGet,
-//             ConsumeAllIfComsumesIsEmpty, ProduceAllIfProducesIsEmpty,
+//             ConsumeAllIfConsumesIsEmpty, ProduceAllIfProducesIsEmpty,
 //             ConsumeNoneForHTTPGet, ConsumeNoneForHTTPDelete,
 //             ProduceNoneForHTTPDelete.
 func NewDefaultConfig(ip string, port uint16) *Config {
@@ -110,7 +110,7 @@ func NewDefaultConfig(ip string, port uint16) *Config {
 		),
 		Modifier(
 			service.FirstContextParameter(),
-			service.ConsumeAllIfComsumesIsEmpty(),
+			service.ConsumeAllIfConsumesIsEmpty(),
 			service.ProduceAllIfProducesIsEmpty(),
 			service.ConsumeNoneForHTTPGet(),
 			service.ConsumeNoneForHTTPDelete(),
