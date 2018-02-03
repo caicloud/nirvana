@@ -127,7 +127,6 @@ func (g *openAPIGen) Namers(ctx *generator.Context) namer.NameSystems {
 func (g *openAPIGen) Imports(ctx *generator.Context) []string {
 	importLines := []string{}
 	importLines = append(importLines, g.imports.ImportLines()...)
-	importLines = append(importLines, specPackagePath)
 	return importLines
 }
 
@@ -161,12 +160,15 @@ func argsFromType(t *types.Type) generator.Args {
 		"type":              t,
 		"ReferenceCallback": types.Ref(openAPICommonPackagePath, "ReferenceCallback"),
 		"OpenAPIDefinition": types.Ref(openAPICommonPackagePath, "OpenAPIDefinition"),
-		"SpecSchemaType":    types.Ref(specPackagePath, "Schema"),
+		"Schema":            types.Ref(specPackagePath, "Schema"),
+		"SchemaOrBool":      types.Ref(specPackagePath, "SchemaOrBool"),
+		"SchemaOrArray":     types.Ref(specPackagePath, "SchemaOrArray"),
+		"SchemaProps":       types.Ref(specPackagePath, "SchemaProps"),
 	}
 }
 
 func (g *openAPIGen) GenerateType(ctx *generator.Context, t *types.Type, w io.Writer) error {
-	glog.Errorf("generating for type %v", t)
+	glog.Infof("generating for type %v", t)
 	sw := generator.NewSnippetWriter(w, ctx, "$", "$")
 	if err := newOpenAPITypeWriter(sw).generate(t); err != nil {
 		return err
@@ -221,9 +223,9 @@ func (sw *openAPITypeWriter) generateElemSchema(t *types.Type) error {
 func (sw *openAPITypeWriter) generateSliceSchema(t *types.Type) error {
 	const (
 		header, footer = `Type: []string{"array"},
-			Items: &spec.SchemaOrArray{
-				Schema: &spec.Schema{
-					SchemaProps: spec.SchemaProps{
+			Items: &$.SchemaOrArray|raw${
+				Schema: &$.Schema|raw${
+					SchemaProps: $.SchemaProps|raw${
 			`, `	},
 				},
 			},
@@ -232,20 +234,20 @@ func (sw *openAPITypeWriter) generateSliceSchema(t *types.Type) error {
 
 	elemType := resolveAliasAndPtrType(t.Elem)
 
-	sw.Do(header, nil)
+	sw.Do(header, argsFromType(t))
 	if err := sw.generateElemSchema(elemType); err != nil {
 		return err
 	}
-	sw.Do(footer, nil)
+	sw.Do(footer, argsFromType(t))
 	return nil
 }
 
 func (sw *openAPITypeWriter) generateMapSchema(t *types.Type) error {
 	const (
 		header, footer = `Type: []string{"object"},
-			AdditionalProperties: &spec.SchemaOrBool{
-				Schema: &spec.Schema{
-					SchemaProps: spec.SchemaProps{
+			AdditionalProperties: &$.SchemaOrBool|raw${
+				Schema: &$.Schema|raw${
+					SchemaProps: $.SchemaProps|raw${
 			`, `	},
 				},
 			},
@@ -256,11 +258,11 @@ func (sw *openAPITypeWriter) generateMapSchema(t *types.Type) error {
 	// just ignore type of map key
 	elemType := resolveAliasAndPtrType(t.Elem)
 
-	sw.Do(header, nil)
+	sw.Do(header, argsFromType(t))
 	if err := sw.generateElemSchema(elemType); err != nil {
 		return err
 	}
-	sw.Do(footer, nil)
+	sw.Do(footer, argsFromType(t))
 	return nil
 }
 
@@ -315,8 +317,8 @@ func (sw *openAPITypeWriter) generateDescription(CommentLines []string) {
 
 func (sw *openAPITypeWriter) generateProperty(m *types.Member) error {
 	const (
-		header, footer = `"$.$": {
-				SchemaProps: spec.SchemaProps{
+		header, footer = `"$.name$": {
+				SchemaProps: $.SchemaProps|raw${
 			`, `},
 			},
 			`
@@ -327,12 +329,16 @@ func (sw *openAPITypeWriter) generateProperty(m *types.Member) error {
 	}
 
 	t := resolveAliasAndPtrType(m.Type)
-	sw.Do(header, name)
+
+	a := argsFromType(t)
+	a["name"] = name
+
+	sw.Do(header, a)
 	sw.generateDescription(m.CommentLines)
 	if err := sw.generateElemSchema(t); err != nil {
 		return err
 	}
-	sw.Do(footer, nil)
+	sw.Do(footer, a)
 	return nil
 }
 
@@ -365,12 +371,12 @@ func (sw *openAPITypeWriter) generatePropertyElem(t *types.Type) error {
 
 func (sw *openAPITypeWriter) generateProperties(t *types.Type) error {
 	const (
-		header, footer = `Properties: map[string]spec.Schema{
+		header, footer = `Properties: map[string]$.Schema|raw${
 			`, `},
 			`
 	)
 
-	sw.Do(header, nil)
+	sw.Do(header, argsFromType(t))
 	if err := sw.generatePropertyElem(t); err != nil {
 		return err
 	}
@@ -388,14 +394,14 @@ func (sw *openAPITypeWriter) generateRequired(required []string) {
 
 func (sw *openAPITypeWriter) generateSchema(t *types.Type) error {
 	const (
-		header, footer = `Schema: spec.Schema{
-				SchemaProps: spec.SchemaProps{
+		header, footer = `Schema: $.Schema|raw${
+				SchemaProps: $.SchemaProps|raw${
 			`, `},
 			},
 			`
 	)
 
-	sw.Do(header, nil)
+	sw.Do(header, argsFromType(t))
 	sw.generateDescription(t.CommentLines)
 	if err := sw.generateProperties(t); err != nil {
 		return err
