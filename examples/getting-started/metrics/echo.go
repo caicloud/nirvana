@@ -34,7 +34,7 @@ var echo = definition.Descriptor{
 			Method:   definition.Get,
 			Function: Echo,
 			Consumes: []string{definition.MIMEAll},
-			Produces: []string{definition.MIMEText},
+			Produces: []string{definition.MIMEJSON},
 			Parameters: []definition.Parameter{
 				{
 					Source:      definition.Query,
