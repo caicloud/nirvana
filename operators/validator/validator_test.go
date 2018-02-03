@@ -41,6 +41,17 @@ func TestVar(t *testing.T) {
 	}
 }
 
+func TestVarErr(t *testing.T) {
+	op := Int("gt=0,lt=10")
+	_, err := op.Operate(context.Background(), "testfield", 20)
+	if err == nil {
+		t.Fatal(err)
+	}
+	if err.Error() != "value '20' on query param 'testfield' cannot pass validator tag 'gt=0,lt=10'" {
+		t.Fatal(err)
+	}
+}
+
 func TestStruct(t *testing.T) {
 	var me = struct {
 		Name string `json:"name" validate:"required,printascii"`
@@ -56,6 +67,20 @@ func TestStruct(t *testing.T) {
 	validator := op.(Validator)
 	if validator.Category() != CategoryStruct {
 		t.Fatalf("%+v", validator)
+	}
+}
+
+func TestStructErr(t *testing.T) {
+	var me = struct {
+		Name string `json:"name" validate:"required,printascii,gt=10"`
+	}{"233"}
+	op := Struct(me)
+	_, err := op.Operate(context.Background(), "", me)
+	if err == nil {
+		t.Fatal(err)
+	}
+	if err.Error() != "value '233' on struct field 'Name' cannot pass validator tag 'gt'" {
+		t.Fatal(err)
 	}
 }
 

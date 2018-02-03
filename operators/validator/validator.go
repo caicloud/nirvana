@@ -18,10 +18,14 @@ package validator
 
 import (
 	"context"
+	"fmt"
 	"reflect"
+	"strings"
+
+	val "gopkg.in/go-playground/validator.v9"
 
 	"github.com/caicloud/nirvana/definition"
-	val "gopkg.in/go-playground/validator.v9"
+	"github.com/caicloud/nirvana/errors"
 )
 
 var std = val.New()
@@ -120,9 +124,8 @@ func Struct(instance interface{}) Validator {
 		in:  reflect.TypeOf(instance),
 		out: reflect.TypeOf(instance),
 		f: func(ctx context.Context, field string, object interface{}) (interface{}, error) {
-			// TODO: Convert the error to nirvana error.
 			err := std.StructCtx(ctx, object)
-			return object, err
+			return object, decorateStructErr(err)
 		},
 		category: CategoryStruct,
 	}
@@ -200,11 +203,32 @@ func varFor(tag string, instance interface{}) Validator {
 		in:  reflect.TypeOf(instance),
 		out: reflect.TypeOf(instance),
 		f: func(ctx context.Context, field string, object interface{}) (interface{}, error) {
-			// TODO: Convert the error to nirvana error.
 			err := std.VarCtx(ctx, object, tag)
-			return object, err
+			return object, decorateErr(err, field, object, tag)
 		},
 		category: CategoryVar,
 		tag:      tag,
 	}
+}
+
+func decorateErr(err error, field string, object interface{}, tag string) error {
+	if err == nil {
+		return nil
+	}
+	return errors.BadRequest.Error("value '${value}' on query param '${field}' cannot pass validator tag '${tag}'", object, field, tag)
+}
+
+func decorateStructErr(err error) error {
+	if err == nil {
+		return nil
+	}
+	if err, ok := err.(val.ValidationErrors); ok {
+		es := make([]string, 0, len(err))
+		for _, fe := range err {
+			es = append(es, fmt.Sprintf("value '%s' on struct field '%s' cannot pass validator tag '%s'", fe.Value(), fe.Field(), fe.Tag()))
+		}
+		return errors.BadRequest.Error("${err}", strings.Join(es, "; "))
+	}
+
+	return errors.BadRequest.Error("${err}", err)
 }
