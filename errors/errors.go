@@ -85,6 +85,11 @@ type message struct {
 	Data dataMap `json:"data,omitempty" xml:",omitempty"`
 }
 
+// Error returns error description.
+func (m *message) Error() string {
+	return m.Message
+}
+
 // err implements error interface.
 type err struct {
 	message
@@ -98,7 +103,7 @@ func (e *err) Code() int {
 
 // Message returns detailed message of the error.
 func (e *err) Message() interface{} {
-	return e.message
+	return &e.message
 }
 
 // Error returns error description.

@@ -132,7 +132,7 @@ func TestNewRaw(t *testing.T) {
 	err := NewFactory(400, "japari:NotFriend", "${kind} is not in japari park").Error("anje").(*err)
 	if err.Error() != "anje is not in japari park" ||
 		err.Code() != 400 ||
-		!reflect.DeepEqual(err.Message(), message{
+		!reflect.DeepEqual(err.Message(), &message{
 			Reason: "japari:NotFriend",
 			Data: map[string]string{
 				"kind": "anje",
