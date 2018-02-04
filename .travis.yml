@@ -13,5 +13,4 @@ before_install:
 script:
   - gometalinter --config=config.json ./...
   - goveralls -service=travis-ci
-  - hack/verify-govet.sh
-  - hack/verify-gofmt.sh
+  - make test
