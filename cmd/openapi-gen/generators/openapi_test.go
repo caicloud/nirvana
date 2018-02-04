@@ -44,29 +44,34 @@ func construct(t *testing.T, files map[string]string, testNamer namer.Namer) (*p
 	return b, u, o
 }
 
-func constructType(t *testing.T, code string) (*openAPITypeWriter, *types.Type, *bytes.Buffer) {
+func constructType(t *testing.T, code string) (*generator.Context, *types.Type, namer.ImportTracker) {
 	var testFiles = map[string]string{
 		"base/foo/bar.go": code,
 	}
+	it := generator.NewImportTracker()
 	rawNamer := namer.NewRawNamer("o", nil)
 	namers := namer.NameSystems{
-		"raw": namer.NewRawNamer("", nil),
+		"raw": namer.NewRawNamer("", it),
 	}
 	builder, universe, _ := construct(t, testFiles, rawNamer)
 	context, err := generator.NewContext(builder, namers, "raw")
 	if err != nil {
 		t.Fatal(err)
 	}
-	buffer := &bytes.Buffer{}
-	sw := generator.NewSnippetWriter(buffer, context, "$", "$")
 	blahT := universe.Type(types.Name{Package: "base/foo", Name: "Blah"})
-	return newOpenAPITypeWriter(sw), blahT, buffer
+	return context, blahT, it
+}
+
+func newWriter(ctx *generator.Context) (*openAPITypeWriter, *bytes.Buffer) {
+	buffer := &bytes.Buffer{}
+	sw := generator.NewSnippetWriter(buffer, ctx, "$", "$")
+	return newOpenAPITypeWriter(sw), buffer
 }
 
 // TODO(liubog2008): add more unit test
 
 func TestSimple(t *testing.T) {
-	sw, typ, buf := constructType(t, `
+	ctx, typ, _ := constructType(t, `
 package foo
 
 // Blah is a test.
@@ -108,6 +113,7 @@ type Blah struct {
 	ByteArray []byte
 }
 		`)
+	sw, buf := newWriter(ctx)
 	if err := sw.generate(typ); err != nil {
 		t.Fatal(err)
 	}
@@ -247,7 +253,7 @@ Required: []string{
 }
 
 func TestPointer(t *testing.T) {
-	sw, typ, buf := constructType(t, `
+	ctx, typ, it := constructType(t, `
 package foo
 
 // PointerSample demonstrate pointer's properties
@@ -262,6 +268,8 @@ type Blah struct {
 	MapPointer *map[string]string
 }
 	`)
+	sw, buf := newWriter(ctx)
+
 	err := sw.generate(typ)
 	if err != nil {
 		t.Fatal(err)
@@ -329,6 +337,12 @@ Dependencies: []string{
 },
 },
 `, string(res))
+
+	imports := it.ImportLines()
+	assert.Equal(t, []string{
+		`foo "base/foo"`,
+		`spec "github.com/go-openapi/spec"`,
+	}, imports, "imports should be equal")
 }
 
 func trimPrefixSpace(in []byte) []byte {
@@ -344,4 +358,18 @@ func trimPrefixSpace(in []byte) []byte {
 		}
 	}
 	return res
+}
+
+func TestContext(t *testing.T) {
+	ctx, typ, it := constructType(t, `
+package foo
+	`)
+	sw, _ := newWriter(ctx)
+	err := sw.generate(typ)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	imports := it.ImportLines()
+	assert.Equal(t, []string{}, imports, "imports should be equal")
 }
