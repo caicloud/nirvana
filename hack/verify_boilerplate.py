@@ -91,7 +91,7 @@ def file_passes(filename, refs, regexs):  # pylint: disable=too-many-locals
         if year.search(datum):
             return False
 
-    # Replace all occurrences of the regex "2018|2017" with "YEAR"
+    # Replace all occurrences of the regex "2017|2018" with "YEAR"
     when = regexs["date"]
     for idx, datum in enumerate(data):
         (data[idx], found) = when.subn('YEAR', datum)
