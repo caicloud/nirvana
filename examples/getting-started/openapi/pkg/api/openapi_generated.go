@@ -22,9 +22,36 @@ package api
 
 import (
 	common "github.com/caicloud/nirvana/utils/openapi/common"
+	spec "github.com/go-openapi/spec"
 )
 
 // GetOpenAPIDefinitions defines function to get OpenAPI definition
 func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenAPIDefinition {
-	return map[string]common.OpenAPIDefinition{}
+	return map[string]common.OpenAPIDefinition{
+		"github.com/caicloud/nirvana/examples/getting-started/openapi/pkg/api.Message": {
+			Schema: spec.Schema{
+				SchemaProps: spec.SchemaProps{
+					Description: "Message defines the message to echo and to whom the message will be sent.",
+					Properties: map[string]spec.Schema{
+						"name": {
+							SchemaProps: spec.SchemaProps{
+								Type:   []string{"string"},
+								Format: "",
+							},
+						},
+						"message": {
+							SchemaProps: spec.SchemaProps{
+								Type:   []string{"string"},
+								Format: "",
+							},
+						},
+					},
+					Required: []string{
+						"name",
+						"message",
+					},
+				},
+			},
+		},
+	}
 }

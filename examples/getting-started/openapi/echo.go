@@ -15,7 +15,6 @@ limitations under the License.
 */
 
 // Package main is definition of api
-// +caicloud:openapi=true
 package main
 
 import (
@@ -26,7 +25,7 @@ import (
 	"github.com/caicloud/nirvana"
 	"github.com/caicloud/nirvana/cmd/openapi-gen/builder"
 	"github.com/caicloud/nirvana/definition"
-	"github.com/caicloud/nirvana/examples/openapi/api"
+	"github.com/caicloud/nirvana/examples/getting-started/openapi/pkg/api"
 	"github.com/caicloud/nirvana/log"
 	"github.com/caicloud/nirvana/operators/validator"
 	"github.com/caicloud/nirvana/plugins/metrics"
@@ -62,6 +61,30 @@ var echo = definition.Descriptor{
 				},
 			},
 		},
+		{
+			Method:   definition.Create,
+			Function: EchoV2,
+			Consumes: []string{definition.MIMEAll},
+			Produces: []string{definition.MIMEJSON},
+			Parameters: []definition.Parameter{
+				{
+					Source:      definition.Body,
+					Name:        "msg",
+					Description: "Corresponding to the second parameter",
+					Operators:   []definition.Operator{validator.Struct(&api.Message{})},
+				},
+			},
+			Results: []definition.Result{
+				{
+					Destination: definition.Data,
+					Description: "Corresponding to the first result",
+				},
+				{
+					Destination: definition.Error,
+					Description: "Corresponding to the second result",
+				},
+			},
+		},
 	},
 }
 
@@ -70,11 +93,20 @@ func Echo(ctx context.Context, msg string) (string, error) {
 	return msg, nil
 }
 
-func main() {
+var message map[string]string
+
+// API function.
+func EchoV2(ctx context.Context, msg *api.Message) (string, error) {
+	log.Infof("receive message from %v\n", msg.Name)
+	message[msg.Name] = msg.Message
+	return msg.Message, nil
+}
+
+func buildOpenAPI() {
 	swagger, err := builder.BuildOpenAPISpec(&echo, &common.Config{
 		Info: &spec.Info{
 			InfoProps: spec.InfoProps{
-				Title:       "echo server openAPI",
+				Title:       "echo server openapi",
 				Description: "This is open API documentation of echo server",
 				Contact: &spec.ContactInfo{
 					Name: "nirvana",
@@ -84,7 +116,7 @@ func main() {
 					Name: "Apache License, Version 2.0",
 					URL:  "http://www.apache.org/licenses/LICENSE-2.0",
 				},
-				Version: "v1.0.0",
+				Version: "v0.1.0",
 			},
 		},
 		GetDefinitions: api.GetOpenAPIDefinitions,
@@ -96,6 +128,12 @@ func main() {
 	if err := encoder.Encode(swagger); err != nil {
 		panic(err)
 	}
+}
+
+func main() {
+	buildOpenAPI()
+	message = make(map[string]string)
+
 	config := nirvana.NewDefaultConfig("", 8080).
 		Configure(
 			metrics.Path("/metrics"),

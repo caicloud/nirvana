@@ -6,7 +6,7 @@
 [![Coverage Status](https://coveralls.io/repos/github/caicloud/nirvana/badge.svg?branch=master)](https://coveralls.io/github/caicloud/nirvana?branch=master)
 [![GoDoc](http://godoc.org/github.com/caicloud/nirvana?status.svg)](http://godoc.org/github.com/caicloud/nirvana)
 [![Go Report Card](https://goreportcard.com/badge/github.com/caicloud/nirvana)](https://goreportcard.com/report/github.com/caicloud/nirvana)
-[![Code Health](https://landscape.io/github/caicloud/nirvana/master/landscape.svg?style=flat)](https://landscape.io/github/caicloud/nirvana/master)
+<!-- [![Code Health](https://landscape.io/github/caicloud/nirvana/master/landscape.svg?style=flat)](https://landscape.io/github/caicloud/nirvana/master) -->
 
 Nirvana is a golang API framework designed for productivity and usability. It aims to be the building block for
 all golang services in Caicloud. The high-level goals and features include:
@@ -23,6 +23,9 @@ Nirvana is also extensible and performant, with the goal to support fast develop
 
 ```
 go get -u github.com/caicloud/nirvana
+
+# for openapi generation
+go get -u github.com/caicloud/nirvana/cmd/openapi-gen
 ```
 
 ## Getting Started
@@ -158,7 +161,7 @@ see user guide for more advanced usage.
 Now run our new echo server and verify validation works:
 
 ```
-$ go run echo.go
+$ go run ./examples/getting-started/validator/echo.go
 INFO  0202-11:18:50.235+08 echo.go:67 | Listening on :8080
 INFO  0202-11:18:50.235+08 builder.go:163 | Definitions: 1 Middlewares: 0 Path: /echo
 INFO  0202-11:18:50.235+08 builder.go:178 |   Method: Get Consumes: [*/*] Produces: [text/plain]
@@ -208,25 +211,36 @@ For full example code, see [metrics](./examples/getting-started/metrics).
 
 ### Show me the docs
 
-You want more people to use the service. To make it easy for them, you need API documentations. Nirvana has
-built-in support to generate openAPI documentation. To generate the docs, you need to first define where types
-come from, in our example, it's in the main package:
+You've upgraded your service to provide a new endpoint to create an echo message, i.e.
+
+```
+curl -H "Content-Type: application/json" -X POST -d '{"name": "alice", "message": "echo to myself"}' http://localhost:8080/echo
+```
+
+This is a complicated enpoint. To make it easy for your user, you decide to provide API documentation.
+Nirvana has built-in support to generate openapi documentation. To generate the docs, you need to first
+define where types come from. In our example, it's in the `api` package:
 
 ```go
-// Package main is definition of api
+package api
+
+// Message defines the message to echo and to whom the message will be sent.
 // +caicloud:openapi=true
-package main
+type Message struct {
+	Name    string `json:"name" validate:"required"`
+	Message string `json:"message" validate:"gt=10"`
+}
 ```
 
-Create a sub-package `api` to hold generated definitions, then generate them:
+Next step is to generate openapi definitions:
 
 ```
-go run ${GOPATH}/src/github.com/caicloud/nirvana/cmd/openapi-gen/main.go \
--i github.com/caicloud/nirvana/examples/getting-started/openapi \
--p github.com/caicloud/nirvana/examples/getting-started/openapi/api
+openapi-gen \
+  -i github.com/caicloud/nirvana/examples/getting-started/openapi/pkg/api \
+  -p github.com/caicloud/nirvana/examples/getting-started/openapi/pkg/api
 ```
 
-Now we have generated definition, we can add generation support in the main function:
+Finally, we can build our openapi specification:
 
 ```go
 swagger, err := builder.BuildOpenAPISpec(&echo, &common.Config{
@@ -260,16 +274,14 @@ Now run the following command, we can generate our swagger.json file. Put it int
 we'll be able to view our generated API docs.
 
 ```
-go run echo.go > /tmp/swagger.json
+go run ./examples/getting-started/openapi/echo.go > /tmp/swagger.json
 ```
+
+For full example code, see [openapi](./examples/getting-started/openapi).
 
 TODO(ddysher): there's quite a bit manual setup to generate openAPI docs, liubo
 
 ### Make it configurable
-
-@zoumo move here
-
-### I want more
 
 TODO
 
