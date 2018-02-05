@@ -17,9 +17,15 @@ limitations under the License.
 package metrics
 
 import (
+	"context"
+	"net/http"
+	"strconv"
+	"time"
+
 	"github.com/caicloud/nirvana"
 	"github.com/caicloud/nirvana/definition"
 	"github.com/caicloud/nirvana/service"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
@@ -32,10 +38,15 @@ const ExternalConfigName = "metrics"
 
 // config is metrics config.
 type config struct {
-	path string
+	path      string
+	namespace string
 }
 
-type metricsInstaller struct{}
+type metricsInstaller struct {
+	requestCounter          *prometheus.CounterVec
+	requestLatencies        *prometheus.HistogramVec
+	requestLatenciesSummary *prometheus.SummaryVec
+}
 
 // Name is the external config name.
 func (i *metricsInstaller) Name() string {
@@ -46,10 +57,71 @@ func (i *metricsInstaller) Name() string {
 func (i *metricsInstaller) Install(builder service.Builder, cfg *nirvana.Config) error {
 	var err error
 	wapper(cfg, func(c *config) {
-		err = builder.AddDescriptor(definition.SimpleDescriptor(definition.Get, c.path, service.WarpHTTPHandler(promhttp.Handler())))
+		i.requestCounter = prometheus.NewCounterVec(
+			prometheus.CounterOpts{
+				Namespace: c.namespace,
+				Name:      "request_count",
+				Help:      "Counter of server requests broken out for each verb, API resource, client, and HTTP response contentType and code.",
+			},
+			[]string{"method", "path", "client", "contentType", "code"},
+		)
+		i.requestLatencies = prometheus.NewHistogramVec(
+			prometheus.HistogramOpts{
+				Namespace: c.namespace,
+				Name:      "request_latencies",
+				Help:      "Response latency distribution in microseconds for each verb, resource and client.",
+				Buckets:   prometheus.ExponentialBuckets(125000, 2.0, 7),
+			},
+			[]string{"method", "path"},
+		)
+		i.requestLatenciesSummary = prometheus.NewSummaryVec(
+			prometheus.SummaryOpts{
+				Namespace: c.namespace,
+				Name:      "request_latencies_summary",
+				Help:      "Response latency summary in microseconds for each verb and resource.",
+				MaxAge:    time.Hour,
+			},
+			[]string{"method", "path"},
+		)
+
+		prometheus.MustRegister(i.requestCounter)
+		prometheus.MustRegister(i.requestLatencies)
+		prometheus.MustRegister(i.requestLatenciesSummary)
+
+		monitorMiddleware := definition.Descriptor{
+			Path:        "/",
+			Middlewares: []definition.Middleware{i.middleware()},
+		}
+		metricsEndpoint := definition.SimpleDescriptor(definition.Get, c.path, service.WarpHTTPHandler(promhttp.Handler()))
+		err = builder.AddDescriptor(monitorMiddleware, metricsEndpoint)
 	})
 	return err
+}
 
+// middleware created definition middleware for metrics.
+func (i *metricsInstaller) middleware() definition.Middleware {
+	return func(ctx context.Context, next definition.Chain) error {
+		startTime := time.Now()
+		_ = next.Continue(ctx)
+		httpCtx := service.HTTPContextFrom(ctx)
+		req := httpCtx.Request()
+		resp := httpCtx.ResponseWriter()
+		path := req.URL.Path
+		elapsed := float64((time.Since(startTime)) / time.Millisecond)
+		i.requestCounter.WithLabelValues(req.Method, path, getHTTPClient(req), req.Header.Get("Content-Type"), strconv.Itoa(resp.StatusCode())).Inc()
+		i.requestLatencies.WithLabelValues(req.Method, path).Observe(elapsed)
+		i.requestLatenciesSummary.WithLabelValues(req.Method, path).Observe(elapsed)
+		return nil
+	}
+}
+
+func getHTTPClient(req *http.Request) string {
+	if userAgent, ok := req.Header["User-Agent"]; ok {
+		if len(userAgent) > 0 {
+			return userAgent[0]
+		}
+	}
+	return "unknown"
 }
 
 // Uninstall uninstalls stuffs after server terminating.
@@ -65,13 +137,23 @@ func Disable() nirvana.Configurer {
 	}
 }
 
+// Default Configurer does nothing but ensure default config was set.
+func Default() nirvana.Configurer {
+	return func(c *nirvana.Config) error {
+		wapper(c, func(c *config) {
+		})
+		return nil
+	}
+}
+
 func wapper(c *nirvana.Config, f func(c *config)) {
 	conf := c.Config(ExternalConfigName)
 	var cfg *config
 	if conf == nil {
 		// Default config.
 		cfg = &config{
-			path: "/metrics",
+			path:      "/metrics",
+			namespace: "nirvana_app",
 		}
 	} else {
 		// Panic if config type is wrong.
@@ -82,14 +164,26 @@ func wapper(c *nirvana.Config, f func(c *config)) {
 }
 
 // Path returns a configurer to set metrics path.
-// Empty path means /metrics.
 func Path(path string) nirvana.Configurer {
 	if path == "" {
-		path = "/metrics"
+		panic("url for metrics endpoint cannot be empty")
 	}
 	return func(c *nirvana.Config) error {
 		wapper(c, func(c *config) {
 			c.path = path
+		})
+		return nil
+	}
+}
+
+// Namespace returns a configure to set metrics namespace.
+func Namespace(ns string) nirvana.Configurer {
+	if ns == "" {
+		panic("namespace for metrics cannot be empty")
+	}
+	return func(c *nirvana.Config) error {
+		wapper(c, func(c *config) {
+			c.namespace = ns
 		})
 		return nil
 	}
