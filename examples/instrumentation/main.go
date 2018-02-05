@@ -36,7 +36,7 @@ func main() {
 		Configure(
 			profiling.Path("/debug/pprof/"),
 			profiling.Contention(true),
-			// By using metrics.Default configurer, metrics for http requests will be prefixed with the default 'nirvana_app' prefix.
+			// By using metrics.Default configurer, metrics for http requests will be prefixed with the default 'nirvana' prefix.
 			// If you want use a different prefix, use metrics.Namespace configurer.
 			metrics.Default(),
 			nirvana.Descriptor(example),
