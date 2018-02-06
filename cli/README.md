@@ -6,9 +6,9 @@ CLI provides a higher level and more friendly interfaces to build modern command
 
 It is based on
 
--   [spf13/pflag](https://github.com/spf13/pflag): to provide POSIX/GNU-style flags
--   [spf13/cobra](https://github.com/spf13/cobra): to provide a simple interface to create powerful modern CLI interfaces
--   [spf13/viper](https://github.com/spf13/viper): to provide a complete configuration sulution for [12-Factor](https://12factor.net) apps
+* [spf13/pflag](https://github.com/spf13/pflag): to provide POSIX/GNU-style flags
+* [spf13/cobra](https://github.com/spf13/cobra): to provide a simple interface to create powerful modern CLI interfaces
+* [spf13/viper](https://github.com/spf13/viper): to provide a complete configuration sulution for [12-Factor](https://12factor.net) apps
 
 ## Status
 
@@ -101,10 +101,10 @@ CLI supports the ability to bind your flags with ENV variables.
 
 CLI uses the following precedence order. Each item takes precedence over the item below it.
 
--   explicit calls to set
--   flag
--   env
--   default value
+* explicit calls to set
+* flag
+* env
+* default value
 
 ```go
 f := cli.StringFlag{
@@ -120,13 +120,13 @@ CLI supports the ability to bind you flags with ENV and add prefix automatically
 
 The following methods exist to aid working with ENV:
 
--   `AutomaticEnv()`: It tells CLI to bind all flags with ENV automatically. 
--   `SetEnvPrefix(string)`: It is **always** working with `AutomaticEnv` . It makes CLI add a prefix while reading from env variables.
--   `SetEnvKeyReplacer(*strings.Replacer)`: It makes CLI change the ENV by key replacer. For example, you can set a `UnderlineReplacer` to replace all `-` with `_` .
+* `AutomaticEnv()`: It tells CLI to bind all flags with ENV automatically.
+* `SetEnvPrefix(string)`: It is **always** working with `AutomaticEnv` . It makes CLI add a prefix while reading from env variables.
+* `SetEnvKeyReplacer(*strings.Replacer)`: It makes CLI change the ENV by key replacer. For example, you can set a `UnderlineReplacer` to replace all `-` with `_` .
 
-*When working with ENV variables, it’s important to recognize that CLI treats ENV variables case insensitively. All ENV variables are treated as UPPER case*
+_When working with ENV variables, it’s important to recognize that CLI treats ENV variables case insensitively. All ENV variables are treated as UPPER case_
 
->   **Note: If EnvKey is set, it will override the automatic env and does not automatically add the prefix.**
+> **Note: If EnvKey is set, it will override the automatic env and does not automatically add the prefix.**
 
 **Example**
 
@@ -148,25 +148,25 @@ cmd.AddFlag(f)
 // *log is TEST
 ```
 
-#### Hidden, Deprecated, ShorthandDeprecated 
+#### Hidden, Deprecated, ShorthandDeprecated
 
--   `Hidden` and `Deprecated` hide the whole flag in help information.
--   `ShorthandDeprecated` hides the shorhand flag.
+* `Hidden` and `Deprecated` hide the whole flag in help information.
+* `ShorthandDeprecated` hides the shorhand flag.
 
 You can set the flag as usual.
 
--   `Hidden` just hide the flag
--   `Deprecated` and `ShorthandDeprecated` will print a deprecated message to you if you use the flag
+* `Hidden` just hide the flag
+* `Deprecated` and `ShorthandDeprecated` will print a deprecated message to you if you use the flag
 
 #### Persistent
 
 Persistent option makes the flag can be inherited by it children‘s commands
 
-### Configuration 
+### Configuration
 
 CLI can be also treated as a configuration registry.
 
-*The flags are bound to registry automatically. That means all defined flags' values can be accessed by `Get()` function.*
+_The flags are bound to registry automatically. That means all defined flags' values can be accessed by `Get()` function._
 
 ```go
 cmd.AddFlag(cli.StringFlag{Name: "log", DefValue: "test configuration"})
@@ -177,17 +177,17 @@ cli.GetString("log") // test configuration
 
 There are two ways for you to let CLI know where to look for config files.
 
-1.  `SetConfigFile(in string)`
-2.  `SetConfigPaths(noExtName string, paths …string)`
+1. `SetConfigFile(in string)`
+2. `SetConfigPaths(noExtName string, paths …string)`
 
 `SetConfigFile` explicitly defines the path, name and extension of the config file. CLI will use this and not check any of the config paths.
 
-`SetConfigPaths` defines a config file name without the extension and paths where CLI search the config file in. 
+`SetConfigPaths` defines a config file name without the extension and paths where CLI search the config file in.
 
 Then, use
 
--   `ReadInConfig`
--   `MergeInConfig`
+* `ReadInConfig`
+* `MergeInConfig`
 
 to load configuration files.
 
@@ -214,32 +214,32 @@ But the prerequisite is that CLI should known what type it is.
 
 Using `SetConfigType(in string)` to tell CLI the type of configuration. The following type are supported now:
 
--   json
--   toml
--   yaml or yml
--   hcl
--   properties, props, prop
+* json
+* toml
+* yaml or yml
+* hcl
+* properties, props, prop
 
 #### Getting Values From CLI
 
 The following methods exist to aid getting values from CLI.
 
--   `Get(key string) interface{}`
--   `IsSet(key string) bool`
--   `GetBool(key string) bool`
--   `GetDuration(key string) time.Duration`
--   `GetFloat32(key string) float32`
--   `GetFloat64(key string) float64`
--   `GetInt(key string) int`
--   `GetInt32(key string) int32`
--   `GetInt64(key string) int64`
--   `GetString(key string) string`
--   `GetStringSlice(key string) []string`
--   `GetUint(key string) uint`
--   `GetUint32(key string) uint32`
--   `GetUint64(key string) uint64`
+* `Get(key string) interface{}`
+* `IsSet(key string) bool`
+* `GetBool(key string) bool`
+* `GetDuration(key string) time.Duration`
+* `GetFloat32(key string) float32`
+* `GetFloat64(key string) float64`
+* `GetInt(key string) int`
+* `GetInt32(key string) int32`
+* `GetInt64(key string) int64`
+* `GetString(key string) string`
+* `GetStringSlice(key string) []string`
+* `GetUint(key string) uint`
+* `GetUint32(key string) uint32`
+* `GetUint64(key string) uint64`
 
->   Note that each Get function will return a zero value if it is not found. To check if a given key exists, please use `IsSet()`
+> Note that each Get function will return a zero value if it is not found. To check if a given key exists, please use `IsSet()`
 
 ## Thanks
 
