@@ -57,7 +57,7 @@
     <link rel="shortcut icon" href="../gitbook/images/favicon.ico" type="image/x-icon">
 
     
-    <link rel="next" href="tracing.html" />
+    <link rel="next" href="openapi.html" />
     
     
     <link rel="prev" href="error.html" />
@@ -154,7 +154,33 @@
             
         </li>
     
-        <li class="chapter " data-level="1.6" data-path="tracing.html">
+        <li class="chapter " data-level="1.6" data-path="openapi.html">
+            
+                <a href="openapi.html">
+            
+                    
+                    Open API
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.7" data-path="metrics.html">
+            
+                <a href="metrics.html">
+            
+                    
+                    Metrics
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.8" data-path="tracing.html">
             
                 <a href="tracing.html">
             
@@ -167,7 +193,7 @@
             
         </li>
     
-        <li class="chapter " data-level="1.7" data-path="testing.html">
+        <li class="chapter " data-level="1.9" data-path="testing.html">
             
                 <a href="testing.html">
             
@@ -226,6 +252,40 @@
                                 <section class="normal markdown-section">
                                 
                                 <h1 id="validation">Validation</h1>
+<p>Now you are tired of echoing non-sense testing message and want to only reply message longer than 10 characters, such
+validation can be easily added when defining your descriptor:</p>
+<pre><code class="lang-go">Parameters: []definition.Parameter{
+    {
+        Source:      definition.Query,
+        Name:        <span class="hljs-string">&quot;msg&quot;</span>,
+        Description: <span class="hljs-string">&quot;Corresponding to the second parameter&quot;</span>,
+        Operators:   []definition.Operator{validator.String(<span class="hljs-string">&quot;gt=10&quot;</span>)},
+    },
+},
+</code></pre>
+<p><code>Operator</code> is a concept in Nirvana to allow framework user to operate on input request; validation is one of several
+pre-defined operators. Another example of <code>operator</code> is <code>convertor</code>, which allows user to convert between different
+versions of an input.</p>
+<p>Under the hood, Nirvana uses <a href="https://github.com/go-playground/validator" target="_blank">go-playground/validator.v9</a> for validation,
+which defines a list of useful tags. It also supports custom validation. Nirvana integrates smoothly with the package,
+see user guide for more advanced usage.</p>
+<p>Now run our new echo server and verify validation works:</p>
+<pre><code>$ go run ./examples/getting-started/validator/echo.go
+INFO  0202-11:18:50.235+08 echo.go:67 | Listening on :8080
+INFO  0202-11:18:50.235+08 builder.go:163 | Definitions: 1 Middlewares: 0 Path: /echo
+INFO  0202-11:18:50.235+08 builder.go:178 |   Method: Get Consumes: [*/*] Produces: [text/plain]
+</code></pre><p>In another terminal:</p>
+<pre><code>$ curl &quot;http://localhost:8080/echo?msg=test&quot;
+Key: &apos;&apos; Error:Field validation for &apos;&apos; failed on the &apos;gt&apos; tag
+
+$ curl &quot;http://localhost:8080/echo?msg=testtesttest&quot;
+testtesttest
+</code></pre><p>It works! The above example teaches us two facts:</p>
+<ol>
+<li>Adding validation support with Nirvana is very simple</li>
+<li>10 characters validation is not enough to prevent spam :) (checkout guide below to add your own validation)</li>
+</ol>
+<p>For full example code, see <a href="https://github.com/caicloud/nirvana/tree/master/examples/getting-started/validator" target="_blank">validator</a>.</p>
 
                                 
                                 </section>
@@ -258,7 +318,7 @@
                 </a>
                 
                 
-                <a href="tracing.html" class="navigation navigation-next " aria-label="Next page: Tracing">
+                <a href="openapi.html" class="navigation navigation-next " aria-label="Next page: Open API">
                     <i class="fa fa-angle-right"></i>
                 </a>
                 
@@ -269,7 +329,7 @@
     <script>
         var gitbook = gitbook || [];
         gitbook.push(function() {
-            gitbook.page.hasChanged({"page":{"title":"Validation","level":"1.5","depth":1,"next":{"title":"Tracing","level":"1.6","depth":1,"path":"topics/tracing.md","ref":"topics/tracing.md","articles":[]},"previous":{"title":"Error","level":"1.4","depth":1,"path":"topics/error.md","ref":"topics/error.md","articles":[]},"dir":"ltr"},"config":{"gitbook":"*","theme":"default","variables":{},"plugins":[],"pluginsConfig":{"highlight":{},"search":{},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"fontsettings":{"theme":"white","family":"sans","size":2},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"}},"file":{"path":"topics/validation.md","mtime":"2017-12-20T09:36:16.080Z","type":"markdown"},"gitbook":{"version":"3.2.3","time":"2018-01-06T14:42:39.551Z"},"basePath":"..","book":{"language":""}});
+            gitbook.page.hasChanged({"page":{"title":"Validation","level":"1.5","depth":1,"next":{"title":"Open API","level":"1.6","depth":1,"path":"topics/openapi.md","ref":"topics/openapi.md","articles":[]},"previous":{"title":"Error","level":"1.4","depth":1,"path":"topics/error.md","ref":"topics/error.md","articles":[]},"dir":"ltr"},"config":{"gitbook":"*","theme":"default","variables":{},"plugins":[],"pluginsConfig":{"highlight":{},"search":{},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"fontsettings":{"theme":"white","family":"sans","size":2},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"}},"file":{"path":"topics/validation.md","mtime":"2018-02-06T14:56:58.573Z","type":"markdown"},"gitbook":{"version":"3.2.3","time":"2018-02-06T14:59:17.344Z"},"basePath":"..","book":{"language":""}});
         });
     </script>
 </div>
