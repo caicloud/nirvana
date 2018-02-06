@@ -6,7 +6,7 @@
 [![Coverage Status](https://coveralls.io/repos/github/caicloud/nirvana/badge.svg?branch=master)](https://coveralls.io/github/caicloud/nirvana?branch=master)
 [![GoDoc](http://godoc.org/github.com/caicloud/nirvana?status.svg)](http://godoc.org/github.com/caicloud/nirvana)
 [![Go Report Card](https://goreportcard.com/badge/github.com/caicloud/nirvana)](https://goreportcard.com/report/github.com/caicloud/nirvana)
-<!-- [![Code Health](https://landscape.io/github/caicloud/nirvana/master/landscape.svg?style=flat)](https://landscape.io/github/caicloud/nirvana/master) -->
+[![OpenTracing Badge](https://img.shields.io/badge/OpenTracing-enabled-blue.svg)](http://opentracing.io)
 
 Nirvana is a golang API framework designed for productivity and usability. It aims to be the building block for
 all golang services in Caicloud. The high-level goals and features include:
@@ -337,12 +337,6 @@ go run ./examples/getting-started/openapi/echo.go > /tmp/swagger.json
 ```
 
 For full example code, see [openapi](./examples/getting-started/openapi).
-
-TODO(ddysher): there's quite a bit manual setup to generate openAPI docs, liubo
-
-### Make it configurable
-
-TODO
 
 ## User Guide
 
