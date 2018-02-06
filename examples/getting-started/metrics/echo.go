@@ -18,6 +18,8 @@ package main
 
 import (
 	"context"
+	"math/rand"
+	"time"
 
 	"github.com/caicloud/nirvana"
 	"github.com/caicloud/nirvana/definition"
@@ -59,6 +61,7 @@ var echo = definition.Descriptor{
 
 // API function.
 func Echo(ctx context.Context, msg string) (string, error) {
+	time.Sleep(time.Duration(rand.Intn(100)) * time.Millisecond)
 	return msg, nil
 }
 
