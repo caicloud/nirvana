@@ -38,7 +38,7 @@ func init() {
 // ExternalConfigName is the external config name of tracing.
 const ExternalConfigName = "tracing"
 
-// config is metrics config.
+// config is tracing config.
 type config struct {
 	serviceName   string
 	agentHostPort string
@@ -80,7 +80,6 @@ func (i *tracingInstaller) Install(builder service.Builder, cfg *nirvana.Config)
 		err = builder.AddDescriptor(descriptor(c.tracer))
 	})
 	return err
-
 }
 
 // Uninstall uninstalls stuffs after server terminating.
