@@ -36,7 +36,7 @@ func init() {
 // ExternalConfigName is the external config name of profiling.
 const ExternalConfigName = "profiling"
 
-// config is metrics config.
+// config is profiling config.
 type config struct {
 	path       string
 	contention bool
@@ -61,7 +61,6 @@ func (i *profilingInstaller) Install(builder service.Builder, cfg *nirvana.Confi
 		}
 	})
 	return err
-
 }
 
 // Uninstall uninstalls stuffs after server terminating.
