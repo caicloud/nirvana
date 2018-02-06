@@ -1,6 +1,6 @@
 # Nirvana
 
-<img align="right" width="225px" src="https://user-images.githubusercontent.com/2191361/35680342-08918456-0795-11e8-8dcd-96a698939e7c.png">
+<img align="right" width="225px" src="https://user-images.githubusercontent.com/2191361/35839723-e9e5cdfa-0b2c-11e8-853a-8d3870f9e7ac.png">
 
 [![Build Status](https://travis-ci.org/caicloud/nirvana.svg?branch=master)](https://travis-ci.org/caicloud/nirvana)
 [![Coverage Status](https://coveralls.io/repos/github/caicloud/nirvana/badge.svg?branch=master)](https://coveralls.io/github/caicloud/nirvana?branch=master)
