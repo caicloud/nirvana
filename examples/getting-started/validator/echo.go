@@ -21,9 +21,14 @@ import (
 
 	"github.com/caicloud/nirvana"
 	"github.com/caicloud/nirvana/definition"
+	"github.com/caicloud/nirvana/errors"
 	"github.com/caicloud/nirvana/log"
 	"github.com/caicloud/nirvana/operators/validator"
 )
+
+type Body struct {
+	Name string
+}
 
 var echo = definition.Descriptor{
 	Path:        "/echo",
@@ -32,7 +37,7 @@ var echo = definition.Descriptor{
 		{
 			Method:   definition.Get,
 			Function: Echo,
-			Consumes: []string{definition.MIMEAll},
+			Consumes: []string{definition.MIMEJSON},
 			Produces: []string{definition.MIMEJSON},
 			Parameters: []definition.Parameter{
 				{
@@ -40,6 +45,24 @@ var echo = definition.Descriptor{
 					Name:        "msg",
 					Description: "Corresponding to the second parameter",
 					Operators:   []definition.Operator{validator.String("gt=10")},
+				},
+				{
+					Source:      definition.Body,
+					Name:        "body",
+					Description: "How to do custom validation",
+					Operators: []definition.Operator{
+						validator.NewCustom(
+							func(ctx context.Context, body *Body) error {
+								if body.Name == "" {
+									return errors.BadRequest.Error("you should have a name!")
+								}
+								if body.Name != "nirvana" {
+									return errors.BadRequest.Error("name ${name} must be nirvana!", body.Name)
+								}
+								return nil
+							},
+							"validate your name"),
+					},
 				},
 			},
 			Results: []definition.Result{
@@ -57,7 +80,7 @@ var echo = definition.Descriptor{
 }
 
 // API function.
-func Echo(ctx context.Context, msg string) (string, error) {
+func Echo(ctx context.Context, msg string, body *Body) (string, error) {
 	return msg, nil
 }
 

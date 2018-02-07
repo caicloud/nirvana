@@ -21,7 +21,6 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/caicloud/nirvana/definition"
 	"github.com/caicloud/nirvana/errors"
 )
 
@@ -88,18 +87,18 @@ func TestNewCustom(t *testing.T) {
 	var anje = struct {
 		Name string
 	}{"anje"}
-	op := NewCustom(definition.OperatorFunc(OperatorKind, func(ctx context.Context, field string, object *struct{ Name string }) (*struct{ Name string }, error) {
+	op := NewCustom(func(ctx context.Context, object *struct{ Name string }) error {
 		if object.Name != "anje" {
-			return nil, errors.BadRequest.Build("badRequest:name", "${name} wrong").Error("anje")
+			return errors.BadRequest.Build("badRequest:name", "${name} wrong").Error("anje")
 		}
-		return object, nil
-	}), "check name")
+		return nil
+	}, "check name")
 	v, err := op.Operate(context.Background(), "", &anje)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if !reflect.DeepEqual(v, &anje) {
-		t.Fatalf("got %v want %v", v, anje)
+		t.Fatalf("got %v want %v", v, &anje)
 	}
 	validator := op.(Validator)
 	if validator.Category() != CategoryCustom ||
