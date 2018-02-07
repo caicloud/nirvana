@@ -107,7 +107,7 @@ func (o *validator) Description() string {
 // Validations which can be done by other way should be done in another Operator.
 // Exp:
 // []definition.Operator{NewCustom(f,"custom validation description")}
-// f should be func(ctx context.Context, object AnyType) (AnyType, error)
+// f should be func(ctx context.Context, object AnyType) error
 func NewCustom(f interface{}, description string) Validator {
 	typ := reflect.TypeOf(f)
 	if typ.Kind() != reflect.Func {
