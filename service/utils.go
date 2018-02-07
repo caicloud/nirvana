@@ -58,18 +58,30 @@ var definitionNoProduces = errors.InternalServerError.Build("Nirvana:Service:Def
 var definitionNoFunction = errors.InternalServerError.Build("Nirvana:Service:DefinitionNoFunction", "no function in [${method}]${path}")
 var definitionInvalidFunctionType = errors.InternalServerError.Build("Nirvana:Service:DefinitionInvalidFunctionType",
 	"${type} is not function in [${method}]${path}")
+
 var definitionNoConsumer = errors.InternalServerError.Build("Nirvana:Service:DefinitionNoConsumer",
 	"no consumer for content type ${type} in [${method}]${path}")
+
 var definitionNoProducer = errors.InternalServerError.Build("Nirvana:Service:DefinitionNoProducer",
 	"no producer for content type ${type} in [${method}]${path}")
+
 var definitionConflict = errors.InternalServerError.Build("Nirvana:Service:DefinitionConflict",
 	"consumer-producer pair ${key}:${value} conflicts in [http.${method}]${path}")
+
 var definitionUnmatchedParameters = errors.InternalServerError.Build("Nirvana:Service:DefinitionUnmatchedParameters",
-	"function ${function} has ${count} parameters but want ${desired} in ${path}")
+	"function ${function} has ${count} parameters but want ${desired} in ${path}, "+
+		"you can define it with descriptor->definition[]->parameters[]")
+
 var definitionUnmatchedResults = errors.InternalServerError.Build("Nirvana:Service:DefinitionUnmatchedResults",
-	"function ${function} has ${count} results but want ${desired} in ${path}")
-var noDestinationHandler = errors.InternalServerError.Build("Nirvana:Service:NoDestinationHandler", "no destination handler for destination ${destination}")
-var noContext = errors.InternalServerError.Build("Nirvana:Service:NoContext", "can't find http context")
+	"function ${function} has ${count} results but want ${desired} in ${path}, "+
+		"you can define it with descriptor->definition[]->results[]")
+
+var noDestinationHandler = errors.InternalServerError.Build("Nirvana:Service:NoDestinationHandler", "no destination handler for destination ${destination}, "+
+	"you can define it with descriptor->definition[]->results[]->destination")
+
+var noContext = errors.InternalServerError.Build("Nirvana:Service:NoContext", "can't find http context, "+
+	"you should define `ctx context.Context` as the first parameter of your handler function")
+
 var requiredField = errors.InternalServerError.Build("Nirvana:Service:RequiredField", "required field ${field} in ${source} but got empty")
 var invalidMetaType = errors.InternalServerError.Build("Nirvana:Service:InvalidMetaType", "can't recognize meta for type ${type}")
 var noProducerToWrite = errors.NotAcceptable.Build("Nirvana:Service:NoProducerToWrite", "can't find producer for accept types ${types}")
