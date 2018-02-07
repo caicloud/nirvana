@@ -180,9 +180,10 @@ testtesttest
 It works! The above example teaches us two facts:
 
 1. Adding validation support with Nirvana is very simple
-2. 10 characters validation is not enough to prevent spam :) (checkout guide below to add your own validation)
+2. 10 characters validation is not enough to prevent spam :)
 
-For full example code, see [validator](./examples/getting-started/validator).
+For full example code, see [validator](./examples/getting-started/validator). Checkout the source code to see
+how to add your own validation.
 
 ### Is it popular?
 
@@ -802,6 +803,27 @@ var echo = definition.Descriptor{
 func EchoV2(ctx context.Context, msg *api.Message) (string, error) {
 	return msg.Message, nil
 }
+```
+
+For Custom validation, you'll write your own operator and use it in API descriptor. The `operators/validator`
+package contains helper funtions to create custom validator. For example, the following example uses custom
+validation to validate the input request body. Nirvana will convert input request to validator's parameter
+type.
+
+```go
+Operators: []definition.Operator{
+	validator.NewCustom(
+		func(ctx context.Context, body *Body) error {
+			if body.Name == "" {
+				return errors.BadRequest.Error("you should have a name!")
+			}
+			if body.Name != "nirvana" {
+				return errors.BadRequest.Error("name ${name} must be nirvana!", body.Name)
+			}
+			return nil
+		},
+		"validate your name"),
+},
 ```
 
 ### OpenAPI
