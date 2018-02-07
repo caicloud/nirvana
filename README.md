@@ -212,7 +212,7 @@ $ go run ./examples/getting-started/metrics/echo.go
 Use ab (ApacheBench) to simulate some user load; in another terminal, run:
 
 ```
-ab -n 1000 -H 'Content-type: application/json' 'http://localhost:8080/echo?msg=testtesttest'
+ab -n 1000 'http://localhost:8080/echo?msg=testtesttest'
 ```
 
 Once done, let's checkout some default metrics from metrics plugin. The metric `nirvana_request_count` tells
@@ -222,7 +222,7 @@ us how many requests we've seen in total. Since we use `-n 1000`, there will be 
 $ curl http://localhost:8080/metrics 2>&1 | grep nirvana_request_count
 # HELP nirvana_request_count Counter of server requests broken out for each verb, API resource, client, and HTTP response contentType and code.
 # TYPE nirvana_request_count counter
-nirvana_request_count{client="ApacheBench/2.3",code="200",contentType="application/json",method="GET",path="/echo"} 1000
+nirvana_request_count{client="ApacheBench/2.3",code="200",contentType="",method="GET",path="/echo"} 1000
 ```
 
 The metric `nirvana_request_latencies` shows distribution of our service latencies. We've added a random sleep
@@ -230,39 +230,65 @@ between [0, 100) in our service; therefore, p90 is around 90m.
 
 ```
 $ curl http://localhost:8080/metrics 2>&1 | grep "nirvana_request_latencies"
-# HELP nirvana_request_latencies Response latency distribution in microseconds for each verb, resource and client.
+# HELP nirvana_request_latencies Response latency distribution in milliseconds for each verb, resource and client.
 # TYPE nirvana_request_latencies histogram
-nirvana_request_latencies_bucket{method="GET",path="/echo",le="125000"} 1000
-nirvana_request_latencies_bucket{method="GET",path="/echo",le="250000"} 1000
-nirvana_request_latencies_bucket{method="GET",path="/echo",le="500000"} 1000
-nirvana_request_latencies_bucket{method="GET",path="/echo",le="1e+06"} 1000
-nirvana_request_latencies_bucket{method="GET",path="/echo",le="2e+06"} 1000
-nirvana_request_latencies_bucket{method="GET",path="/echo",le="4e+06"} 1000
-nirvana_request_latencies_bucket{method="GET",path="/echo",le="8e+06"} 1000
+nirvana_request_latencies_bucket{method="GET",path="/echo",le="0.1"} 11
+nirvana_request_latencies_bucket{method="GET",path="/echo",le="0.2"} 11
+nirvana_request_latencies_bucket{method="GET",path="/echo",le="0.4"} 11
+nirvana_request_latencies_bucket{method="GET",path="/echo",le="0.8"} 11
+nirvana_request_latencies_bucket{method="GET",path="/echo",le="1.6"} 28
+nirvana_request_latencies_bucket{method="GET",path="/echo",le="3.2"} 41
+nirvana_request_latencies_bucket{method="GET",path="/echo",le="6.4"} 73
+nirvana_request_latencies_bucket{method="GET",path="/echo",le="12.8"} 126
+nirvana_request_latencies_bucket{method="GET",path="/echo",le="25.6"} 260
+nirvana_request_latencies_bucket{method="GET",path="/echo",le="51.2"} 507
+nirvana_request_latencies_bucket{method="GET",path="/echo",le="102.4"} 995
+nirvana_request_latencies_bucket{method="GET",path="/echo",le="204.8"} 1000
+nirvana_request_latencies_bucket{method="GET",path="/echo",le="409.6"} 1000
+nirvana_request_latencies_bucket{method="GET",path="/echo",le="819.2"} 1000
+nirvana_request_latencies_bucket{method="GET",path="/echo",le="1638.4"} 1000
+nirvana_request_latencies_bucket{method="GET",path="/echo",le="3276.8"} 1000
+nirvana_request_latencies_bucket{method="GET",path="/echo",le="6553.6"} 1000
+nirvana_request_latencies_bucket{method="GET",path="/echo",le="13107.2"} 1000
+nirvana_request_latencies_bucket{method="GET",path="/echo",le="26214.4"} 1000
+nirvana_request_latencies_bucket{method="GET",path="/echo",le="52428.8"} 1000
 nirvana_request_latencies_bucket{method="GET",path="/echo",le="+Inf"} 1000
-nirvana_request_latencies_sum{method="GET",path="/echo"} 48533
+nirvana_request_latencies_sum{method="GET",path="/echo"} 50554
 nirvana_request_latencies_count{method="GET",path="/echo"} 1000
-nirvana_request_latencies_bucket{method="GET",path="/metrics",le="125000"} 1
-nirvana_request_latencies_bucket{method="GET",path="/metrics",le="250000"} 1
-nirvana_request_latencies_bucket{method="GET",path="/metrics",le="500000"} 1
-nirvana_request_latencies_bucket{method="GET",path="/metrics",le="1e+06"} 1
-nirvana_request_latencies_bucket{method="GET",path="/metrics",le="2e+06"} 1
-nirvana_request_latencies_bucket{method="GET",path="/metrics",le="4e+06"} 1
-nirvana_request_latencies_bucket{method="GET",path="/metrics",le="8e+06"} 1
+nirvana_request_latencies_bucket{method="GET",path="/metrics",le="0.1"} 0
+nirvana_request_latencies_bucket{method="GET",path="/metrics",le="0.2"} 0
+nirvana_request_latencies_bucket{method="GET",path="/metrics",le="0.4"} 0
+nirvana_request_latencies_bucket{method="GET",path="/metrics",le="0.8"} 0
+nirvana_request_latencies_bucket{method="GET",path="/metrics",le="1.6"} 0
+nirvana_request_latencies_bucket{method="GET",path="/metrics",le="3.2"} 1
+nirvana_request_latencies_bucket{method="GET",path="/metrics",le="6.4"} 1
+nirvana_request_latencies_bucket{method="GET",path="/metrics",le="12.8"} 1
+nirvana_request_latencies_bucket{method="GET",path="/metrics",le="25.6"} 1
+nirvana_request_latencies_bucket{method="GET",path="/metrics",le="51.2"} 1
+nirvana_request_latencies_bucket{method="GET",path="/metrics",le="102.4"} 1
+nirvana_request_latencies_bucket{method="GET",path="/metrics",le="204.8"} 1
+nirvana_request_latencies_bucket{method="GET",path="/metrics",le="409.6"} 1
+nirvana_request_latencies_bucket{method="GET",path="/metrics",le="819.2"} 1
+nirvana_request_latencies_bucket{method="GET",path="/metrics",le="1638.4"} 1
+nirvana_request_latencies_bucket{method="GET",path="/metrics",le="3276.8"} 1
+nirvana_request_latencies_bucket{method="GET",path="/metrics",le="6553.6"} 1
+nirvana_request_latencies_bucket{method="GET",path="/metrics",le="13107.2"} 1
+nirvana_request_latencies_bucket{method="GET",path="/metrics",le="26214.4"} 1
+nirvana_request_latencies_bucket{method="GET",path="/metrics",le="52428.8"} 1
 nirvana_request_latencies_bucket{method="GET",path="/metrics",le="+Inf"} 1
-nirvana_request_latencies_sum{method="GET",path="/metrics"} 0
+nirvana_request_latencies_sum{method="GET",path="/metrics"} 3
 nirvana_request_latencies_count{method="GET",path="/metrics"} 1
 # HELP nirvana_request_latencies_summary Response latency summary in microseconds for each verb and resource.
 # TYPE nirvana_request_latencies_summary summary
-nirvana_request_latencies_summary{method="GET",path="/echo",quantile="0.5"} 53
-nirvana_request_latencies_summary{method="GET",path="/echo",quantile="0.9"} 89
-nirvana_request_latencies_summary{method="GET",path="/echo",quantile="0.99"} 98
-nirvana_request_latencies_summary_sum{method="GET",path="/echo"} 48533
+nirvana_request_latencies_summary{method="GET",path="/echo",quantile="0.5"} 55
+nirvana_request_latencies_summary{method="GET",path="/echo",quantile="0.9"} 90
+nirvana_request_latencies_summary{method="GET",path="/echo",quantile="0.99"} 101
+nirvana_request_latencies_summary_sum{method="GET",path="/echo"} 50554
 nirvana_request_latencies_summary_count{method="GET",path="/echo"} 1000
-nirvana_request_latencies_summary{method="GET",path="/metrics",quantile="0.5"} 0
-nirvana_request_latencies_summary{method="GET",path="/metrics",quantile="0.9"} 0
-nirvana_request_latencies_summary{method="GET",path="/metrics",quantile="0.99"} 0
-nirvana_request_latencies_summary_sum{method="GET",path="/metrics"} 0
+nirvana_request_latencies_summary{method="GET",path="/metrics",quantile="0.5"} 3
+nirvana_request_latencies_summary{method="GET",path="/metrics",quantile="0.9"} 3
+nirvana_request_latencies_summary{method="GET",path="/metrics",quantile="0.99"} 3
+nirvana_request_latencies_summary_sum{method="GET",path="/metrics"} 3
 nirvana_request_latencies_summary_count{method="GET",path="/metrics"} 1
 ```
 
