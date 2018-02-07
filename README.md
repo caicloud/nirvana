@@ -688,6 +688,14 @@ type Result struct {
 | Data        | Indicates the value should be written to HTTP response body. The format is decided by HTTP `Accept` and `Definition.Produces` |
 | Error       | If an error occurs, `Meta` and `Data` is ignored. Error message will be written to HTTP response body                         |
 
+### Validation
+
+TODO
+
+### Configurer
+
+TODO
+
 ### Error
 
 In Nirvana core, error always means HTTP status code 500 - we try to avoid adding busniess logic into Nirvana.
@@ -744,11 +752,31 @@ Fatal
 Keep in mind that:
 
 * Each level comes with formatter and newliner method, i.e. `Infof` and `Infoln`
-* `Info` has verbosity level, for example, you can use `log.V(4)Info` for unimportant logs
+* `Info` has verbosity level, for example, you can use `log.V(4).Info` for unimportant logs
 * `Fatal` error will terminate program execution
 
 For more details, see `github.com/caicloud/nirvana/log` package.
 
 ### Plugins
+
+#### Metrics
+
+TBD
+
+#### Profiling
+
+TBD
+
+#### Tracing
+
+TBD
+
+## Developer Guide and Proposals
+
+### Proposals
+
+TBD
+
+### Plugin framework
 
 TBD
