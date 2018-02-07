@@ -39,7 +39,7 @@ func WarpHTTPHandlerFunc(f http.HandlerFunc) func(ctx context.Context) {
 	}
 }
 
-// Internel error factories:
+// Internal error factories:
 var noExecutorForMethod = errors.MethodNotAllowed.Build("Nirvana:Service:NoExecutorForMethod", "method not allowed")
 var noExecutorForContentType = errors.UnsupportedMediaType.Build("Nirvana:Service:NoExecutorForContentType", "unsupported media type")
 var noExecutorToProduce = errors.NotAcceptable.Build("Nirvana:Service:NoExecutorToProduce", "not acceptable")
