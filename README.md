@@ -690,6 +690,122 @@ type Result struct {
 
 ### Validation
 
+Validation is used to validate request input, including request body, query parameter, etc. In Nirvana,
+validation is implemented as a parameter operator, so it naturally has access to all request attributes.
+There are three categories of validation: Var, Struct and Custom, where Var is used to validate basic
+built-in types like `string`, `int`, `bool`, etc; Struct is for struct validation and Custom is for writing
+custom validation.
+
+For Var validation, simply add the validation operator including the type to validate. For example, the
+following example shows a validation used to validate input string length is longer than 10 characters.
+
+```go
+var echo = definition.Descriptor{
+	Path:        "/echo",
+	Description: "Echo API",
+	Definitions: []definition.Definition{
+		{
+			Method:   definition.Get,
+			Function: Echo,
+			Consumes: []string{definition.MIMEAll},
+			Produces: []string{definition.MIMEJSON},
+			Parameters: []definition.Parameter{
+				{
+					Source:      definition.Query,
+					Name:        "msg",
+					Description: "Corresponding to the second parameter",
+					Operators:   []definition.Operator{validator.String("gt=10")},
+				},
+			},
+			...
+		},
+	},
+}
+
+// API function.
+func Echo(ctx context.Context, msg string) (string, error) {
+	return msg, nil
+}
+```
+
+Note we are using `Validator.String` here since our API handler takes string as input. As an other example,
+if we want to validate input parameter is a number larger than 10, we should use:
+
+```go
+var echo = definition.Descriptor{
+	Path:        "/echo",
+	Description: "Echo API",
+	Definitions: []definition.Definition{
+		{
+			Method:   definition.Get,
+			Function: Echo,
+			Consumes: []string{definition.MIMEAll},
+			Produces: []string{definition.MIMEJSON},
+			Parameters: []definition.Parameter{
+				{
+					Source:      definition.Query,
+					Name:        "msg",
+					Description: "Message to echo",
+					Operators:   []definition.Operator{validator.Int("gt=10")},
+				},
+			},
+			...
+		},
+	},
+}
+
+// API function.
+func Echo(ctx context.Context, msg int) (string, error) {
+	return strconv.Itoa(msg), nil
+}
+```
+
+Here we've changed validator to `validator.Int`, and API handler has input parameter `int`.
+
+For Struct validation, the first step is to add a `validate` tag to our struct, e.g.
+
+```go
+// Message defines the message to echo and to whom the message will be sent.
+type Message struct {
+	Name    string `json:"name" validate:"required"`
+	Message string `json:"message" validate:"gt=10"`
+}
+```
+
+Then, similar to Var validation, we need to add an operator to our API descriptor. A struct instance is
+required for Nirvana to make sure the type to validate actually matches handler parameter type.
+
+```go
+var echo = definition.Descriptor{
+	Path:        "/echo",
+	Description: "Echo API",
+	Definitions: []definition.Definition{
+		{
+			Method:   definition.Create,
+			Function: EchoV2,
+			Consumes: []string{definition.MIMEAll},
+			Produces: []string{definition.MIMEJSON},
+			Parameters: []definition.Parameter{
+				{
+					Source:      definition.Body,
+					Name:        "msg",
+					Description: "Message to echo",
+					Operators:   []definition.Operator{validator.Struct(&api.Message{})},
+				},
+			},
+			...
+		},
+	},
+}
+
+// API function.
+func EchoV2(ctx context.Context, msg *api.Message) (string, error) {
+	return msg.Message, nil
+}
+```
+
+### OpenAPI
+
 TODO
 
 ### Configurer
