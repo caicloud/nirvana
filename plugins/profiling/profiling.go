@@ -130,28 +130,28 @@ func descriptor(path string) definition.Descriptor {
 		Produces: []string{definition.MIMEAll},
 		Definitions: []definition.Definition{{
 			Method:   definition.Get,
-			Function: service.WarpHTTPHandlerFunc(index),
+			Function: service.WrapHTTPHandlerFunc(index),
 		}},
 		Children: []definition.Descriptor{
 			{
 				Path: "/profile",
 				Definitions: []definition.Definition{{
 					Method:   definition.Get,
-					Function: service.WarpHTTPHandlerFunc(pprof.Profile),
+					Function: service.WrapHTTPHandlerFunc(pprof.Profile),
 				}},
 			},
 			{
 				Path: "/symbol",
 				Definitions: []definition.Definition{{
 					Method:   definition.Get,
-					Function: service.WarpHTTPHandlerFunc(pprof.Symbol),
+					Function: service.WrapHTTPHandlerFunc(pprof.Symbol),
 				}},
 			},
 			{
 				Path: "/trace",
 				Definitions: []definition.Definition{{
 					Method:   definition.Get,
-					Function: service.WarpHTTPHandlerFunc(pprof.Trace),
+					Function: service.WrapHTTPHandlerFunc(pprof.Trace),
 				}},
 			},
 		},

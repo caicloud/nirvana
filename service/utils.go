@@ -23,16 +23,16 @@ import (
 	"github.com/caicloud/nirvana/errors"
 )
 
-// WarpHTTPHandler warps a http handler to definition function.
-func WarpHTTPHandler(h http.Handler) func(ctx context.Context) {
+// WrapHTTPHandler wraps an http handler to definition function.
+func WrapHTTPHandler(h http.Handler) func(ctx context.Context) {
 	return func(ctx context.Context) {
 		httpCtx := HTTPContextFrom(ctx)
 		h.ServeHTTP(httpCtx.ResponseWriter(), httpCtx.Request())
 	}
 }
 
-// WarpHTTPHandlerFunc warps a http handler func to definition function.
-func WarpHTTPHandlerFunc(f http.HandlerFunc) func(ctx context.Context) {
+// WrapHTTPHandlerFunc wraps an http handler func to definition function.
+func WrapHTTPHandlerFunc(f http.HandlerFunc) func(ctx context.Context) {
 	return func(ctx context.Context) {
 		httpCtx := HTTPContextFrom(ctx)
 		f(httpCtx.ResponseWriter(), httpCtx.Request())
