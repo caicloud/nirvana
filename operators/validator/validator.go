@@ -104,14 +104,38 @@ func (o *validator) Description() string {
 
 // NewCustom calls f for validation, using description for doc gen.
 // User should only do custom validation in f.
-// Validations which can be done by Var and Struct should be done in another Operator.
+// Validations which can be done by other way should be done in another Operator.
 // Exp:
 // []definition.Operator{NewCustom(f,"custom validation description")}
-func NewCustom(operator definition.Operator, description string) Validator {
+// f should be func(ctx context.Context, object AnyType) (AnyType, error)
+func NewCustom(f interface{}, description string) Validator {
+	typ := reflect.TypeOf(f)
+	if typ.Kind() != reflect.Func {
+		panic(fmt.Sprintf("Parameter f in Custom Validator Func must be a function, but got: %s", typ.Kind()))
+	}
+	if typ.NumIn() != 2 {
+		panic(fmt.Sprintf("Custom Validator Func must have 2 parameters, but got: %d", typ.NumIn()))
+	}
+	if typ.In(0) != reflect.TypeOf((*context.Context)(nil)).Elem() {
+		panic(fmt.Sprintf("The first parameter of Custom Validator Func must be context.Context, but got: %v", typ.In(0)))
+	}
+	if typ.NumOut() != 1 {
+		panic(fmt.Sprintf("Parameter f in Custom Validator Func must have two results, but got: %d", typ.NumOut()))
+	}
+	if typ.Out(0).String() != "error" {
+		panic(fmt.Sprintf("The result of parameter f in Custom Validator Func must be error, but got: %v", typ.Out(1)))
+	}
+	op := definition.NewOperator(OperatorKind, typ.In(1), typ.In(1), func(ctx context.Context, _ string, object interface{}) (interface{}, error) {
+		v := reflect.ValueOf(f).Call([]reflect.Value{reflect.ValueOf(ctx), reflect.ValueOf(object)})
+		if v[0].IsNil() {
+			return object, nil
+		}
+		return object, v[0].Interface().(error)
+	})
 	return &validator{
-		in:          operator.In(),
-		out:         operator.Out(),
-		f:           operator.Operate,
+		in:          op.In(),
+		out:         op.Out(),
+		f:           op.Operate,
 		category:    CategoryCustom,
 		description: description,
 	}
