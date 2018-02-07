@@ -57,8 +57,8 @@ func newMetricsMiddleware(namespace string) definition.Middleware {
 		prometheus.HistogramOpts{
 			Namespace: namespace,
 			Name:      "request_latencies",
-			Help:      "Response latency distribution in microseconds for each verb, resource and client.",
-			Buckets:   prometheus.ExponentialBuckets(125000, 2.0, 7),
+			Help:      "Response latency distribution in milliseconds for each verb, resource and client.",
+			Buckets:   prometheus.ExponentialBuckets(0.1, 2.0, 20),
 		},
 		[]string{"method", "path"},
 	)
