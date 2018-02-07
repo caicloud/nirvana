@@ -11,11 +11,11 @@
 Nirvana is a golang API framework designed for productivity and usability. It aims to be the building block for
 all golang services in Caicloud. The high-level goals and features include:
 
-- consistent API behavior, structure and layout across all golang projects
-- improve engineering productivity with openAPI and client generation, etc
-- validation can be added by declaring validation method as part of API definition
-- out-of-box instrumentation support, e.g. metrics, profiling, tracing, etc
-- easy and standard configuration management, as well as standard cli interface
+* consistent API behavior, structure and layout across all golang projects
+* improve engineering productivity with openAPI and client generation, etc
+* validation can be added by declaring validation method as part of API definition
+* out-of-box instrumentation support, e.g. metrics, profiling, tracing, etc
+* easy and standard configuration management, as well as standard cli interface
 
 Nirvana is also extensible and performant, with the goal to support fast developmenet velocity.
 
@@ -30,7 +30,7 @@ go get -u github.com/caicloud/nirvana/cmd/openapi-gen
 
 ## Getting Started
 
-### API Quick Start
+### API quick start
 
 In Nirvana, APIs are defined via `definition.Descriptor`. We will not introduce details of the concept `Descriptor`,
 instead, let's take a look at a contrived example:
@@ -268,7 +268,7 @@ nirvana_request_latencies_summary_count{method="GET",path="/metrics"} 1
 
 See user guide for more information about metrics plugin (and others). For full example code, see [metrics](./examples/getting-started/metrics).
 
-### Show me the docs
+### Show me the doc
 
 You've upgraded your service to provide a new endpoint to create an echo message, i.e.
 
@@ -341,6 +341,10 @@ For full example code, see [openapi](./examples/getting-started/openapi).
 ## User Guide
 
 ### API Descriptor
+
+API Descriptor is the core data structure in Nirvana: it holds all API definitions, and is usually the starting
+point to write your services with Nirvana. Following is the golang type definition of `Descriptor`:
+
 ```go
 // Descriptor describes a descriptor for API definitions.
 type Descriptor struct {
@@ -367,58 +371,114 @@ type Descriptor struct {
 	Description string
 }
 ```
-An descriptor can contains many API definitions for a path.  It consumes  `Content-Type` and produces the data with format of `Accept`. It also can have children.
-If a child descriptor does not have its own `Consumes` or `Produces`, it would inherit corresponding 
-field from its parent. 
-e.g.
+
+**A single descriptor contains API definitions for a single path.** It sets `Content-Type` to be produced and
+consumed by the path handler. Each descriptor has an array of children; they will all inherit `Content-Type`
+from the parent descriptor, for example:
+
 ```go
 definition.Descriptor{
 	Path:        "/path",
-	Consumes: []string{definition.MIMEAll},
-	Produces: []string{definition.MIMEText},
+	Consumes:    []string{definition.MIMEAll},
+	Produces:    []string{definition.MIMEText},
 	Definitions: SomeDefinitions,
 	Children: []definition.Descriptor{
 		{
 			Path:        "/child",
-			Produces: []string{definition.MIMEJSON},
+			Produces:    []string{definition.MIMEJSON},
 			Definitions: SomeDefinitions,
 		},
 	},
-} 
+}
 ```
-The child of above descriptor is actually identical to:
+
+The child descriptor is identical to:
+
 ```go
 definition.Descriptor{
 	Path:        "/path/child",
-	Consumes: []string{definition.MIMEAll},
-	Produces: []string{definition.MIMEJSON},
+	Consumes:    []string{definition.MIMEAll},
+	Produces:    []string{definition.MIMEJSON},
 	Definitions: SomeDefinitions,
-} 
+}
 ```
-There are supported MIME types and their data types:
 
-| MIME | Consume | Produce | Note |
-| --- | --- | --- | --- |
-| MIMENone | nil | nil | Can be used into `Consumes` of Get/List and `Produces` of `Delete` |
-| MIMEText | string/[]byte/io.Reader | string/[]byte/io.Reader | |
-| MIMEJSON | string/[]byte/io.Reader/struct | string/[]byte/io.Reader/struct ||
-| MIMEXML | string/[]byte/io.Reader/struct | string/[]byte/io.Reader/struct ||
-| MIMEOctetStream | string/[]byte/io.Reader | string/[]byte/io.Reader ||
-| MIMEURLEncoded | nil | nil | Depends on `Source`. Only be used in `Consumes`  |
-| MIMEFormData | nil | nil | Depends on `Source`. Only be used in `Consumes` |
+### Consumes and Produces
 
-`Middlewares` is not like `Consumes` or `Produces`. It impacts paths rather than descriptors. That means a middleware for `/some/path` will impact all paths have prefix  `/some/path`. Even though they are in different descriptors.
-e.g.
+Consumes and Produces indicate content types that current definitions and child definitions support. Following
+is a table of all supported MIME types and their data types:
+
+| MIME            | Consume                        | Produce                        | Note                                                               |
+| --------------- | ------------------------------ | ------------------------------ | ------------------------------------------------------------------ |
+| MIMENone        | nil                            | nil                            | Can be used into `Consumes` of Get/List and `Produces` of `Delete` |
+| MIMEText        | string/[]byte/io.Reader        | string/[]byte/io.Reader        |                                                                    |
+| MIMEJSON        | string/[]byte/io.Reader/struct | string/[]byte/io.Reader/struct |                                                                    |
+| MIMEXML         | string/[]byte/io.Reader/struct | string/[]byte/io.Reader/struct |                                                                    |
+| MIMEOctetStream | string/[]byte/io.Reader        | string/[]byte/io.Reader        |                                                                    |
+| MIMEURLEncoded  | nil                            | nil                            | Depends on `Source`. Only be used in `Consumes`                    |
+| MIMEFormData    | nil                            | nil                            | Depends on `Source`. Only be used in `Consumes`                    |
+
+### Middleware
+
+Middleware is a convenient mechanism to intercept HTTP requests entering your application. To use middleware
+in Nirvana, just add your middlewaare definition to API descriptor. For example, below is the code snippet for
+metrics plugin:
+
+```
+monitorMiddleware := definition.Descriptor{
+	Path:        "/",
+	Middlewares: []definition.Middleware{newMetricsMiddleware(c.namespace)},
+}
+
+func newMetricsMiddleware(namespace string) definition.Middleware {
+	...
+
+	// This is the middleware function to be called for each request.
+	return func(ctx context.Context, next definition.Chain) error {
+		startTime := time.Now()
+		err := next.Continue(ctx)
+
+		httpCtx := service.HTTPContextFrom(ctx)
+		req := httpCtx.Request()
+		resp := httpCtx.ResponseWriter()
+		path := req.URL.Path
+		elapsed := float64((time.Since(startTime)) / time.Millisecond)
+
+		requestCounter.WithLabelValues(req.Method, path, getHTTPClient(req), req.Header.Get("Content-Type"), strconv.Itoa(resp.StatusCode())).Inc()
+		requestLatencies.WithLabelValues(req.Method, path).Observe(elapsed)
+		requestLatenciesSummary.WithLabelValues(req.Method, path).Observe(elapsed)
+
+		return err
+	}
+}
+```
+
+Usually, Nirvana users do not care about how middlewares are implemented: they only need to find useful
+middlewares and add them to their descriptors. But if necessary, writing your own middleware is also quite
+straightforward, as shown above.
+
+Unlike `Consumes` or `Produces`, middlewares are not scoped within a single descriptor, which means a
+middleware for `/some/path` will impact all paths with prefix `/some/path`, even though they are in different
+descriptors. For example:
+
 ```go
 definition.Descriptor{
 	Path:        "/path",
 	Middlewares: SomeMiddlewares,
-} 
+}
 definition.Descriptor{
 	Path:        "/path/child",
-} 
+}
 ```
-The two descriptors does not have any relationship but their path have common prefix. The first path `/path` is the prefix of the second one. So middlewares is also valid for the second descriptor. For more details, check the design doc of router.
+
+The two descriptors do not have any relationship but their path have common prefix, i.e. path of the first
+descriptor is a prefix of the second descriptor. In such case, `SomeMiddlewares` are also valid for the second
+descriptor. For more details, check the design doc of router.
+
+### API Definition
+
+API definition is another core data structure in Nirvana: it defines all handlers for your services. Following
+is the golang type definition of `Definition`:
 
 ```go
 // Definition defines an API handler.
@@ -443,22 +503,101 @@ type Definition struct {
 	Examples []Example
 }
 ```
-An definition describes an API handler. `Method` determines the action of the handler:
 
-| Method | HTTP Method | Success Status Code |
-| --- | --- | --- |
-| List | GET | 200 |
-| Get | GET | 200 |
-| Create | POST | 201 |
-| Update | PUT | 200 |
-| Patch | PATCH | 200 |
-| Delete | DELETE | 204 |
-| AsyncCreate | POST | 202 | 
-| AsyncUpdate | PUT | 202 |
-| AsyncPatch | PATCH | 202 |
-| AsyncDelete | DELETE | 202 |
+Each descriptor has multiple API definitions, and **A single API definition contains handler for a single path
+and method combination.** For example, here we define a descriptor to handle endpoint `/echo`, with two methods
+`Get` and `Create`:
 
-Every API method corresponds to a HTTP method and **ONE** Success status code. It's a convention. If an API functions returns with no error, Nirvana should return the status code.
+```
+var echo = definition.Descriptor{
+	Path:        "/echo",
+	Description: "Echo API",
+	Definitions: []definition.Definition{
+		{
+			Method:   definition.Get,
+			Function: EchoGet,
+			Consumes: []string{definition.MIMEAll},
+			Produces: []string{definition.MIMEJSON},
+		},
+		{
+			Method:   definition.Create,
+			Function: EchoCreate,
+			Consumes: []string{definition.MIMEAll},
+			Produces: []string{definition.MIMEJSON},
+		},
+	},
+}
+```
+
+Below is a list of all supported methods, as well as its corresponding HTTP method and success status code. By
+convention, every API method corresponds to a HTTP method and **ONE** success status code. If an API function
+returns no error, Nirvana will return the success status code.
+
+| Method      | HTTP Method | Success Status Code |
+| ----------- | ----------- | ------------------- |
+| List        | GET         | 200                 |
+| Get         | GET         | 200                 |
+| Create      | POST        | 201                 |
+| Update      | PUT         | 200                 |
+| Patch       | PATCH       | 200                 |
+| Delete      | DELETE      | 204                 |
+| AsyncCreate | POST        | 202                 |
+| AsyncUpdate | PUT         | 202                 |
+| AsyncPatch  | PATCH       | 202                 |
+| AsyncDelete | DELETE      | 202                 |
+
+### Parameter
+
+`Parameter` describes corresponding handler parameters of an API definition. Your request handler will receive
+the exact number of parameters, with the same index as defined in your API definition. Note most of the times,
+you will start your service using `nirvana.NewDefaultConfig()`, which adds request context as the first
+parameter. Therefore, parameters defined in descriptor appear in the second parameter of your request handler.
+For example, in the following example, our endpoint `/echo` has two query parameters, and our handler `Echo`
+receives three parameters: `context`, `msg1` and `msg2`.
+
+```
+var echo = definition.Descriptor{
+	Path:        "/echo",
+	Description: "Echo API",
+	Definitions: []definition.Definition{
+		{
+			Method:   definition.Get,
+			Function: Echo,
+			Consumes: []string{definition.MIMEAll},
+			Produces: []string{definition.MIMEJSON},
+			Parameters: []definition.Parameter{
+				{
+					Source:      definition.Query,
+					Name:        "msg1",
+					Description: "First message to echo",
+				},
+				{
+					Source:      definition.Query,
+					Name:        "msg2",
+					Description: "Second message to echo",
+				},
+			},
+			Results: []definition.Result{
+				{
+ 					Destination: definition.Data,
+					Description: "Result to return if success",
+				},
+				{
+					Destination: definition.Error,
+					Description: "Error to return if not success",
+				},
+			},
+		},
+	},
+}
+
+// API function.
+func Echo(ctx context.Context, msg1 string, msg2 string) (string, error) {
+	return msg, nil
+}
+```
+
+Below is the golang type definition of `Parameter`:
 
 ```go
 // Parameter describes a function parameter.
@@ -480,44 +619,54 @@ type Parameter struct {
 	Description string
 }
 ```
-`Parameter` describes the corresponding parameter which with same index in API function (If you use `nirvana.NewDefaultConfig()` to create server, All your API functions must use `context.Context` as the first parameter, and you don't need add a `Parameter` for `context.Context` in `Definition.Parameters`. For more details, see `Advanced Usage`).
 
- `Source` is the value source of current parameter. `Name` is the key of `Source` (Not the name of API function parameter). 
+`Source` is the source of a parameter, and `Name` is the key of `Source`.
 
-| Source | Description |
-| --- | --- |
-| Path | Value from URL path |
-| Query | Value from URL query string |
-| Header | Value from HTTP request header |
-| Form | Value from HTTP body. But `Content-Type` must be "application/x-www-form-urlencoded" or "multipart/form-data" |
-| File | Value from HTTP body. But `Content-Type` must be "multipart/form-data" |
-| Body | Value from HTTP body. Parameters of the type don't need a name |
-| Auto | Data receiver must be a struct. Parameters of the type don't need a name. Explain later |
-| Prefab | Value from internal method. See `Advanced Usage` |
+| Source | Description                                                                                               |
+| ------ | --------------------------------------------------------------------------------------------------------- |
+| Path   | Value from URL path                                                                                       |
+| Query  | Value from URL query string                                                                               |
+| Header | Value from HTTP request header                                                                            |
+| Form   | Value from HTTP body. `Content-Type` must be "application/x-www-form-urlencoded" or "multipart/form-data" |
+| File   | Value from HTTP body. `Content-Type` must be "multipart/form-data"                                        |
+| Body   | Value from HTTP body. Parameters of this type don't need a name                                           |
+| Auto   | Data receiver must be a struct. Parameters of the type don't need a name.                                 |
+| Prefab | Value from internal method. See `Advanced Usage`                                                          |
 
-**Source Auto**
-Auto is for combining fields in a struct:
+The source **Auto** is for combining fields in a struct:
+
 ```go
 // Here is an example for `Auto` struct.
 // The struct has some fields. Every field has a tag with name `source`.
 // The source should obey the format:
 //     Source,Name[,default=value]
-// `Source` and `Name` are same as before.
-// `default` is optional. its value should be basic data type (bool, int*, uint*, float*, string). 
+// `Source` and `Name` are the same as before.
+// `default` is optional. its value should be basic data type (bool, int*, uint*, float*, string).
 type Example struct {
 	ID     int    `source:"Path,id"`
 	Start  int    `source:"Query,id,default=100"`
 	Tenant string `source:"Header,X-Tenant,default=test"`
 }
 ```
-If you have lots of fields from a request, you could use `Auto` with a struct to get values from request. Don't use it when you only have several parameters. Separate parameters is more readable.
 
-**Parameter Workflow**
-All values from HTTP request is string. Nirvana has a mechanism to convert strings to specific types for API function. It's normal, but if there are some operators in `Parameter`, the target type of the parameter would be from the first operator. 
-Here is the data flow for a parameter:
-![](https://user-images.githubusercontent.com/13895988/34516454-7215cda8-f03c-11e7-8fcf-e06147c9d98d.png)
+If you have lots of fields from a request, you can use `Auto` with a struct to get values from request.
+Don't use it when you only have a few parameters: separated parameters is more readable.
+
+All values from HTTP request are string. Nirvana has a mechanism to convert strings to specific types for
+API function. The behavior is customizable via `operator`, which allows you to modify input request. In case
+there is custom operator, input request will be converted to parameter type of the first operator. Here is
+the data flow for a parameter:
+
+<p align="center"><img src="https://user-images.githubusercontent.com/13895988/34516454-7215cda8-f03c-11e7-8fcf-e06147c9d98d.png" height="350px" width="auto"></p>
+
 If `Data` is empty and `Parameter.Default` is not nil, default value is used as `Typed Data` .
- 
+
+### Result
+
+`Result` is similar but simpler than `Parameter`. Its `Destination` indicates the target to write data. Just
+like `Parameter`, we can modify output response via `operator`; the final returned type will be the return
+type of the last operator.
+
 ```go
 // Result describes how to handle a result from function results.
 type Result struct {
@@ -532,18 +681,27 @@ type Result struct {
 	Description string
 }
 ```
-`Result` is simpler than `Parameter`.  Its `Destination` indicates the target to write data.
 
-| Destination | Description |
-| --- | --- |
-| Meta | Indicates the value should be written to HTTP response header. Its type must be `map[string]string` |
-| Data | Indicates the value should be written to HTTP response body. The format is decided by HTTP `Accept` and `Definition.Produces` |
-| Error | If an error occurs, `Meta` and `Data` is ignored. Error message would be written to HTTP response body |
+| Destination | Description                                                                                                                   |
+| ----------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| Meta        | Indicates the value should be written to HTTP response header. Its type must be `map[string]string`                           |
+| Data        | Indicates the value should be written to HTTP response body. The format is decided by HTTP `Accept` and `Definition.Produces` |
+| Error       | If an error occurs, `Meta` and `Data` is ignored. Error message will be written to HTTP response body                         |
 
-The workflow of `Result` is similar with `Parameter`. Only the input of operators is the returned value of API function and output would be written to HTTP response.
+### Validation
 
-**Error**
-Your error always indicate a 500 status code except your error implements the following the interface:
+TODO
+
+### Configurer
+
+TODO
+
+### Error
+
+In Nirvana core, error always means HTTP status code 500 - we try to avoid adding busniess logic into Nirvana.
+That is, for error code other than 500, you are responsible to write your own error implementation, which only
+needs to satisfy the following interface:
+
 ```go
 // Error is a common interface for error.
 // If an error implements the interface, type handlers can
@@ -555,120 +713,70 @@ type Error interface {
 	Message() interface{}
 }
 ```
-An error should implement Error interface. It contains a status code and error message. Package `github.com/caicloud/nirvana/errors` provides many helper functions to create standard errors. 
-Here are two examples:
+
+An error contains status code and error message. Package `github.com/caicloud/nirvana/errors` provides standard
+errors implementation and many helper functions. For example:
+
 ```go
 // Example 1:
 // Directly create an error.
-// Fields (e.g. ${customer}) in format are corresponds to args (e.g. customer.Name) in order. 
-errors.NotFound.Error("${customer} is not found", customer.Name)
+// Fields (e.g. ${customer}) in format correspond to args (e.g. customer.Name) in order.
+errors.NotFound.Error("${customer} not found", customer.Name)
 
 // Example 2:
 // Create an error factory at first.
-var CustomerNotFount = errors.NotFound.Build("Project:Customer:CustomerNotFount", "${customer} is not found")
+var CustomerNotFount = errors.NotFound.Build("Project:Customer:CustomerNotFount", "${customer} not found")
 // Then create error by factory.
 CustomerNotFount.Error(customer.Name)
-// In the solution, you can check if an error is derived by specified factory.
+// You can check if an error is derived by specified factory.
 if CustomerNotFount.Derived(err) {
 	// Do something.
 }
 ```
-Use interface `errors.Error` in function signature is strongly discouraged. You should always use `error` and create errors by the methods referred above.
 
-### Nirvana Config Plugins
-Nirvana provides a simple but useful plugin mechanism to create plugins.  Nirvana server need a config to configure server options:
-```go
-// Config describes configuration of server.
-type Config struct {
-	...
-	// Descriptors contains all APIs.
-	Descriptors []definition.Descriptor
-	...
-	// configSet contains all configurations of plugins.
-	configSet map[string]interface{}
-}
+Use interface `errors.Error` in function signature is strongly discouraged. You should always use standard
+`error` interface and create errors by the methods referred above.
 
-type Configurer func(c *Config) error
+### Logging
 
-// Configure configs by configurers. It panics if an error occurs.
-func (c *Config) Configure(configurers ...Configurer) *Config {...}
+Nirvana provides a default logging implementation, the API mirrors [glog](https://github.com/golang/glog).
+Following logging methods are provided with increasing severity.
+
 ```
-An plugin can install its own config into Nirvana config by `Configurer`s. `Configurer` can modify its own config. For example:
-```go
-// Descriptor returns a configurer to add descriptors into config.
-func Descriptor(descriptors ...definition.Descriptor) Configurer {
-	return func(c *Config) error {
-		c.Descriptors = append(c.Descriptors, descriptors...)
-		return nil
-	}
-}
-```
-`nirvana.Descriptor` is an configurer to install API descriptors into Nirvana config (All descriptors should be installed by the configurer rather than add into Nirvana config directly). If your plugin has private config, you can set/get it into Nirvana config by:
-```go
-// Config gets external config by plugin name.
-func (c *Config) Config(name string) interface{} {...}
-
-// Set sets external config by plugin name.
-// Set a nil config will delete it.
-func (c *Config) Set(name string, config interface{}) {...}
-```
-Configurers only manipulate config. Nirvana server would install your plugins when server is starting. So all your plugins have their own installer: 
-```go
-// ConfigInstaller is used to install config to service builder.
-type ConfigInstaller interface {
-	// Name is the external config name.
-	Name() string
-	// Install installs stuffs before server starting.
-	Install(builder service.Builder, config *Config) error
-	// Uninstall uninstalls stuffs after server terminating.
-	Uninstall(builder service.Builder, config *Config) error
-}
+Info
+Warning
+Error
+Fatal
 ```
 
-**Plugin Frame**
-```go
-func init() {
-	nirvana.RegisterConfigInstaller(&pluginInstaller{})
-}
+Keep in mind that:
 
-// ExternalConfigName is the external config name of tracing.
-const ExternalConfigName = "pluginName"
+* Each level comes with formatter and newliner method, i.e. `Infof` and `Infoln`
+* `Info` has verbosity level, for example, you can use `log.V(4).Info` for unimportant logs
+* `Fatal` error will terminate program execution
 
-type pluginInstaller struct{}
+For more details, see `github.com/caicloud/nirvana/log` package.
 
-// Name is the external config name.
-func (i *pluginInstaller) Name() string {
-	return ExternalConfigName
-}
+### Plugins
 
-// Install installs config to builder.
-func (i *pluginInstaller) Install(builder service.Builder, cfg *nirvana.Config) error {...}
+#### Metrics
 
-// Uninstall uninstalls stuffs after server terminating.
-func (i *pluginInstaller) Uninstall(builder service.Builder, cfg *nirvana.Config) error {...)
+TBD
 
-// ConfigA configures fieldA.
-func ConfigA(fieldA FieldType) nirvana.Configurer {...}
+#### Profiling
 
-// ConfigB configures fieldB.
-func ConfigB() nirvana.Configurer {...}
+TBD
 
-// Disable returns a configurer to disable current plugin.
-func Disable() nirvana.Configurer {
-	return func(c *nirvana.Config) error {
-		c.Set(ExternalConfigName, nil)
-		return nil
-	}
-}
-```
-Then user can use the plugin by:
-```go
-import "/path/to/plugin"
+#### Tracing
 
-func main() {
-	config := nirvana.NewDefaultConfig("", 8080)
-	config.Configure(plugin.ConfigA(fieldValue))
-}
-```
+TBD
 
+## Developer Guide and Proposals
 
+### Proposals
+
+TBD
+
+### Plugin framework
+
+TBD
