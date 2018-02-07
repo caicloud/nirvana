@@ -69,17 +69,17 @@ var definitionConflict = errors.InternalServerError.Build("Nirvana:Service:Defin
 	"consumer-producer pair ${key}:${value} conflicts in [http.${method}]${path}")
 
 var definitionUnmatchedParameters = errors.InternalServerError.Build("Nirvana:Service:DefinitionUnmatchedParameters",
-	"function ${function} has ${count} parameters but want ${desired} in ${path}, " +
+	"function ${function} has ${count} parameters but want ${desired} in ${path}, "+
 		"you can define it with descriptor->definition[]->parameters[]")
 
 var definitionUnmatchedResults = errors.InternalServerError.Build("Nirvana:Service:DefinitionUnmatchedResults",
-	"function ${function} has ${count} results but want ${desired} in ${path}, " +
+	"function ${function} has ${count} results but want ${desired} in ${path}, "+
 		"you can define it with descriptor->definition[]->results[]")
 
-var noDestinationHandler = errors.InternalServerError.Build("Nirvana:Service:NoDestinationHandler", "no destination handler for destination ${destination}, " +
+var noDestinationHandler = errors.InternalServerError.Build("Nirvana:Service:NoDestinationHandler", "no destination handler for destination ${destination}, "+
 	"you can define it with descriptor->definition[]->results[]->destination")
 
-var noContext = errors.InternalServerError.Build("Nirvana:Service:NoContext", "can't find http context, " +
+var noContext = errors.InternalServerError.Build("Nirvana:Service:NoContext", "can't find http context, "+
 	"you should define `ctx context.Context` as the first parameter of your handler function")
 
 var requiredField = errors.InternalServerError.Build("Nirvana:Service:RequiredField", "required field ${field} in ${source} but got empty")
