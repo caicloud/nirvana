@@ -165,7 +165,7 @@ func wapper(c *nirvana.Config, f func(c *config)) {
 // Path returns a configurer to set metrics path.
 func Path(path string) nirvana.Configurer {
 	if path == "" {
-		panic("url for metrics endpoint cannot be empty")
+		path = "/metrics"
 	}
 	return func(c *nirvana.Config) error {
 		wapper(c, func(c *config) {
@@ -178,7 +178,7 @@ func Path(path string) nirvana.Configurer {
 // Namespace returns a configure to set metrics namespace.
 func Namespace(ns string) nirvana.Configurer {
 	if ns == "" {
-		panic("namespace for metrics cannot be empty")
+		ns = "nirvana"
 	}
 	return func(c *nirvana.Config) error {
 		wapper(c, func(c *config) {
@@ -186,4 +186,26 @@ func Namespace(ns string) nirvana.Configurer {
 		})
 		return nil
 	}
+}
+
+// Plugin contains basic configurations of metrics.
+type Plugin struct {
+	// Namespace is metrics namespace.
+	Namespace string `desc:"Metrics namespace"`
+	// Path is metrics path.
+	Path string `desc:"Metrics handler path"`
+}
+
+// Name returns plugin name.
+func (p *Plugin) Name() string {
+	return ExternalConfigName
+}
+
+// Configure configures nirvana config via current options.
+func (p *Plugin) Configure(cfg *nirvana.Config) error {
+	cfg.Configure(
+		Namespace(p.Namespace),
+		Path(p.Path),
+	)
+	return nil
 }
