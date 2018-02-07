@@ -117,7 +117,7 @@ func (i *metricsInstaller) Install(builder service.Builder, cfg *nirvana.Config)
 			Path:        "/",
 			Middlewares: []definition.Middleware{newMetricsMiddleware(c.namespace)},
 		}
-		metricsEndpoint := definition.SimpleDescriptor(definition.Get, c.path, service.WarpHTTPHandler(promhttp.Handler()))
+		metricsEndpoint := definition.SimpleDescriptor(definition.Get, c.path, service.WrapHTTPHandler(promhttp.Handler()))
 		err = builder.AddDescriptor(monitorMiddleware, metricsEndpoint)
 	})
 	return err
