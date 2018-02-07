@@ -29,8 +29,10 @@ import (
 )
 
 // This example shows how metrics and profiling plugin work, and the defaults functionality they provide.
-// Run `ab -n 100 -H 'Content-type: application/json' http://localhost:8080/hello`, then
+// Run `ab -n 1000 http://localhost:8080/hello`, then
 // curl `http://localhost:8080/metrics` to see default metrics for http requests.
+// Use following prometheus query to see 95th percentile:
+// histogram_quantile (0.95, sum(rate(nirvana_request_latencies_bucket{path="/hello"}[5m])) by (le))
 func main() {
 	config := nirvana.NewDefaultConfig("", 8080).
 		Configure(
@@ -55,7 +57,7 @@ var example = definition.Descriptor{
 		{
 			Method: definition.Get,
 			Function: func(ctx context.Context) (string, error) {
-				latency := 20 + rand.Float64()*300
+				latency := rand.NormFloat64()*7.5 + 10
 				<-time.After(time.Duration(latency) * time.Millisecond)
 				return "success", nil
 			},
