@@ -235,8 +235,6 @@ type Descriptor struct {
 }
 ```
 
-**TO BE CONTINUED!!!**
-
 ## Architecture Overview
 
 <p align="center"><img src="https://user-images.githubusercontent.com/13895988/34514829-d9a9b43c-f034-11e7-9dee-5c7940755fab.png" height="350px" width="auto"></p>
