@@ -282,25 +282,3 @@ func Modifier(modifiers ...service.DefinitionModifier) Configurer {
 		return nil
 	}
 }
-
-// Plugin contains basic configurations of nirvana.
-type Plugin struct {
-	// IP is the IP to listen.
-	IP string `desc:"Nirvana server listening IP"`
-	// Port is the port to listen.
-	Port uint16 `desc:"Nirvana server listening Port"`
-}
-
-// Name returns plugin name.
-func (p *Plugin) Name() string {
-	return "nirvana"
-}
-
-// Configure configures nirvana config via current options.
-func (p *Plugin) Configure(cfg *Config) error {
-	cfg.Configure(
-		IP(p.IP),
-		Port(p.Port),
-	)
-	return nil
-}

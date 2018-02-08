@@ -188,21 +188,21 @@ func Namespace(ns string) nirvana.Configurer {
 	}
 }
 
-// Plugin contains basic configurations of metrics.
-type Plugin struct {
+// Option contains basic configurations of metrics.
+type Option struct {
 	// Namespace is metrics namespace.
 	Namespace string `desc:"Metrics namespace"`
 	// Path is metrics path.
-	Path string `desc:"Metrics handler path"`
+	Path string `desc:"Metrics path"`
 }
 
 // Name returns plugin name.
-func (p *Plugin) Name() string {
+func (p *Option) Name() string {
 	return ExternalConfigName
 }
 
 // Configure configures nirvana config via current options.
-func (p *Plugin) Configure(cfg *nirvana.Config) error {
+func (p *Option) Configure(cfg *nirvana.Config) error {
 	cfg.Configure(
 		Namespace(p.Namespace),
 		Path(p.Path),

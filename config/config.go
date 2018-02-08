@@ -31,51 +31,66 @@ import (
 )
 
 var banner = `
-                                                '-:::::-                 
-                                            .:/oo+++oo+:                 
-                                         .:+++//+sys.'                   
-                             .:.       :+++//+sysss+                     
-                            /o++     :o++//osysos+.     ''.......'       
-                           oo/o-   -o+///ossoos+.'--/+oooooooooooooo/-.  
+                                                '-:::::-
+                                            .:/oo+++oo+:
+                                         .:+++//+sys.'
+                             .:.       :+++//+sysss+
+                            /o++     :o++//osysos+.     ''.......'
+                           oo/o-   -o+///ossoos+.'--/+oooooooooooooo/-.
                           +o//y  '+o///+ssooos::+oooooooossooooooooooooo'
                          's//o+ .s+///osoooohoooooosooo+:-...''''''''''.'
-                     '// /+//y./s+//+ssooooosoooso/-.'  '-               
-                     s+s/s///ysh+///ysoooooooos+-'      yh'  ::          
-                    'h//yy///sd+///ssoooooooso:..'   '+-dys'-h+          
-                    'y//ys///+s///+hoooooooso'h++o+'.-hydhyyshy'         
-                     y//++////////ssooooooos 'y+/sso+++syyyyyhyo  ''     
-                     o+///////+s//yoooooooh:+oo+:/:::::::+++ooshss++o    
-                     's///////yh//ysoooooodo/:::::::::::::::::::/sss+    
-                   //:/s//////hyo/+hoooosh+:::::::::::::::::::::::/y.    
-                   s/+os////++hoh//ysoosh/::::::::::::+o///+o/:::::/h'   
-                   y////////hyhosy//yssh::::::::::::/o-     ':s/::::so.  
+                     '// /+//y./s+//+ssooooosoooso/-.'  '-
+                     s+s/s///ysh+///ysoooooooos+-'      yh'  ::
+                    'h//yy///sd+///ssoooooooso:..'   '+-dys'-h+
+                    'y//ys///+s///+hoooooooso'h++o+'.-hydhyyshy'
+                     y//++////////ssooooooos 'y+/sso+++syyyyyhyo  ''
+                     o+///////+s//yoooooooh:+oo+:/:::::::+++ooshss++o
+                     's///////yh//ysoooooodo/:::::::::::::::::::/sss+
+                   //:/s//////hyo/+hoooosh+:::::::::::::::::::::::/y.
+                   s/+os////++hoh//ysoosh/::::::::::::+o///+o/:::::/h'
+                   y////////hyhosy//yssh::::::::::::/o-     ':s/::::so.
                    +o//////+yshyosy+/sd/::::::::::::y      '+hyy::::o+:o.
                    'y//////+hoodyooy+/+ssoo+/+oooo::s      .mNsy::::s::dy
 ///.                /+//////ssoosyooss+////+++//+y::s:        ++:/ssh .ss
-++/oo/.    o+/.      s////+yosyooooooossso++++//y/:::+o/-''-/o+s++syy-// 
- +o///o+/. oo/+o/- -soh+///yysyhoooooooooooosyoso:::::::/++/::/s....o:   
-  .+o////+o/os+//+o/y++so///+ssssooooooooossh/-::/:::::::::::::o/oo//    
-    .+o+////+shy+///oy+/oso////++ossssssso+os+++/::::::::::::::+oy+/:    
-      '-+o+////+o+///////ossssoo+++++oooooo/:::::::::o/::::::::/h/::/    
-       s++sys+//yysssso+oysssm///+++////::::::::::::/s:::/+:::/y'''      
-       :+o+++oo/+ssssoosyyhyod:::::::::::::::::::::+o:::+h++:/s'         
-        '-+++/////+++shyyooooys::::::::::::::::::::s++++sooh+s'          
-           './oysoo///osssssssho::::::::::::::::::::/:::o+/so'           
-              ss+++//////////+oys/:::::::::::::::::::::::+o:             
-              '.:/+++++++++//-.'.soo/o::::::::::::::::/oo:'              
-                   ''''''        h/-./ss+++///////++oo/-'                
-                                 oo++/.''o+/y////::-.                    
-                                         ://-                            
-        ____  _____   _                                          
-       |_   \|_   _| (_)                                         
-         |   \ | |   __   _ .--.  _   __  ,--.   _ .--.   ,--.   
-         | |\ \| |  [  | [ '/''\][ \ [  ]''_\ : [ '.-. | ''_\ :  
-        _| |_\   |_  | |  | |     \ \/ / // | |, | | | | // | |, 
-       |_____|\____|[___][___]     \__/  \'-;__/[___||__]\'-;__/ 
+++/oo/.    o+/.      s////+yosyooooooossso++++//y/:::+o/-''-/o+s++syy-//
+ +o///o+/. oo/+o/- -soh+///yysyhoooooooooooosyoso:::::::/++/::/s....o:
+  .+o////+o/os+//+o/y++so///+ssssooooooooossh/-::/:::::::::::::o/oo//
+    .+o+////+shy+///oy+/oso////++ossssssso+os+++/::::::::::::::+oy+/:
+      '-+o+////+o+///////ossssoo+++++oooooo/:::::::::o/::::::::/h/::/
+       s++sys+//yysssso+oysssm///+++////::::::::::::/s:::/+:::/y'''
+       :+o+++oo/+ssssoosyyhyod:::::::::::::::::::::+o:::+h++:/s'
+        '-+++/////+++shyyooooys::::::::::::::::::::s++++sooh+s'
+           './oysoo///osssssssho::::::::::::::::::::/:::o+/so'
+              ss+++//////////+oys/:::::::::::::::::::::::+o:
+              '.:/+++++++++//-.'.soo/o::::::::::::::::/oo:'
+                   ''''''        h/-./ss+++///////++oo/-'
+                                 oo++/.''o+/y////::-.
+                                         ://-
+        ____  _____   _
+       |_   \|_   _| (_)
+         |   \ | |   __   _ .--.  _   __  ,--.   _ .--.   ,--.
+         | |\ \| |  [  | [ '/''\][ \ [  ]''_\ : [ '.-. | ''_\ :
+        _| |_\   |_  | |  | |     \ \/ / // | |, | | | | // | |,
+       |_____|\____|[___][___]     \__/  \'-;__/[___||__]\'-;__/
 
 `
 
 // Option must be a pointer to struct.
+//
+// Here is an example:
+//   type Option struct {
+//       FirstName string `desc:"Desc for First Name"`
+//       Age       uint16 `desc:"Desc for Age"`
+//   }
+// The struct has two fields (with prefix example):
+//   Field       Flag                   ENV                  Key (In config file)
+//   FirstName   --example-first-name   EXAMPLE_FIRST_NAME   example.firstName
+//   Age         --example-age          EXAMPLE_AGE          example.age
+// When you execute command with `--help`, you can see the help doc of flags and
+// descriptions (From field tag `desc`).
+//
+// The priority is:
+//   Flag > ENV > Key > The value you set in option
 type Option interface{}
 
 // Plugin is for plugins to collect configurations
@@ -86,34 +101,75 @@ type Plugin interface {
 	Configure(cfg *nirvana.Config) error
 }
 
-// NirvanaStarter is a nirvana starter.
-type NirvanaStarter interface {
+// NirvanaOption contains basic configurations of nirvana.
+type NirvanaOption struct {
+	// IP is the IP to listen.
+	IP string `desc:"Nirvana server listening IP"`
+	// Port is the port to listen.
+	Port uint16 `desc:"Nirvana server listening Port"`
+}
+
+// NewDefaultNirvanaOption creates a default nirvana option.
+func NewDefaultNirvanaOption() NirvanaOption {
+	return NirvanaOption{
+		IP:   "",
+		Port: 80,
+	}
+}
+
+// Name returns plugin name.
+func (p *NirvanaOption) Name() string {
+	return "nirvana"
+}
+
+// Configure configures nirvana config via current options.
+func (p *NirvanaOption) Configure(cfg *nirvana.Config) error {
+	cfg.Configure(
+		nirvana.IP(p.IP),
+		nirvana.Port(p.Port),
+	)
+	return nil
+}
+
+// NirvanaCommand is a nirvana command.
+type NirvanaCommand interface {
 	// EnablePlugin enables plugins.
-	EnablePlugin(plugins ...Plugin) NirvanaStarter
-	// AddOption will fill up options from config/ENV/flags after executing.
-	AddOption(prefix string, options ...Option) NirvanaStarter
-	// Add adds a field by key
-	Add(pointer interface{}, key string, shortFlag string, desc string) NirvanaStarter
+	EnablePlugin(plugins ...Plugin) NirvanaCommand
+	// AddOption will fill up options from flags/ENV/config after executing.
+	// A non-empty prefix is recommended. It's used to divide option namespaces.
+	AddOption(prefix string, options ...Option) NirvanaCommand
+	// Add adds a field by key.
+	// If you don't have any struct to describe an option, you can use the method to
+	// add a single field into nirvana command.
+	// `pointer` must be a pointer to golang basic data type (e.g. *int, *string).
+	// `key` must a config key. It's like 'nirvana.ip' and 'myconfig.name.firstName'.
+	// The key will be converted to flag and env (e.g. --nirvana-ip and NIRVANA_IP).
+	// If you want a short flag for the field, you can only set a one-char string.
+	// `desc` describes the field.
+	Add(pointer interface{}, key string, shortFlag string, desc string) NirvanaCommand
 	// Execute runs nirvana server.
 	Execute(descriptors ...definition.Descriptor) error
 	// ExecuteWithConfig runs nirvana server from a custom config.
 	ExecuteWithConfig(cfg *nirvana.Config) error
-	// Command returns a command for starter.
+	// Command returns a command for command.
 	Command(cfg *nirvana.Config) *cobra.Command
 }
 
-// NewNirvanaStarter creates a nirvana starter.
-func NewNirvanaStarter() NirvanaStarter {
-	return NewNamedNirvanaStarter("")
+// NewNirvanaCommand creates a nirvana command.
+func NewNirvanaCommand(option NirvanaOption) NirvanaCommand {
+	return NewNamedNirvanaCommand("", option)
 }
 
-// NewNamedNirvanaStarter creates a nirvana starter with an unique name.
-func NewNamedNirvanaStarter(name string) NirvanaStarter {
-	return &starter{
+// NewNamedNirvanaCommand creates a nirvana command with an unique name.
+func NewNamedNirvanaCommand(name string, option NirvanaOption) NirvanaCommand {
+	cmd := &command{
 		name:    name,
+		option:  option,
 		plugins: []Plugin{},
 		fields:  map[string]*configField{},
 	}
+	cmd.EnablePlugin(&cmd.option)
+	return cmd
 }
 
 type configField struct {
@@ -125,14 +181,15 @@ type configField struct {
 	description string
 }
 
-type starter struct {
+type command struct {
 	name    string
+	option  NirvanaOption
 	plugins []Plugin
 	fields  map[string]*configField
 }
 
 // EnablePlugin enables plugins.
-func (s *starter) EnablePlugin(plugins ...Plugin) NirvanaStarter {
+func (s *command) EnablePlugin(plugins ...Plugin) NirvanaCommand {
 	s.plugins = append(s.plugins, plugins...)
 	for _, plugin := range plugins {
 		s.AddOption(plugin.Name(), plugin)
@@ -152,7 +209,7 @@ func walkthrough(index []int, typ reflect.Type, f func(index []int, field reflec
 }
 
 // AddOption will fill up options from config/ENV/flags after executing.
-func (s *starter) AddOption(prefix string, options ...Option) NirvanaStarter {
+func (s *command) AddOption(prefix string, options ...Option) NirvanaCommand {
 	if prefix != "" {
 		prefix += "."
 	}
@@ -175,8 +232,11 @@ func (s *starter) AddOption(prefix string, options ...Option) NirvanaStarter {
 	return s
 }
 
-// Add adds a field by key
-func (s *starter) Add(pointer interface{}, key string, shortFlag string, desc string) NirvanaStarter {
+// Add adds a field by key.
+func (s *command) Add(pointer interface{}, key string, shortFlag string, desc string) NirvanaCommand {
+	if pointer == nil || reflect.ValueOf(pointer).IsNil() {
+		panic(errors.InternalServerError.Error("pointer of ${key} should not be nil", key))
+	}
 	if s.name != "" {
 		key = s.name + "." + key
 	}
@@ -245,19 +305,19 @@ func (s *starter) Add(pointer interface{}, key string, shortFlag string, desc st
 }
 
 // Execute runs nirvana server.
-func (s *starter) Execute(descriptors ...definition.Descriptor) error {
-	cfg := nirvana.NewDefaultConfig("", 80)
+func (s *command) Execute(descriptors ...definition.Descriptor) error {
+	cfg := nirvana.NewDefaultConfig(s.option.IP, s.option.Port)
 	cfg.Configure(nirvana.Descriptor(descriptors...))
 	return s.Command(cfg).Execute()
 }
 
 // ExecuteWithConfig runs nirvana server from a custom config.
-func (s *starter) ExecuteWithConfig(cfg *nirvana.Config) error {
+func (s *command) ExecuteWithConfig(cfg *nirvana.Config) error {
 	return s.Command(cfg).Execute()
 }
 
-// Command returns a command for starter.
-func (s *starter) Command(cfg *nirvana.Config) *cobra.Command {
+// Command returns a command for nirvana.
+func (s *command) Command(cfg *nirvana.Config) *cobra.Command {
 	cmd := &cobra.Command{
 		Use: s.name,
 		Run: func(cmd *cobra.Command, args []string) {
@@ -445,15 +505,15 @@ func chooseValue(key string, value interface{}, env string, envValue interface{}
 	desc := ""
 	if value != nil {
 		val = value
-		desc += fmt.Sprintf(" (%s=%v)", key, value)
+		desc += fmt.Sprintf(" (CFG: %s=%v)", key, value)
 	} else {
-		desc += fmt.Sprintf(" (%s)", key)
+		desc += fmt.Sprintf(" (CFG: %s)", key)
 	}
 	if envValue != nil {
 		val = envValue
-		desc = fmt.Sprintf(" (%s=%v)", env, envValue) + desc
+		desc = fmt.Sprintf(" (ENV: %s=%v)", env, envValue) + desc
 	} else {
-		desc = fmt.Sprintf(" (%s)", env) + desc
+		desc = fmt.Sprintf(" (ENV: %s)", env) + desc
 	}
 	return desc, val
 }
