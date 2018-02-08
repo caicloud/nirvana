@@ -34,6 +34,8 @@ type Transport struct {
 	http.RoundTripper
 	// Enable the ClientTrace, See https://blog.golang.org/http-tracing for more.
 	EnableHTTPtrace bool
+	// The default is HTTP method
+	OperationName string
 }
 
 // RoundTrip implements the RoundTripper interface.
@@ -43,7 +45,12 @@ func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 		rt = http.DefaultTransport
 	}
 
-	span, ctx := StartSpanFromContext(req.Context(), "HTTP: "+req.Method)
+	operationName := t.OperationName
+	if operationName == "" {
+		operationName = req.Method
+	}
+
+	span, ctx := StartSpanFromContext(req.Context(), "HTTP: "+operationName)
 	if span == nil {
 		return rt.RoundTrip(req)
 	}
