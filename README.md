@@ -939,7 +939,8 @@ TBD
 
 ### Proposals
 
-TBD
+- [kickoff](./docs/proposals/kickoff.md)
+- [framework](./docs/proposals/framework.md)
 
 ### Plugin framework
 
