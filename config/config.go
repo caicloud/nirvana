@@ -182,6 +182,7 @@ func NewNamedNirvanaCommand(name string, option *Option) NirvanaCommand {
 
 type configField struct {
 	pointer     interface{}
+	desired     interface{}
 	key         string
 	env         string
 	shortFlag   string
@@ -329,11 +330,15 @@ func (s *command) Command(cfg *nirvana.Config) *cobra.Command {
 	cmd := &cobra.Command{
 		Use: s.name,
 		Run: func(cmd *cobra.Command, args []string) {
+			fs := cmd.Flags()
 			cfg.Logger.Info(banner)
 			// Restore configs.
 			for _, f := range s.fields {
-				val := reflect.ValueOf(f.pointer).Elem().Interface()
-				Set(f.key, val)
+				val := reflect.ValueOf(f.pointer).Elem()
+				if f.desired != nil && !fs.Lookup(f.longFlag).Changed {
+					val.Set(reflect.ValueOf(f.desired))
+				}
+				Set(f.key, val.Interface())
 			}
 			for _, plugin := range s.plugins {
 				if err := plugin.Configure(cfg); err != nil {
@@ -359,7 +364,8 @@ func (s *command) Command(cfg *nirvana.Config) *cobra.Command {
 				envValue = cast.ToUint8(env)
 			}
 			desc, val := chooseValue(f.key, value, f.env, envValue, *v)
-			fs.Uint8VarP(v, f.longFlag, f.shortFlag, val.(uint8), f.description+desc)
+			f.desired = val
+			fs.Uint8VarP(v, f.longFlag, f.shortFlag, *v, f.description+desc)
 		case *uint16:
 			if IsSet(f.key) {
 				value = GetUint16(f.key)
@@ -368,7 +374,8 @@ func (s *command) Command(cfg *nirvana.Config) *cobra.Command {
 				envValue = cast.ToUint16(env)
 			}
 			desc, val := chooseValue(f.key, value, f.env, envValue, *v)
-			fs.Uint16VarP(v, f.longFlag, f.shortFlag, val.(uint16), f.description+desc)
+			f.desired = val
+			fs.Uint16VarP(v, f.longFlag, f.shortFlag, *v, f.description+desc)
 		case *uint32:
 			if IsSet(f.key) {
 				value = GetUint32(f.key)
@@ -377,7 +384,8 @@ func (s *command) Command(cfg *nirvana.Config) *cobra.Command {
 				envValue = cast.ToUint32(env)
 			}
 			desc, val := chooseValue(f.key, value, f.env, envValue, *v)
-			fs.Uint32VarP(v, f.longFlag, f.shortFlag, val.(uint32), f.description+desc)
+			f.desired = val
+			fs.Uint32VarP(v, f.longFlag, f.shortFlag, *v, f.description+desc)
 		case *uint64:
 			if IsSet(f.key) {
 				value = GetUint64(f.key)
@@ -386,7 +394,8 @@ func (s *command) Command(cfg *nirvana.Config) *cobra.Command {
 				envValue = cast.ToUint64(env)
 			}
 			desc, val := chooseValue(f.key, value, f.env, envValue, *v)
-			fs.Uint64VarP(v, f.longFlag, f.shortFlag, val.(uint64), f.description+desc)
+			f.desired = val
+			fs.Uint64VarP(v, f.longFlag, f.shortFlag, *v, f.description+desc)
 		case *uint:
 			if IsSet(f.key) {
 				value = GetUint(f.key)
@@ -395,7 +404,8 @@ func (s *command) Command(cfg *nirvana.Config) *cobra.Command {
 				envValue = cast.ToUint(env)
 			}
 			desc, val := chooseValue(f.key, value, f.env, envValue, *v)
-			fs.UintVarP(v, f.longFlag, f.shortFlag, val.(uint), f.description+desc)
+			f.desired = val
+			fs.UintVarP(v, f.longFlag, f.shortFlag, *v, f.description+desc)
 
 		case *int8:
 			if IsSet(f.key) {
@@ -405,7 +415,8 @@ func (s *command) Command(cfg *nirvana.Config) *cobra.Command {
 				envValue = cast.ToInt8(env)
 			}
 			desc, val := chooseValue(f.key, value, f.env, envValue, *v)
-			fs.Int8VarP(v, f.longFlag, f.shortFlag, val.(int8), f.description+desc)
+			f.desired = val
+			fs.Int8VarP(v, f.longFlag, f.shortFlag, *v, f.description+desc)
 		case *int16:
 			if IsSet(f.key) {
 				value = GetInt16(f.key)
@@ -414,7 +425,8 @@ func (s *command) Command(cfg *nirvana.Config) *cobra.Command {
 				envValue = cast.ToInt16(env)
 			}
 			desc, val := chooseValue(f.key, value, f.env, envValue, *v)
-			fs.Int16VarP(v, f.longFlag, f.shortFlag, val.(int16), f.description+desc)
+			f.desired = val
+			fs.Int16VarP(v, f.longFlag, f.shortFlag, *v, f.description+desc)
 		case *int32:
 			if IsSet(f.key) {
 				value = GetInt32(f.key)
@@ -423,7 +435,8 @@ func (s *command) Command(cfg *nirvana.Config) *cobra.Command {
 				envValue = cast.ToInt32(env)
 			}
 			desc, val := chooseValue(f.key, value, f.env, envValue, *v)
-			fs.Int32VarP(v, f.longFlag, f.shortFlag, val.(int32), f.description+desc)
+			f.desired = val
+			fs.Int32VarP(v, f.longFlag, f.shortFlag, *v, f.description+desc)
 		case *int64:
 			if IsSet(f.key) {
 				value = GetInt64(f.key)
@@ -432,7 +445,8 @@ func (s *command) Command(cfg *nirvana.Config) *cobra.Command {
 				envValue = cast.ToInt64(env)
 			}
 			desc, val := chooseValue(f.key, value, f.env, envValue, *v)
-			fs.Int64VarP(v, f.longFlag, f.shortFlag, val.(int64), f.description+desc)
+			f.desired = val
+			fs.Int64VarP(v, f.longFlag, f.shortFlag, *v, f.description+desc)
 		case *int:
 			if IsSet(f.key) {
 				value = GetInt(f.key)
@@ -441,7 +455,8 @@ func (s *command) Command(cfg *nirvana.Config) *cobra.Command {
 				envValue = cast.ToInt(env)
 			}
 			desc, val := chooseValue(f.key, value, f.env, envValue, *v)
-			fs.IntVarP(v, f.longFlag, f.shortFlag, val.(int), f.description+desc)
+			f.desired = val
+			fs.IntVarP(v, f.longFlag, f.shortFlag, *v, f.description+desc)
 
 		case *float32:
 			if IsSet(f.key) {
@@ -451,7 +466,8 @@ func (s *command) Command(cfg *nirvana.Config) *cobra.Command {
 				envValue = cast.ToFloat32(env)
 			}
 			desc, val := chooseValue(f.key, value, f.env, envValue, *v)
-			fs.Float32VarP(v, f.longFlag, f.shortFlag, val.(float32), f.description+desc)
+			f.desired = val
+			fs.Float32VarP(v, f.longFlag, f.shortFlag, *v, f.description+desc)
 		case *float64:
 			if IsSet(f.key) {
 				value = GetFloat64(f.key)
@@ -460,7 +476,8 @@ func (s *command) Command(cfg *nirvana.Config) *cobra.Command {
 				envValue = cast.ToFloat64(env)
 			}
 			desc, val := chooseValue(f.key, value, f.env, envValue, *v)
-			fs.Float64VarP(v, f.longFlag, f.shortFlag, val.(float64), f.description+desc)
+			f.desired = val
+			fs.Float64VarP(v, f.longFlag, f.shortFlag, *v, f.description+desc)
 
 		case *string:
 			if IsSet(f.key) {
@@ -470,7 +487,8 @@ func (s *command) Command(cfg *nirvana.Config) *cobra.Command {
 				envValue = cast.ToString(env)
 			}
 			desc, val := chooseValue(f.key, value, f.env, envValue, *v)
-			fs.StringVarP(v, f.longFlag, f.shortFlag, val.(string), f.description+desc)
+			f.desired = val
+			fs.StringVarP(v, f.longFlag, f.shortFlag, *v, f.description+desc)
 		case *[]string:
 			if IsSet(f.key) {
 				value = GetStringSlice(f.key)
@@ -479,7 +497,8 @@ func (s *command) Command(cfg *nirvana.Config) *cobra.Command {
 				envValue = cast.ToStringSlice(env)
 			}
 			desc, val := chooseValue(f.key, value, f.env, envValue, *v)
-			fs.StringSliceVarP(v, f.longFlag, f.shortFlag, val.([]string), f.description+desc)
+			f.desired = val
+			fs.StringSliceVarP(v, f.longFlag, f.shortFlag, *v, f.description+desc)
 
 		case *bool:
 			if IsSet(f.key) {
@@ -489,7 +508,8 @@ func (s *command) Command(cfg *nirvana.Config) *cobra.Command {
 				envValue = cast.ToBool(env)
 			}
 			desc, val := chooseValue(f.key, value, f.env, envValue, *v)
-			fs.BoolVarP(v, f.longFlag, f.shortFlag, val.(bool), f.description+desc)
+			f.desired = val
+			fs.BoolVarP(v, f.longFlag, f.shortFlag, *v, f.description+desc)
 
 		case *time.Duration:
 			if IsSet(f.key) {
@@ -499,7 +519,8 @@ func (s *command) Command(cfg *nirvana.Config) *cobra.Command {
 				envValue = cast.ToDuration(env)
 			}
 			desc, val := chooseValue(f.key, value, f.env, envValue, *v)
-			fs.DurationVarP(v, f.longFlag, f.shortFlag, val.(time.Duration), f.description+desc)
+			f.desired = val
+			fs.DurationVarP(v, f.longFlag, f.shortFlag, *v, f.description+desc)
 
 		default:
 			panic(errors.InternalServerError.Error("unrecognized type ${type} for ${key}", reflect.TypeOf(f.pointer).String(), f.key))
@@ -513,15 +534,15 @@ func chooseValue(key string, value interface{}, env string, envValue interface{}
 	desc := ""
 	if value != nil {
 		val = value
-		desc += fmt.Sprintf(" (CFG: %s=%v)", key, value)
+		desc += fmt.Sprintf(" (cfg %s=%v)", key, value)
 	} else {
-		desc += fmt.Sprintf(" (CFG: %s)", key)
+		desc += fmt.Sprintf(" (cfg %s)", key)
 	}
 	if envValue != nil {
 		val = envValue
-		desc = fmt.Sprintf(" (ENV: %s=%v)", env, envValue) + desc
+		desc = fmt.Sprintf(" (env %s=%v)", env, envValue) + desc
 	} else {
-		desc = fmt.Sprintf(" (ENV: %s)", env) + desc
+		desc = fmt.Sprintf(" (env %s)", env) + desc
 	}
 	return desc, val
 }
