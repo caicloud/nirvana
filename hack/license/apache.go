@@ -18,7 +18,6 @@ package main
 
 import (
 	"bytes"
-	goflag "flag"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -26,10 +25,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/caicloud/nirvana/cli"
-	"github.com/golang/glog"
+	"github.com/caicloud/nirvana/log"
 	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
 )
 
 var sentinels = []string{
@@ -37,6 +34,10 @@ var sentinels = []string{
 	"Caicloud",
 	`Licensed under the Apache License, Version 2.0 (the "License");`,
 }
+
+var dryRun = false
+var root = ""
+var goHeaderFile = ""
 
 // LoadGoBoilerplate loads the boilerplate file passed to --go-header-file.
 func loadGoBoilerplate(filepath string) ([]byte, error) {
@@ -50,11 +51,10 @@ func loadGoBoilerplate(filepath string) ([]byte, error) {
 
 // Run ...
 func Run() {
-	root := cli.GetString("root")
 
-	boilerplate, err := loadGoBoilerplate(cli.GetString("go-header-file"))
+	boilerplate, err := loadGoBoilerplate(goHeaderFile)
 	if err != nil {
-		glog.Fatal(err)
+		log.Fatal(err)
 		return
 	}
 	boilerplate = bytes.TrimSpace(boilerplate)
@@ -99,11 +99,11 @@ func Run() {
 		}
 
 		if needLicense {
-			glog.Infof("Add License to file: %s", path)
+			log.Infof("Add License to file: %s", path)
 
 			i := bytes.Index(allFile, []byte("package"))
 
-			if !cli.GetBool("dryRun") {
+			if !dryRun {
 				if err := ioutil.WriteFile(path, append(license, allFile[i:]...), 0655); err != nil {
 					panic(err)
 				}
@@ -111,46 +111,27 @@ func Run() {
 			return nil
 		}
 
-		glog.Infof("Skip file: %s", path)
+		log.Infof("Skip file: %s", path)
 
 		return nil
 	})
 
 	if err != nil {
-		glog.Error(err)
+		log.Error(err)
 	}
 }
 
 func main() {
-	pflag.CommandLine.AddGoFlagSet(goflag.CommandLine)
-	if err := goflag.CommandLine.Parse(nil); err != nil {
-		panic(err)
-	}
-
-	cmd := cli.NewCommand(&cobra.Command{
+	cmd := &cobra.Command{
 		Use:  "license",
 		Long: "Read Apache 2.0 LICENSE content and add to to all go source code header",
 		Run: func(cmd *cobra.Command, args []string) {
 			Run()
 		},
-	})
-
-	if err := cmd.AddFlag(
-		cli.BoolFlag{
-			Name:      "dryRun",
-			Shorthand: "d",
-		},
-		cli.StringFlag{
-			Name:      "root",
-			Shorthand: "r",
-			DefValue:  "./",
-		},
-		cli.StringFlag{
-			Name: "go-header-file",
-		},
-	); err != nil {
-		panic(err)
 	}
+	cmd.Flags().BoolVarP(&dryRun, "dry-run", "d", false, "")
+	cmd.Flags().StringVarP(&root, "root", "r", "./", "")
+	cmd.Flags().StringVarP(&goHeaderFile, "go-header-file", "", "", "")
 
 	if err := cmd.Execute(); err != nil {
 		os.Exit(1)
