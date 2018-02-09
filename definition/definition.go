@@ -171,18 +171,6 @@ type Parameter struct {
 	Description string
 }
 
-// DefaultValue sets default value for the parameter.
-func (p Parameter) DefaultValue(value interface{}) Parameter {
-	p.Default = value
-	return p
-}
-
-// Operator adds operators to current parameter.
-func (p Parameter) Operator(operators ...Operator) Parameter {
-	p.Operators = append(p.Operators, operators...)
-	return p
-}
-
 // Result describes how to handle a result from function results.
 type Result struct {
 	// Destination is the target for the result. Different types make different behavior.
@@ -194,12 +182,6 @@ type Result struct {
 	Operators []Operator
 	// Description describes the result.
 	Description string
-}
-
-// Operator adds operators to current result.
-func (r Result) Operator(operators ...Operator) Result {
-	r.Operators = append(r.Operators, operators...)
-	return r
 }
 
 // Definition defines an API handler.
@@ -222,36 +204,6 @@ type Definition struct {
 	Description string
 	// Examples contains many examples for the API handler.
 	Examples []Example
-}
-
-// Consume adds consumes.
-func (d Definition) Consume(cs ...string) Definition {
-	d.Consumes = append(d.Consumes, cs...)
-	return d
-}
-
-// Produce adds produces.
-func (d Definition) Produce(cs ...string) Definition {
-	d.Produces = append(d.Produces, cs...)
-	return d
-}
-
-// Parameter adds parameters.
-func (d Definition) Parameter(ps ...Parameter) Definition {
-	d.Parameters = append(d.Parameters, ps...)
-	return d
-}
-
-// Result adds results.
-func (d Definition) Result(rs ...Result) Definition {
-	d.Results = append(d.Results, rs...)
-	return d
-}
-
-// Example adds examples.
-func (d Definition) Example(es ...Example) Definition {
-	d.Examples = append(d.Examples, es...)
-	return d
 }
 
 // Descriptor describes a descriptor for API definitions.
@@ -277,34 +229,4 @@ type Descriptor struct {
 	Children []Descriptor
 	// Description describes the usage of the path.
 	Description string
-}
-
-// Consume adds consumes.
-func (d Descriptor) Consume(cs ...string) Descriptor {
-	d.Consumes = append(d.Consumes, cs...)
-	return d
-}
-
-// Produce adds produces.
-func (d Descriptor) Produce(ps ...string) Descriptor {
-	d.Produces = append(d.Produces, ps...)
-	return d
-}
-
-// Middleware adds middlewares.
-func (d Descriptor) Middleware(ms ...Middleware) Descriptor {
-	d.Middlewares = append(d.Middlewares, ms...)
-	return d
-}
-
-// Definition adds definitions.
-func (d Descriptor) Definition(defs ...Definition) Descriptor {
-	d.Definitions = append(d.Definitions, defs...)
-	return d
-}
-
-// Descriptor adds descriptors as children.
-func (d Descriptor) Descriptor(descs ...Descriptor) Descriptor {
-	d.Children = append(d.Children, descs...)
-	return d
 }
