@@ -456,6 +456,7 @@ func TestRouter(t *testing.T) {
 	testMatch(t, makeRouter(t, rds), right, wrong)
 }
 
+// borrowed from https://github.com/go-chi/chi/blob/master/tree_test.go
 func TestFromChiTree(t *testing.T) {
 	rds := []TestRouterData{
 		{"/", getExecs, nil},
@@ -521,6 +522,7 @@ func TestFromChiTree(t *testing.T) {
 	testMatch(t, makeRouter(t, rds), right, nil)
 }
 
+// borrowed from https://github.com/go-chi/chi/blob/master/tree_test.go
 func TestFromChiTreeMoar(t *testing.T) {
 	rds := []TestRouterData{
 		{"/articlefun", getExecs, nil},
@@ -567,6 +569,7 @@ func TestFromChiTreeMoar(t *testing.T) {
 	testMatch(t, makeRouter(t, rds), right, nil)
 }
 
+// borrowed from https://github.com/go-chi/chi/blob/master/tree_test.go
 func TestFromChiTreeRegexp(t *testing.T) {
 	rds := []TestRouterData{
 		{"/articles/{rid:^[0-9]{5,6}}", getExecs, nil},
@@ -590,6 +593,7 @@ func TestFromChiTreeRegexp(t *testing.T) {
 	testMatch(t, makeRouter(t, rds), right, nil)
 }
 
+// borrowed from https://github.com/go-chi/chi/blob/master/tree_test.go
 func TestFromChiTreeRegexMatchWholeParam(t *testing.T) {
 	rds := []TestRouterData{
 		{"/{id:[0-9]+}", getExecs, nil},
