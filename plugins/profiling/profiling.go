@@ -186,3 +186,25 @@ var indexTmpl = template.Must(template.New("index").Parse(`<html>
 	</body>
 	</html>
 	`))
+
+// Option contains basic configurations of profiling.
+type Option struct {
+	// Contention enables contention profiling.
+	Contention bool `desc:"Enable contention profiling"`
+	// Path is profiling path.
+	Path string `desc:"Profiling path"`
+}
+
+// Name returns plugin name.
+func (p *Option) Name() string {
+	return ExternalConfigName
+}
+
+// Configure configures nirvana config via current options.
+func (p *Option) Configure(cfg *nirvana.Config) error {
+	cfg.Configure(
+		Contention(p.Contention),
+		Path(p.Path),
+	)
+	return nil
+}
