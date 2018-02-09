@@ -113,7 +113,7 @@ type Option struct {
 func NewDefaultOption() *Option {
 	return &Option{
 		IP:   "",
-		Port: 80,
+		Port: 8080,
 	}
 }
 
