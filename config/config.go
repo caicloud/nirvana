@@ -75,7 +75,7 @@ var banner = `
 
 `
 
-// Option must be a pointer to struct.
+// CustomOption must be a pointer to struct.
 //
 // Here is an example:
 //   type Option struct {
@@ -91,7 +91,7 @@ var banner = `
 //
 // The priority is:
 //   Flag > ENV > Key > The value you set in option
-type Option interface{}
+type CustomOption interface{}
 
 // Plugin is for plugins to collect configurations
 type Plugin interface {
@@ -101,29 +101,29 @@ type Plugin interface {
 	Configure(cfg *nirvana.Config) error
 }
 
-// NirvanaOption contains basic configurations of nirvana.
-type NirvanaOption struct {
+// Option contains basic configurations of nirvana.
+type Option struct {
 	// IP is the IP to listen.
 	IP string `desc:"Nirvana server listening IP"`
 	// Port is the port to listen.
 	Port uint16 `desc:"Nirvana server listening Port"`
 }
 
-// NewDefaultNirvanaOption creates a default nirvana option.
-func NewDefaultNirvanaOption() NirvanaOption {
-	return NirvanaOption{
+// NewDefaultOption creates a default option.
+func NewDefaultOption() *Option {
+	return &Option{
 		IP:   "",
 		Port: 80,
 	}
 }
 
 // Name returns plugin name.
-func (p *NirvanaOption) Name() string {
+func (p *Option) Name() string {
 	return "nirvana"
 }
 
-// Configure configures nirvana config via current options.
-func (p *NirvanaOption) Configure(cfg *nirvana.Config) error {
+// Configure configures nirvana config via current option.
+func (p *Option) Configure(cfg *nirvana.Config) error {
 	cfg.Configure(
 		nirvana.IP(p.IP),
 		nirvana.Port(p.Port),
@@ -137,7 +137,7 @@ type NirvanaCommand interface {
 	EnablePlugin(plugins ...Plugin) NirvanaCommand
 	// AddOption will fill up options from flags/ENV/config after executing.
 	// A non-empty prefix is recommended. It's used to divide option namespaces.
-	AddOption(prefix string, options ...Option) NirvanaCommand
+	AddOption(prefix string, options ...CustomOption) NirvanaCommand
 	// Add adds a field by key.
 	// If you don't have any struct to describe an option, you can use the method to
 	// add a single field into nirvana command.
@@ -155,20 +155,28 @@ type NirvanaCommand interface {
 	Command(cfg *nirvana.Config) *cobra.Command
 }
 
-// NewNirvanaCommand creates a nirvana command.
-func NewNirvanaCommand(option NirvanaOption) NirvanaCommand {
+// NewDefaultNirvanaCommand creates a nirvana command with default option.
+func NewDefaultNirvanaCommand() NirvanaCommand {
+	return NewNirvanaCommand(NewDefaultOption())
+}
+
+// NewNirvanaCommand creates a nirvana command. Nil option means default option.
+func NewNirvanaCommand(option *Option) NirvanaCommand {
 	return NewNamedNirvanaCommand("", option)
 }
 
 // NewNamedNirvanaCommand creates a nirvana command with an unique name.
-func NewNamedNirvanaCommand(name string, option NirvanaOption) NirvanaCommand {
+func NewNamedNirvanaCommand(name string, option *Option) NirvanaCommand {
+	if option == nil {
+		option = NewDefaultOption()
+	}
 	cmd := &command{
 		name:    name,
 		option:  option,
 		plugins: []Plugin{},
 		fields:  map[string]*configField{},
 	}
-	cmd.EnablePlugin(&cmd.option)
+	cmd.EnablePlugin(cmd.option)
 	return cmd
 }
 
@@ -183,7 +191,7 @@ type configField struct {
 
 type command struct {
 	name    string
-	option  NirvanaOption
+	option  *Option
 	plugins []Plugin
 	fields  map[string]*configField
 }
@@ -209,7 +217,7 @@ func walkthrough(index []int, typ reflect.Type, f func(index []int, field reflec
 }
 
 // AddOption will fill up options from config/ENV/flags after executing.
-func (s *command) AddOption(prefix string, options ...Option) NirvanaCommand {
+func (s *command) AddOption(prefix string, options ...CustomOption) NirvanaCommand {
 	if prefix != "" {
 		prefix += "."
 	}
