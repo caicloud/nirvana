@@ -19,7 +19,7 @@ package main
 import (
 	"context"
 
-	"github.com/caicloud/nirvana"
+	"github.com/caicloud/nirvana/config"
 	"github.com/caicloud/nirvana/definition"
 	"github.com/caicloud/nirvana/log"
 )
@@ -60,10 +60,8 @@ func Echo(ctx context.Context, msg string) (string, error) {
 }
 
 func main() {
-	config := nirvana.NewDefaultConfig("", 8080)
-	config.Configure(nirvana.Descriptor(echo))
-	log.Infof("Listening on %s:%d", config.IP, config.Port)
-	if err := nirvana.NewServer(config).Serve(); err != nil {
+	cmd := config.NewDefaultNirvanaCommand()
+	if err := cmd.Execute(echo); err != nil {
 		log.Fatal(err)
 	}
 }

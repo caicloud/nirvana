@@ -17,18 +17,15 @@ limitations under the License.
 package main
 
 import (
-	"github.com/caicloud/nirvana"
+	"github.com/caicloud/nirvana/config"
 	"github.com/caicloud/nirvana/examples/api-basic/api/v1"
 	"github.com/caicloud/nirvana/examples/api-basic/api/v2"
 	"github.com/caicloud/nirvana/log"
 )
 
 func main() {
-	config := nirvana.NewDefaultConfig("", 8080)
-	v1.Install(config)
-	v2.Install(config)
-	log.Infof("Listening on %s:%d", config.IP, config.Port)
-	if err := nirvana.NewServer(config).Serve(); err != nil {
+	cmd := config.NewDefaultNirvanaCommand()
+	if err := cmd.Execute(v1.Descriptor(), v2.Descriptor()); err != nil {
 		log.Fatal(err)
 	}
 }

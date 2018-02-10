@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/caicloud/nirvana"
+	"github.com/caicloud/nirvana/config"
 	"github.com/caicloud/nirvana/examples/stream/api/v1"
 	"github.com/caicloud/nirvana/log"
 	"github.com/caicloud/nirvana/service"
@@ -51,10 +51,8 @@ func main() {
 		panic(err)
 	}
 
-	config := nirvana.NewDefaultConfig("", 8080)
-	v1.Install(config)
-	log.Infof("Listening on %s:%d", config.IP, config.Port)
-	if err := nirvana.NewServer(config).Serve(); err != nil {
+	cmd := config.NewDefaultNirvanaCommand()
+	if err := cmd.Execute(v1.Descriptor()); err != nil {
 		log.Fatal(err)
 	}
 }

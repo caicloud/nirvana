@@ -22,8 +22,8 @@ import (
 	"encoding/json"
 	"os"
 
-	"github.com/caicloud/nirvana"
 	"github.com/caicloud/nirvana/cmd/openapi-gen/builder"
+	"github.com/caicloud/nirvana/config"
 	"github.com/caicloud/nirvana/definition"
 	"github.com/caicloud/nirvana/examples/getting-started/openapi/pkg/api"
 	"github.com/caicloud/nirvana/log"
@@ -134,13 +134,9 @@ func main() {
 	buildOpenAPI()
 	message = make(map[string]string)
 
-	config := nirvana.NewDefaultConfig("", 8080).
-		Configure(
-			metrics.Path("/metrics"),
-		)
-	config.Configure(nirvana.Descriptor(echo))
-	log.Infof("Listening on %s:%d", config.IP, config.Port)
-	if err := nirvana.NewServer(config).Serve(); err != nil {
+	cmd := config.NewDefaultNirvanaCommand()
+	cmd.EnablePlugin(&metrics.Option{Path: "/metrics"})
+	if err := cmd.Execute(echo); err != nil {
 		log.Fatal(err)
 	}
 }
