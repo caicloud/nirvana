@@ -256,6 +256,10 @@ func (s *command) Add(pointer interface{}, key string, shortFlag string, desc st
 		lastIsCapital := true
 		lastIndex := 0
 		for i, char := range field {
+			if char >= '0' && char <= '9' {
+				// Numbers inherit last char.
+				continue
+			}
 			currentIsCapital := char >= 'A' && char <= 'Z'
 			if i > 0 && lastIsCapital != currentIsCapital {
 				end := 0
