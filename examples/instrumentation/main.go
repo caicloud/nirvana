@@ -21,7 +21,7 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/caicloud/nirvana"
+	"github.com/caicloud/nirvana/config"
 	"github.com/caicloud/nirvana/definition"
 	"github.com/caicloud/nirvana/log"
 	"github.com/caicloud/nirvana/plugins/metrics"
@@ -34,18 +34,14 @@ import (
 // Use following prometheus query to see 95th percentile:
 // histogram_quantile (0.95, sum(rate(nirvana_request_latencies_bucket{path="/hello"}[5m])) by (le))
 func main() {
-	config := nirvana.NewDefaultConfig("", 8080).
-		Configure(
-			profiling.Path("/debug/pprof/"),
-			profiling.Contention(true),
-			// By using metrics.Default configurer, metrics for http requests will be prefixed with the default 'nirvana' prefix.
-			// If you want use a different prefix, use metrics.Namespace configurer.
-			metrics.Default(),
-			nirvana.Descriptor(example),
-		)
-
-	log.Infof("Listening on %s:%d", config.IP, config.Port)
-	if err := nirvana.NewServer(config).Serve(); err != nil {
+	cmd := config.NewDefaultNirvanaCommand()
+	cmd.EnablePlugin(
+		// Metrics for http requests is prefixed with 'nirvana' as default.
+		// If you want a different one, set Option.Namespace.
+		&metrics.Option{},
+		&profiling.Option{Contention: true},
+	)
+	if err := cmd.Execute(example); err != nil {
 		log.Fatal(err)
 	}
 }

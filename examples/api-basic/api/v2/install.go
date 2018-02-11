@@ -17,7 +17,6 @@ limitations under the License.
 package v2
 
 import (
-	"github.com/caicloud/nirvana"
 	"github.com/caicloud/nirvana/definition"
 )
 
@@ -27,10 +26,12 @@ func register(ds ...definition.Descriptor) {
 	descriptors = append(descriptors, ds...)
 }
 
-func Install(s *nirvana.Config) {
-	s.Configure(nirvana.Descriptor(definition.Descriptor{
+func Descriptor() definition.Descriptor {
+	return definition.Descriptor{
 		Path:        "/api/v2",
 		Description: "It contains all APIs in v2",
+		Consumes:    []string{definition.MIMEAll},
+		Produces:    []string{definition.MIMEJSON},
 		Children:    descriptors,
-	}))
+	}
 }

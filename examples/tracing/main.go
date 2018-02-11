@@ -21,6 +21,7 @@ import (
 	"errors"
 
 	"github.com/caicloud/nirvana"
+	"github.com/caicloud/nirvana/config"
 	"github.com/caicloud/nirvana/definition"
 	"github.com/caicloud/nirvana/log"
 	"github.com/caicloud/nirvana/plugins/tracing"
@@ -55,14 +56,14 @@ func main() {
 		},
 	}
 
-	config := nirvana.NewDefaultConfig("", 8080).
+	cfg := nirvana.NewDefaultConfig("", 8080).
 		Configure(
 			tracing.DefaultTracer("example", "127.0.0.1:6831"),
 			nirvana.Descriptor(example),
 		)
 
-	log.Infof("Listening on %s:%d", config.IP, config.Port)
-	if err := nirvana.NewServer(config).Serve(); err != nil {
+	cmd := config.NewDefaultNirvanaCommand()
+	if err := cmd.ExecuteWithConfig(cfg); err != nil {
 		log.Fatal(err)
 	}
 }
