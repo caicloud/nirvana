@@ -23,91 +23,15 @@ import (
 	"testing"
 )
 
-func TestDescriptor(t *testing.T) {
-	d := Descriptor{
-		Path:        "/test",
-		Consumes:    []string{MIMEJSON},
-		Produces:    []string{MIMEAll},
-		Middlewares: []Middleware{nil},
-		Definitions: []Definition{{}},
-		Children:    []Descriptor{{}},
-		Description: "For test",
-	}
-	u := DescriptorFor(d.Path, d.Description).
-		Consume(d.Consumes...).
-		Produce(d.Produces...).
-		Middleware(d.Middlewares...).
-		Definition(d.Definitions...).
-		Descriptor(d.Children...)
-	if !reflect.DeepEqual(d, u) {
-		t.Fatalf("Descriptors is not equal: %+v, %+v", d, u)
-	}
-}
-
-func TestDefinition(t *testing.T) {
-	d := Definition{
-		Method:      Create,
-		Consumes:    []string{MIMEJSON},
-		Produces:    []string{MIMEAll},
-		Parameters:  []Parameter{{}},
-		Results:     []Result{{}},
-		Description: "For test",
-		Examples:    []Example{{}},
-	}
-
-	u := CreateDefinitionFor(d.Function, d.Description).
-		Consume(d.Consumes...).
-		Produce(d.Produces...).
-		Parameter(d.Parameters...).
-		Result(d.Results...).
-		Example(d.Examples...)
-	if !reflect.DeepEqual(d, u) {
-		t.Fatalf("Definitions is not equal: %+v, %+v", d, u)
-	}
-	ds := []Definition{
-		{Method: List, Description: "For test"},
-		{Method: Get, Description: "For test"},
-		{Method: Create, Description: "For test"},
-		{Method: Update, Description: "For test"},
-		{Method: Patch, Description: "For test"},
-		{Method: Delete, Description: "For test"},
-		{Method: AsyncCreate, Description: "For test"},
-		{Method: AsyncUpdate, Description: "For test"},
-		{Method: AsyncPatch, Description: "For test"},
-		{Method: AsyncDelete, Description: "For test"},
-	}
-	us := []Definition{
-		ListDefinitionFor(nil, "For test"),
-		GetDefinitionFor(nil, "For test"),
-		CreateDefinitionFor(nil, "For test"),
-		UpdateDefinitionFor(nil, "For test"),
-		PatchDefinitionFor(nil, "For test"),
-		DeleteDefinitionFor(nil, "For test"),
-		AsyncCreateDefinitionFor(nil, "For test"),
-		AsyncUpdateDefinitionFor(nil, "For test"),
-		AsyncPatchDefinitionFor(nil, "For test"),
-		AsyncDeleteDefinitionFor(nil, "For test"),
-	}
-	for i, d := range ds {
-		u := us[i]
-		if !reflect.DeepEqual(d, u) {
-			t.Fatalf("Definitions is not equal: %+v, %+v", d, u)
-		}
-	}
-}
-
 func TestParameter(t *testing.T) {
 	d := Parameter{
 		Source:      Path,
 		Name:        "test",
 		Default:     1,
-		Operators:   []Operator{nil},
 		Description: "For test",
 	}
-	u := PathParameterFor(d.Name, d.Description).
-		DefaultValue(d.Default).
-		Operator(d.Operators...)
-
+	u := PathParameterFor(d.Name, d.Description)
+	u.Default = d.Default
 	if !reflect.DeepEqual(d, u) {
 		t.Fatalf("Parameters is not equal: %+v, %+v", d, u)
 	}
@@ -143,12 +67,10 @@ func TestParameter(t *testing.T) {
 func TestResult(t *testing.T) {
 	d := Result{
 		Destination: Data,
-		Operators:   []Operator{nil},
 		Description: "For test",
 	}
 
-	u := DataResultFor(d.Description).
-		Operator(d.Operators...)
+	u := DataResultFor(d.Description)
 
 	if !reflect.DeepEqual(d, u) {
 		t.Fatalf("Results is not equal: %+v, %+v", d, u)

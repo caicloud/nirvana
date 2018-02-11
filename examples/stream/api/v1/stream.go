@@ -25,9 +25,16 @@ func init() {
 	register(app)
 }
 
-var app = definition.DescriptorFor("/stream", "Example for explaining how to write stream").
-	Definition(
-		definition.CreateDefinitionFor(stream.Stream, "Return a stream").
-			Produce("application/somedata").
-			Result(definition.DataErrorResults("Data from stream")...),
-	)
+var app = definition.Descriptor{
+	Path:        "/stream",
+	Description: "Example for explaining how to write stream",
+	Definitions: []definition.Definition{
+		{
+			Method:      definition.Get,
+			Description: "Return a stream",
+			Function:    stream.Stream,
+			Produces:    []string{"application/somedata"},
+			Results:     definition.DataErrorResults("Data from stream"),
+		},
+	},
+}
