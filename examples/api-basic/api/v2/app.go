@@ -25,13 +25,20 @@ func init() {
 	register(app)
 }
 
-var app = definition.DescriptorFor("/applications", "Application API").
-	Definition(
-		definition.CreateDefinitionFor(application.CreateApplication, "Create Application").
-			Parameter(
+var app = definition.Descriptor{
+	Path:        "/applications",
+	Description: "Application API",
+	Definitions: []definition.Definition{
+		{
+			Method:      definition.Create,
+			Description: "Create Application",
+			Function:    application.CreateApplication,
+			Consumes:    []string{definition.MIMEJSON},
+			Produces:    []string{definition.MIMEJSON},
+			Parameters: []definition.Parameter{
 				definition.BodyParameterFor("Application V2 json object"),
-			).
-			Result(
-				definition.DataErrorResults("Application V2 json object")...,
-			),
-	)
+			},
+			Results: definition.DataErrorResults("Application V2 json object"),
+		},
+	},
+}

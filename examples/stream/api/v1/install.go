@@ -28,9 +28,9 @@ func register(ds ...definition.Descriptor) {
 }
 
 func Install(s *nirvana.Config) {
-	v1 := definition.DescriptorFor("/api/v1", "It contains all APIs in v1").
-		Consume(definition.MIMEJSON).
-		Produce(definition.MIMEJSON).
-		Descriptor(descriptors...)
-	s.Configure(nirvana.Descriptor(v1))
+	s.Configure(nirvana.Descriptor(definition.Descriptor{
+		Path:        "/api/v1",
+		Description: "It contains all APIs in v1",
+		Children:    descriptors,
+	}))
 }
