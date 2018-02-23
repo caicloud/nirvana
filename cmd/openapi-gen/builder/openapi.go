@@ -259,7 +259,7 @@ func (o *openAPI) buildResponses(handler interface{}, results []definition.Resul
 
 	rightResponse := spec.Response{
 		ResponseProps: spec.ResponseProps{
-		// Headers: map[string]spec.Header{},
+			// Headers: map[string]spec.Header{},
 		},
 	}
 
