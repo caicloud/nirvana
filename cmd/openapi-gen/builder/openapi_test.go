@@ -299,21 +299,19 @@ func newConfig() *common.Config {
 	}
 }
 
-func TestBuildPathItems(t *testing.T) {
+func TestBuildPathItem(t *testing.T) {
 	c := newConfig()
 	o, err := newOpenAPI(c)
 	assert.Nil(t, err, "can new openAPI successfully")
 
-	pathItems, err := o.buildPathItems("/api/v1/input", descriptor.Consumes, descriptor.Produces, descriptor.Children[0].Definitions)
+	pathItem, err := o.buildPathItem(descriptor.Consumes, descriptor.Produces, descriptor.Children[0].Definitions)
 	assert.Nil(t, err)
 
-	assert.Equal(t, map[string]spec.PathItem{
-		"/api/v1/input": {
-			PathItemProps: spec.PathItemProps{
-				Post: operation,
-			},
+	assert.Equal(t, &spec.PathItem{
+		PathItemProps: spec.PathItemProps{
+			Post: operation,
 		},
-	}, pathItems)
+	}, pathItem)
 }
 
 func TestBuildOperation(t *testing.T) {
