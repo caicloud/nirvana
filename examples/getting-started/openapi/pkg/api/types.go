@@ -17,7 +17,7 @@ limitations under the License.
 package api
 
 // Message defines the message to echo and to whom the message will be sent.
-// +caicloud:openapi=true
+// +nirvana:openapi=true
 type Message struct {
 	Name    string `json:"name" validate:"required"`
 	Message string `json:"message" validate:"gt=10"`

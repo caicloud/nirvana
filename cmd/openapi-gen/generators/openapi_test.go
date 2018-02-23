@@ -75,7 +75,7 @@ func TestSimple(t *testing.T) {
 package foo
 
 // Blah is a test.
-// +caicloud:openapi-gen=true
+// +nirvana:openapi=true
 type Blah struct {
 	// A simple string
 	String string
