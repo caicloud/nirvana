@@ -24,7 +24,7 @@ import (
 )
 
 const (
-	openAPITag    = "caicloud:openapi"
+	openAPITag    = "nirvana:openapi"
 	tagValueFalse = "false"
 	tagValueTrue  = "true"
 )

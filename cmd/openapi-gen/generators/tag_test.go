@@ -32,10 +32,10 @@ func TestGetOpenAPITagValue(t *testing.T) {
 		{
 			"should get values successfully",
 			[]string{
-				`+caicloud:openapi`,
-				`+caicloud:openapi=true`,
-				`+caicloud:openapi=false`,
-				`+caicloud:openapi=xxx`,
+				`+nirvana:openapi`,
+				`+nirvana:openapi=true`,
+				`+nirvana:openapi=false`,
+				`+nirvana:openapi=xxx`,
 			},
 			[]string{
 				``,
@@ -48,11 +48,11 @@ func TestGetOpenAPITagValue(t *testing.T) {
 			"should ignore wrong case",
 			[]string{
 				`asdfasdg`,
-				`+    caicloud:openapi`,
-				`+  caicloud:openapi=true`,
-				`+caicloud:openapi=false`,
-				`+ caicloud:openapi=  true`,
-				`+caicloud:openapi=xxx`,
+				`+    nirvana:openapi`,
+				`+  nirvana:openapi=true`,
+				`+nirvana:openapi=false`,
+				`+ nirvana:openapi=  true`,
+				`+nirvana:openapi=xxx`,
 			},
 			[]string{
 				`false`,
@@ -76,10 +76,10 @@ func TestHasOpenAPITagValue(t *testing.T) {
 		{
 			"should get values successfully",
 			[]string{
-				`+caicloud:openapi`,
-				`+caicloud:openapi=true`,
-				`+caicloud:openapi=false`,
-				`+caicloud:openapi=xxx`,
+				`+nirvana:openapi`,
+				`+nirvana:openapi=true`,
+				`+nirvana:openapi=false`,
+				`+nirvana:openapi=xxx`,
 			},
 			[]string{
 				``,
@@ -96,11 +96,11 @@ func TestHasOpenAPITagValue(t *testing.T) {
 			"should ignore wrong case",
 			[]string{
 				`asdfasdg`,
-				`+    caicloud:openapi`,
-				`+  caicloud:openapi=true`,
-				`+caicloud:openapi=false`,
-				`+ caicloud:openapi=  true`,
-				`+caicloud:openapi=xxx`,
+				`+    nirvana:openapi`,
+				`+  nirvana:openapi=true`,
+				`+nirvana:openapi=false`,
+				`+ nirvana:openapi=  true`,
+				`+nirvana:openapi=xxx`,
 			},
 			[]string{
 				`false`,

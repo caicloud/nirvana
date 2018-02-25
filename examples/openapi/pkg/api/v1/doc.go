@@ -15,5 +15,5 @@ limitations under the License.
 */
 
 // Package v1 is definition of api
-// +caicloud:openapi=true
+// +nirvana:openapi=true
 package v1
