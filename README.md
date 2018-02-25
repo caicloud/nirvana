@@ -925,11 +925,43 @@ For more details, see `github.com/caicloud/nirvana/log` package.
 
 #### Metrics
 
-TBD
+This plugin provides a lot of metrics with standard prometheus format. You can simply enable it via:
+
+```go
+config.Configure(metrics.Default())
+```
+
+The plugin would register a middleware and a descriptor into your nirvana server. Then you can get metrics by visiting `http://host:port/metrics`.
+
+Here are two concepts in the plugin:
+- Namespace: Metrics namespace. it is as the prefix of all metric names. Defaults to `nirvana`.
+- Path: Path is descriptor path. Users can get metrics by the path. Defaults to `/metrics`
+
+If default settings don't satisfy your needs, following two configurers can modify them:
+- `metrics.Namespace(ns string)`: The function can modify metrics namespace.
+- `metrics.Path(path string)`: The function can modity metrics descriptor path.
+
+For more information, please check [Prometheus Doc](https://prometheus.io/docs/introduction/overview/).
 
 #### Profiling
 
-TBD
+This plugin provides a capability to install `pprof` into nirvana server. Its functionality is same as golang standard library `net/http/pprof`.
+
+You can install it via:
+```go
+config.Configure(profiling.Path("myprof"))
+```
+Then the plugin handles for paths:
+- "/myprof": Show profiling index page.
+- "/myprof/profile": Show cpu profile page.
+- "/myprof/symbol": Show symbol page.
+- "/myprof/trace": Show trace page.
+
+The plugin also have two configurers:
+- `Path(path string)`: The function can change profiling descriptor path. Defaults to `/debug/pprof`
+- `Contention(enable bool)`: Use to enable contention profiling. Defauts to false.
+
+For more information, please check [PProf Doc](https://golang.org/pkg/net/http/pprof/).
 
 #### Tracing
 
@@ -944,4 +976,57 @@ TBD
 
 ### Plugin framework
 
-TBD
+Nirvana provides some plugins inside. They are the most best examples for you to write your own plugins. Here is the common parts extracted from those plugins for your new plugins:
+
+```go
+func init() {
+	// Register your config installer into nirvana.
+	nirvana.RegisterConfigInstaller(&pluginInstaller{})
+}
+
+// ExternalConfigName is the external config name for your plugin. Please ensure that the
+// name is unique and won't conflict with other plugins.
+const ExternalConfigName = "pluginName"
+
+type pluginInstaller struct{}
+
+// Name is the external config name.
+func (i *pluginInstaller) Name() string {
+	return ExternalConfigName
+}
+
+// Install installs config to builder. You can get plugin config from nirvana config. Then
+// install/initialize what you need.
+func (i *pluginInstaller) Install(builder service.Builder, cfg *nirvana.Config) error {...}
+
+// Uninstall uninstalls stuffs after server terminating.
+func (i *pluginInstaller) Uninstall(builder service.Builder, cfg *nirvana.Config) error {...)
+
+// ConfigA configures fieldA. Be careful, you should get/save plugin config into nirvana config
+// by `c.Config(ExternalConfigName)`/`c.Set(ExternalConfigName, cfg)` rather than a global
+// plugin config.
+func ConfigA(fieldA FieldType) nirvana.Configurer {...}
+
+// ConfigB configures fieldB.
+func ConfigB() nirvana.Configurer {...}
+
+// Disable returns a configurer to disable current plugin for a certain nirvana server.
+func Disable() nirvana.Configurer {
+	return func(c *nirvana.Config) error {
+		// Set to nil will delete plugin config from nirvana config.
+		c.Set(ExternalConfigName, nil)
+		return nil
+	}
+}
+```
+
+Then user can use the plugin by:
+
+```go
+import "/path/to/plugin"
+
+func main() {
+	config := nirvana.NewDefaultConfig("", 8080)
+	config.Configure(plugin.ConfigA(fieldValue))
+}
+```
