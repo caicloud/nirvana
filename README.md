@@ -925,43 +925,48 @@ For more details, see `github.com/caicloud/nirvana/log` package.
 
 #### Metrics
 
-This plugin provides a lot of metrics with standard prometheus format. You can simply enable it via:
+This plugin provides a lot of metrics with standard [prometheus](https://prometheus.io/) format. You can simply
+enable it via:
 
 ```go
 config.Configure(metrics.Default())
 ```
 
-The plugin would register a middleware and a descriptor into your nirvana server. Then you can get metrics by visiting `http://host:port/metrics`.
+The plugin will register a middleware and a descriptor into your nirvana server, installing metrics at endpoint
+`http://host:port/metrics`.
 
-Here are two concepts in the plugin:
-- Namespace: Metrics namespace. it is as the prefix of all metric names. Defaults to `nirvana`.
-- Path: Path is descriptor path. Users can get metrics by the path. Defaults to `/metrics`
+There are two config knobs in the plugin:
+- Namespace: Metrics namespace is the prefix of all metric names. Defaults to `nirvana`.
+- Path: Path is the descriptor path. Users can get metrics by the path. Defaults to `/metrics`
 
-If default settings don't satisfy your needs, following two configurers can modify them:
+You can use following two configurers to change the settings:
 - `metrics.Namespace(ns string)`: The function can modify metrics namespace.
 - `metrics.Path(path string)`: The function can modity metrics descriptor path.
 
-For more information, please check [Prometheus Doc](https://prometheus.io/docs/introduction/overview/).
+For more information about installed metrics, please check [Prometheus Doc](https://prometheus.io/docs/introduction/overview/).
 
 #### Profiling
 
-This plugin provides a capability to install `pprof` into nirvana server. Its functionality is same as golang standard library `net/http/pprof`.
+This plugin provides capability to install `pprof` into nirvana server, which is a direct reflection of golang
+standard library `net/http/pprof`.
 
-You can install it via:
+You can install the plugin via:
+
 ```go
 config.Configure(profiling.Path("myprof"))
 ```
-Then the plugin handles for paths:
+
+Then the plugin handles requests for the following paths:
 - "/myprof": Show profiling index page.
 - "/myprof/profile": Show cpu profile page.
 - "/myprof/symbol": Show symbol page.
 - "/myprof/trace": Show trace page.
 
-The plugin also have two configurers:
+The plugin has two configurers:
 - `Path(path string)`: The function can change profiling descriptor path. Defaults to `/debug/pprof`
-- `Contention(enable bool)`: Use to enable contention profiling. Defauts to false.
+- `Contention(enable bool)`: Use to enable contention profiling. Defauts to `false`.
 
-For more information, please check [PProf Doc](https://golang.org/pkg/net/http/pprof/).
+For more information about `pprof`, please check [PProf Doc](https://golang.org/pkg/net/http/pprof/).
 
 #### Tracing
 
@@ -976,7 +981,8 @@ TBD
 
 ### Plugin framework
 
-Nirvana provides some plugins inside. They are the most best examples for you to write your own plugins. Here is the common parts extracted from those plugins for your new plugins:
+Following is a framework for writing nirvana plugin. All aforementioned built-in plugins are written with the
+framework: they are the best reference implementations if you ever want to draft a new plugin.
 
 ```go
 func init() {
