@@ -94,14 +94,12 @@ func (c *Config) forEach(f func(name string, config interface{}) error) error {
 // NewDefaultConfig creates default config.
 // Default config contains:
 //  Filters: RedirectTrailingSlash, FillLeadingSlash, ParseRequestForm.
-//  Modifiers: FirstContextParameter, EmptyConsumeForHTTPGet,
+//  Modifiers: FirstContextParameter,
 //             ConsumeAllIfConsumesIsEmpty, ProduceAllIfProducesIsEmpty,
 //             ConsumeNoneForHTTPGet, ConsumeNoneForHTTPDelete,
 //             ProduceNoneForHTTPDelete.
-func NewDefaultConfig(ip string, port uint16) *Config {
+func NewDefaultConfig() *Config {
 	return NewConfig().Configure(
-		IP(ip),
-		Port(port),
 		Logger(log.DefaultLogger()),
 		Filter(
 			service.RedirectTrailingSlash(),
@@ -119,11 +117,12 @@ func NewDefaultConfig(ip string, port uint16) *Config {
 	)
 }
 
-// NewConfig creates a pure config.
+// NewConfig creates a pure config. If you don't know how to set filters and
+// modifiers for specific scenario, please use NewDefaultConfig().
 func NewConfig() *Config {
 	return &Config{
 		IP:          "",
-		Port:        80,
+		Port:        8080,
 		Logger:      &log.SilentLogger{},
 		Filters:     []service.Filter{},
 		Descriptors: []definition.Descriptor{},
@@ -160,8 +159,7 @@ func (s *server) builder() (service.Builder, error) {
 		if installer == nil {
 			return noConfigInstaller.Error(name)
 		}
-		err := installer.Install(builder, s.config)
-		return err
+		return installer.Install(builder, s.config)
 	})
 	if err != nil {
 		return nil, err
@@ -188,11 +186,9 @@ func (s *server) Serve() error {
 	e := s.config.forEach(func(name string, config interface{}) error {
 		installer := ConfigInstallerFor(name)
 		if installer == nil {
-			s.config.Logger.Error(noConfigInstaller.Error(name))
+			return noConfigInstaller.Error(name)
 		}
-		err := installer.Uninstall(builder, s.config)
-		s.config.Logger.Error(err)
-		return nil
+		return installer.Uninstall(builder, s.config)
 	})
 	if e != nil {
 		s.config.Logger.Error(e)

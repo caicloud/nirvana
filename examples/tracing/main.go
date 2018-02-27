@@ -56,7 +56,7 @@ func main() {
 		},
 	}
 
-	cfg := nirvana.NewDefaultConfig("", 8080).
+	cfg := nirvana.NewDefaultConfig().
 		Configure(
 			tracing.DefaultTracer("example", "127.0.0.1:6831"),
 			nirvana.Descriptor(example),
