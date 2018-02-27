@@ -858,7 +858,26 @@ TODO
 
 ### Configurer
 
-TODO
+Nirvana has a mechanism to set partial options into config. Here is an example mentioned above:
+
+```go
+config.Configure(nirvana.Descriptor(echo))
+```
+
+In the example, `nirvana.Descriptor` returns a configurer and the configurer will install descriptors into nirvana config.
+
+There are some inside configurers in the table:
+
+| Configurer  | Description                                |
+| ----------- | ------------------------------------------ |
+| IP          | Set listening ip. Defaults to "0.0.0.0"    |
+| Port        | Set listening port. Defaults to 8080       |
+| Logger      | Set custom logger                          |
+| Descriptor  | Add API descriptors                        |
+| Filter      | Add request filters                        |
+| Modifier    | Add definition modifiers                   |
+
+Plugins should also use configurers to configure plugins. For more details, see also [Plugins](#plugins)
 
 ### Error
 
