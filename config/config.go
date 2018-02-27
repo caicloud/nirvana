@@ -319,7 +319,7 @@ func (s *command) Add(pointer interface{}, key string, shortFlag string, desc st
 
 // Execute runs nirvana server.
 func (s *command) Execute(descriptors ...definition.Descriptor) error {
-	cfg := nirvana.NewDefaultConfig(s.option.IP, s.option.Port)
+	cfg := nirvana.NewDefaultConfig()
 	cfg.Configure(nirvana.Descriptor(descriptors...))
 	return s.Command(cfg).Execute()
 }

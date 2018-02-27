@@ -112,7 +112,7 @@ func TestCommand(t *testing.T) {
 	}
 	cmd := NewDefaultNirvanaCommand()
 	cmd.EnablePlugin(o)
-	flags := cmd.Command(nirvana.NewDefaultConfig("", 8080)).Flags()
+	flags := cmd.Command(nirvana.NewDefaultConfig()).Flags()
 	c := cmd.(*command)
 	for _, f := range fields {
 		cf, ok := c.fields[f.key]

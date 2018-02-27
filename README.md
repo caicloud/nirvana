@@ -107,7 +107,7 @@ import (
 )
 
 func main() {
-	config := nirvana.NewDefaultConfig("", 8080)
+	config := nirvana.NewDefaultConfig()
 	config.Configure(nirvana.Descriptor(echo))
 	log.Infof("Listening on %s:%d", config.IP, config.Port)
 	if err := nirvana.NewServer(config).Serve(); err != nil {
@@ -191,7 +191,7 @@ It's time to expose some metrics to help understand and diagnose our service! Ni
 instrumentation. To enable exposing request metrics, just add one more configuration:
 
 ```go
-config := nirvana.NewDefaultConfig("", 8080).
+config := nirvana.NewDefaultConfig().
 	Configure(
 		metrics.Path("/metrics"),
 	)
@@ -1032,7 +1032,7 @@ Then user can use the plugin by:
 import "/path/to/plugin"
 
 func main() {
-	config := nirvana.NewDefaultConfig("", 8080)
+	config := nirvana.NewDefaultConfig()
 	config.Configure(plugin.ConfigA(fieldValue))
 }
 ```
