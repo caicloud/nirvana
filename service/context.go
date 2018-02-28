@@ -39,6 +39,7 @@ type httpCtx struct {
 	context.Context
 	container container
 	response  response
+	path      string
 }
 
 func newHTTPContext() interface{} {
@@ -248,6 +249,8 @@ type HTTPContext interface {
 	Request() *http.Request
 	ResponseWriter() ResponseWriter
 	ValueContainer() ValueContainer
+	RoutePath() string
+	setRoutePath(path string)
 }
 
 // HTTPContextFrom get http context from context.
@@ -275,4 +278,14 @@ func (c *httpCtx) ResponseWriter() ResponseWriter {
 // ValueContainer gets ValueContainer.
 func (c *httpCtx) ValueContainer() ValueContainer {
 	return &c.container
+}
+
+// RoutePath is the abstract path which matches request URL.
+func (c *httpCtx) RoutePath() string {
+	return c.path
+}
+
+// setRoutePath sets the abstract path which matches request URL.
+func (c *httpCtx) setRoutePath(path string) {
+	c.path = path
 }
