@@ -20,6 +20,8 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"sync"
+	"sync/atomic"
 
 	"github.com/caicloud/nirvana/definition"
 	"github.com/caicloud/nirvana/errors"
@@ -37,27 +39,60 @@ type Server interface {
 
 // Config describes configuration of server.
 type Config struct {
-	// IP is the ip to listen. Empty means `0.0.0.0`.
-	IP string
-	// Port is the port to listen.
-	Port uint16
-	// Logger is used to output info inside framework.
-	Logger log.Logger
-	// Descriptors contains all APIs.
-	Descriptors []definition.Descriptor
-	// Filters is http filters.
-	Filters []service.Filter
-	// Modifiers is definition modifiers
-	Modifiers service.DefinitionModifiers
+	// ip is the ip to listen. Empty means `0.0.0.0`.
+	ip string
+	// port is the port to listen.
+	port uint16
+	// logger is used to output info inside framework.
+	logger log.Logger
+	// descriptors contains all APIs.
+	descriptors []definition.Descriptor
+	// filters is http filters.
+	filters []service.Filter
+	// modifiers is definition modifiers
+	modifiers service.DefinitionModifiers
 	// configSet contains all configurations of plugins.
 	configSet map[string]interface{}
+	// locked is for locking current config. If the field
+	// is not 0, any modification causes panic.
+	locked int32
+}
+
+// lock locks config. If succeed, it will return ture.
+func (c *Config) lock() bool {
+	return atomic.CompareAndSwapInt32(&c.locked, 0, 1)
+}
+
+// Locked checks if the config is locked.
+func (c *Config) Locked() bool {
+	return atomic.LoadInt32(&c.locked) != 0
+}
+
+// IP returns listenning ip.
+func (c *Config) IP() string {
+	return c.ip
+}
+
+// Port returns listenning port.
+func (c *Config) Port() uint16 {
+	return c.port
+}
+
+// Logger returns logger.
+func (c *Config) Logger() log.Logger {
+	return c.logger
 }
 
 // Configurer is used to configure server config.
 type Configurer func(c *Config) error
 
-// Configure configs by configurers. It panics if an error occurs.
+var immutableConfig = errors.InternalServerError.Build("Nirvana:ImmutableConfig", "config has been locked and must not be modified")
+
+// Configure configs by configurers. It panics if an error occurs or config is locked.
 func (c *Config) Configure(configurers ...Configurer) *Config {
+	if c.Locked() {
+		panic(immutableConfig.Error())
+	}
 	for _, configurer := range configurers {
 		if err := configurer(c); err != nil {
 			panic(err)
@@ -66,12 +101,12 @@ func (c *Config) Configure(configurers ...Configurer) *Config {
 	return c
 }
 
-// Config gets external config by name.
+// Config gets external config by name. This method is for plugins.
 func (c *Config) Config(name string) interface{} {
 	return c.configSet[name]
 }
 
-// Set sets external config by name.
+// Set sets external config by name. This method is for plugins.
 // Set a nil config will delete it.
 func (c *Config) Set(name string, config interface{}) {
 	if config == nil {
@@ -121,24 +156,31 @@ func NewDefaultConfig() *Config {
 // modifiers for specific scenario, please use NewDefaultConfig().
 func NewConfig() *Config {
 	return &Config{
-		IP:          "",
-		Port:        8080,
-		Logger:      &log.SilentLogger{},
-		Filters:     []service.Filter{},
-		Descriptors: []definition.Descriptor{},
-		Modifiers:   []service.DefinitionModifier{},
+		ip:          "",
+		port:        8080,
+		logger:      &log.SilentLogger{},
+		filters:     []service.Filter{},
+		descriptors: []definition.Descriptor{},
+		modifiers:   []service.DefinitionModifier{},
 		configSet:   make(map[string]interface{}),
 	}
 }
 
 // server is nirvana server.
 type server struct {
-	config *Config
-	server *http.Server
+	lock    sync.Mutex
+	config  *Config
+	server  *http.Server
+	builder service.Builder
+	cleaner func() error
 }
 
-// NewServer creates a nirvana server.
+// NewServer creates a nirvana server. After creation, don't modify
+// config. Also don't create another server with current config.
 func NewServer(c *Config) Server {
+	if c.Locked() || !c.lock() {
+		panic(immutableConfig.Error())
+	}
 	return &server{
 		config: c,
 	}
@@ -146,60 +188,99 @@ func NewServer(c *Config) Server {
 
 var noConfigInstaller = errors.InternalServerError.Build("Nirvana:NoConfigInstaller", "no config installer for external config name ${name}")
 
-func (s *server) builder() (service.Builder, error) {
-	builder := service.NewBuilder()
-	builder.SetLogger(s.config.Logger)
-	builder.AddFilter(s.config.Filters...)
-	builder.SetModifier(s.config.Modifiers.Combine())
-	if err := builder.AddDescriptor(s.config.Descriptors...); err != nil {
-		return nil, err
+// Builder create a service builder for current server. Don't use this method directly except
+// there is a special server to hold http services. After server shutdown, clean resources via
+// returned cleaner.
+// This method always returns same builder until cleaner is called. Then it will
+// returns new one.
+func (s *server) Builder() (builder service.Builder, cleaner func() error, err error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	if s.builder != nil {
+		return s.builder, s.cleaner, nil
 	}
-	err := s.config.forEach(func(name string, config interface{}) error {
+	builder = service.NewBuilder()
+	builder.SetLogger(s.config.logger)
+	builder.AddFilter(s.config.filters...)
+	builder.SetModifier(s.config.modifiers.Combine())
+	if err := builder.AddDescriptor(s.config.descriptors...); err != nil {
+		return nil, nil, err
+	}
+	if err := s.config.forEach(func(name string, config interface{}) error {
 		installer := ConfigInstallerFor(name)
 		if installer == nil {
 			return noConfigInstaller.Error(name)
 		}
 		return installer.Install(builder, s.config)
-	})
-	if err != nil {
-		return nil, err
+	}); err != nil {
+		return nil, nil, err
 	}
-	return builder, nil
+	s.builder = builder
+	s.cleaner = func() (err error) {
+		// Clean builder and plugins.
+		s.lock.Lock()
+		defer func() {
+			if err == nil {
+				s.builder = nil
+				s.cleaner = nil
+			}
+			s.lock.Unlock()
+		}()
+		if s.builder == nil {
+			return nil
+		}
+		return s.config.forEach(func(name string, config interface{}) error {
+			installer := ConfigInstallerFor(name)
+			if installer == nil {
+				return noConfigInstaller.Error(name)
+			}
+			return installer.Uninstall(builder, s.config)
+		})
+	}
+	return s.builder, s.cleaner, nil
 }
+
+var builderInUse = errors.InternalServerError.Build("Nirvana:BuilderInUse", "service builder is in use, clean it before serving")
 
 // Serve starts to listen and serve requests.
 // The method won't return except an error occurs.
-func (s *server) Serve() error {
-	builder, err := s.builder()
+func (s *server) Serve() (e error) {
+	s.lock.Lock()
+	if s.builder != nil || s.cleaner != nil {
+		return builderInUse.Error()
+	}
+	s.lock.Unlock()
+	builder, cleaner, err := s.Builder()
 	if err != nil {
 		return err
 	}
+	defer func() {
+		if err := cleaner(); err != nil {
+			s.config.logger.Error(err)
+			if e == nil {
+				e = err
+			}
+		}
+	}()
+
 	service, err := builder.Build()
 	if err != nil {
 		return err
 	}
 	s.server = &http.Server{
-		Addr:    fmt.Sprintf("%s:%d", s.config.IP, s.config.Port),
+		Addr:    fmt.Sprintf("%s:%d", s.config.ip, s.config.port),
 		Handler: service,
 	}
-	err = s.server.ListenAndServe()
-	e := s.config.forEach(func(name string, config interface{}) error {
-		installer := ConfigInstallerFor(name)
-		if installer == nil {
-			return noConfigInstaller.Error(name)
-		}
-		return installer.Uninstall(builder, s.config)
-	})
-	if e != nil {
-		s.config.Logger.Error(e)
-	}
-	return err
+	return s.server.ListenAndServe()
 }
 
 // Shutdown gracefully shuts down the server without interrupting any
 // active connections.
 func (s *server) Shutdown(ctx context.Context) error {
-	return s.server.Shutdown(ctx)
+	if s.server != nil {
+		return s.server.Shutdown(ctx)
+	}
+	return nil
 }
 
 // ConfigInstaller is used to install config to service builder.
@@ -230,7 +311,7 @@ func RegisterConfigInstaller(ci ConfigInstaller) {
 // IP returns a configurer to set ip into config.
 func IP(ip string) Configurer {
 	return func(c *Config) error {
-		c.IP = ip
+		c.ip = ip
 		return nil
 	}
 }
@@ -238,7 +319,7 @@ func IP(ip string) Configurer {
 // Port returns a configurer to set port into config.
 func Port(port uint16) Configurer {
 	return func(c *Config) error {
-		c.Port = port
+		c.port = port
 		return nil
 	}
 }
@@ -247,9 +328,9 @@ func Port(port uint16) Configurer {
 func Logger(logger log.Logger) Configurer {
 	return func(c *Config) error {
 		if logger == nil {
-			c.Logger = &log.SilentLogger{}
+			c.logger = &log.SilentLogger{}
 		} else {
-			c.Logger = logger
+			c.logger = logger
 		}
 		return nil
 	}
@@ -258,7 +339,7 @@ func Logger(logger log.Logger) Configurer {
 // Descriptor returns a configurer to add descriptors into config.
 func Descriptor(descriptors ...definition.Descriptor) Configurer {
 	return func(c *Config) error {
-		c.Descriptors = append(c.Descriptors, descriptors...)
+		c.descriptors = append(c.descriptors, descriptors...)
 		return nil
 	}
 }
@@ -266,7 +347,7 @@ func Descriptor(descriptors ...definition.Descriptor) Configurer {
 // Filter returns a configurer to add filters into config.
 func Filter(filters ...service.Filter) Configurer {
 	return func(c *Config) error {
-		c.Filters = append(c.Filters, filters...)
+		c.filters = append(c.filters, filters...)
 		return nil
 	}
 }
@@ -274,7 +355,7 @@ func Filter(filters ...service.Filter) Configurer {
 // Modifier returns a configurer to add definition modifiers into config.
 func Modifier(modifiers ...service.DefinitionModifier) Configurer {
 	return func(c *Config) error {
-		c.Modifiers = append(c.Modifiers, modifiers...)
+		c.modifiers = append(c.modifiers, modifiers...)
 		return nil
 	}
 }

@@ -335,7 +335,8 @@ func (s *command) Command(cfg *nirvana.Config) *cobra.Command {
 		Use: s.name,
 		Run: func(cmd *cobra.Command, args []string) {
 			fs := cmd.Flags()
-			cfg.Logger.Info(banner)
+			logger := cfg.Logger()
+			logger.Info(banner)
 			// Restore configs.
 			for _, f := range s.fields {
 				val := reflect.ValueOf(f.pointer).Elem()
@@ -346,12 +347,12 @@ func (s *command) Command(cfg *nirvana.Config) *cobra.Command {
 			}
 			for _, plugin := range s.plugins {
 				if err := plugin.Configure(cfg); err != nil {
-					cfg.Logger.Fatalf("Failed to install plugin %s: %s", plugin.Name(), err.Error())
+					logger.Fatalf("Failed to install plugin %s: %s", plugin.Name(), err.Error())
 				}
 			}
-			cfg.Logger.Infof("Listening on %s:%d", cfg.IP, cfg.Port)
+			logger.Infof("Listening on %s:%d", cfg.IP(), cfg.Port())
 			if err := nirvana.NewServer(cfg).Serve(); err != nil {
-				cfg.Logger.Fatal(err)
+				logger.Fatal(err)
 			}
 		},
 	}

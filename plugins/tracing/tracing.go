@@ -71,7 +71,7 @@ func (i *tracingInstaller) Install(builder service.Builder, cfg *nirvana.Config)
 			}
 			c.tracer, c.closer, err = tcfg.New(
 				c.serviceName,
-				tconfig.Logger(&loggerAdapter{cfg.Logger}),
+				tconfig.Logger(&loggerAdapter{cfg.Logger()}),
 			)
 			if err != nil {
 				return
