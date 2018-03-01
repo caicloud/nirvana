@@ -35,6 +35,12 @@ type Server interface {
 	// Serve starts to listen and serve requests.
 	// The method won't return except an error occurs.
 	Serve() error
+	// Builder create a service builder for current server. Don't use this method directly except
+	// there is a special server to hold http services. After server shutdown, clean resources via
+	// returned cleaner.
+	// This method always returns same builder until cleaner is called. Then it will
+	// returns new one.
+	Builder() (builder service.Builder, cleaner func() error, err error)
 }
 
 // Config describes configuration of server.
