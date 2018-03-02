@@ -282,7 +282,8 @@ func (s resultsSorter) Swap(i, j int) {
 
 // Inspect finds a valid executor to execute target context.
 func (i *inspector) Inspect(ctx context.Context) (router.Executor, error) {
-	req := HTTPContextFrom(ctx).Request()
+	httpCtx := HTTPContextFrom(ctx)
+	req := httpCtx.Request()
 	if req == nil {
 		return nil, noContext.Error()
 	}
@@ -331,6 +332,7 @@ func (i *inspector) Inspect(ctx context.Context) (router.Executor, error) {
 	if target == nil {
 		return nil, noExecutorToProduce.Error()
 	}
+	httpCtx.setRoutePath(i.path)
 	return target, nil
 }
 

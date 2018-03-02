@@ -21,6 +21,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -101,6 +102,10 @@ type Application struct {
 }
 
 func Handle(ctx context.Context, userAgent string, target1 int, target2 bool, app *Application) (*Application, error) {
+	path := HTTPContextFrom(ctx).RoutePath()
+	if path != "/api/v1/{target1}/{target2}" {
+		return nil, fmt.Errorf("http abstract path is not correct: %s", path)
+	}
 	app.Target = userAgent
 	app.Target1 = target1
 	app.Target2 = target2
