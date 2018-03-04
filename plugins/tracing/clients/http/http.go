@@ -14,12 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package tracing
+package http
 
 import (
 	"net/http"
 	"net/http/httptrace"
 
+	"github.com/caicloud/nirvana/plugins/tracing/utils"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	tlog "github.com/opentracing/opentracing-go/log"
@@ -50,7 +51,7 @@ func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 		operationName = req.Method
 	}
 
-	span, ctx := StartSpanFromContext(req.Context(), "HTTP: "+operationName)
+	span, ctx := utils.StartSpanFromContext(req.Context(), "HTTP: "+operationName)
 	if span == nil {
 		return rt.RoundTrip(req)
 	}
