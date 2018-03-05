@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package tracing
+package middleware
 
 import (
 	"context"
@@ -210,16 +210,4 @@ func (l *loggerAdapter) Error(msg string) {
 // Infof logs a message at info priority
 func (l *loggerAdapter) Infof(msg string, args ...interface{}) {
 	l.logger.Infof(msg, args...)
-}
-
-// StartSpanFromContext starts and returns a Span with `operationName`, using
-// any Span found within `ctx` as a ChildOfRef.
-func StartSpanFromContext(ctx context.Context, operationName string) (opentracing.Span, context.Context) {
-	if span := opentracing.SpanFromContext(ctx); span != nil {
-		span = span.Tracer().StartSpan(operationName, opentracing.ChildOf(span.Context()))
-		ctx = opentracing.ContextWithSpan(ctx, span)
-		return span, ctx
-	}
-
-	return nil, ctx
 }
