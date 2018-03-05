@@ -110,10 +110,11 @@ func (o *openAPI) buildDescriptor(specPaths map[string]spec.PathItem, path strin
 }
 
 func (o *openAPI) buildPathItem(consumes, produces []string, defs []definition.Definition) (*spec.PathItem, error) {
+	if len(defs) == 0 {
+		return nil, nil
+	}
 	pathItem := spec.PathItem{}
-	hasDef := false
 	for _, def := range defs {
-		hasDef = true
 		op, err := o.buildOperation(&def, consumes, produces, service.HTTPCodeFor(def.Method))
 		if err != nil {
 			return nil, err
@@ -141,10 +142,7 @@ func (o *openAPI) buildPathItem(consumes, produces []string, defs []definition.D
 			pathItem.Delete = op
 		}
 	}
-	if hasDef {
-		return &pathItem, nil
-	}
-	return nil, nil
+	return &pathItem, nil
 }
 
 func (o *openAPI) buildOperation(def *definition.Definition, consumes, produces []string, defaultStatusCode int) (*spec.Operation, error) {
