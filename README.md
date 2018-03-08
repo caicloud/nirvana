@@ -889,7 +889,8 @@ Add tag `+nirvana:openapi=true` to the `doc.go` file in package of api types jus
 package api
 ```
 
-And run cmd to generate the function `GetOpenAPIDefinitions`
+And run cmd to generate the function `GetOpenAPIDefinitions`.
+If input(-i) packages are more than one, comma-separated list can be used.
 
 ```
 openapi-gen \
