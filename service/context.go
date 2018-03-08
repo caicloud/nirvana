@@ -42,32 +42,13 @@ type httpCtx struct {
 	path      string
 }
 
-func newHTTPContext() interface{} {
+func newHTTPContext(resp http.ResponseWriter, request *http.Request) *httpCtx {
 	ctx := &httpCtx{}
+	ctx.Context = request.Context()
+	ctx.container.request = request
 	ctx.container.params = make([]param, 0, 5)
+	ctx.response.writer = resp
 	return ctx
-}
-
-// reset resets itself by a http.Request and a http.ResponseWriter.
-func (c *httpCtx) reset(w http.ResponseWriter, request *http.Request) {
-	// Get context from request.
-	c.Context = request.Context()
-	// Reset value container.
-	c.container.request = request
-	c.container.params = c.container.params[:0]
-	c.container.query = nil
-	// Reset response.
-	c.response.writer = w
-	c.response.statusCode = 0
-	c.response.contentLength = 0
-}
-
-// clear clears request and response.
-func (c *httpCtx) clear() {
-	c.Context = nil
-	c.container.request = nil
-	c.container.query = nil
-	c.response.writer = nil
 }
 
 // Value returns itself when key is contextKeyUnderlyingHTTPContext.
