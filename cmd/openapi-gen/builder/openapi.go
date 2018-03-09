@@ -79,16 +79,19 @@ func newOpenAPI(c *common.Config) (*openAPI, error) {
 }
 
 func (o *openAPI) init(descriptor *definition.Descriptor) error {
-	return o.buildDescriptor("", nil, nil, descriptor)
+	specPaths := o.swagger.SwaggerProps.Paths.Paths
+	return o.buildDescriptor(specPaths, "", nil, nil, descriptor)
 }
 
-func (o *openAPI) buildDescriptor(path string, consumes, produces []string, descriptor *definition.Descriptor) error {
+func (o *openAPI) buildDescriptor(specPaths map[string]spec.PathItem, path string, consumes, produces []string, descriptor *definition.Descriptor) error {
 	path = strings.TrimSuffix(path, "/") + descriptor.Path
-	specPaths, err := o.buildPathItems(path, consumes, produces, descriptor.Definitions)
+	pathItem, err := o.buildPathItem(consumes, produces, descriptor.Definitions)
 	if err != nil {
 		return err
 	}
-	o.swagger.SwaggerProps.Paths.Paths = specPaths
+	if pathItem != nil {
+		specPaths[path] = *pathItem
+	}
 	c, p := descriptor.Consumes, descriptor.Produces
 
 	if c == nil {
@@ -99,17 +102,19 @@ func (o *openAPI) buildDescriptor(path string, consumes, produces []string, desc
 	}
 
 	for _, d := range descriptor.Children {
-		if err := o.buildDescriptor(descriptor.Path, c, p, &d); err != nil {
+		if err := o.buildDescriptor(specPaths, descriptor.Path, c, p, &d); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (o *openAPI) buildPathItems(path string, consumes, produces []string, defs []definition.Definition) (map[string]spec.PathItem, error) {
-	specPaths := map[string]spec.PathItem{}
+func (o *openAPI) buildPathItem(consumes, produces []string, defs []definition.Definition) (*spec.PathItem, error) {
+	if len(defs) == 0 {
+		return nil, nil
+	}
+	pathItem := spec.PathItem{}
 	for _, def := range defs {
-		pathItem := spec.PathItem{}
 		op, err := o.buildOperation(&def, consumes, produces, service.HTTPCodeFor(def.Method))
 		if err != nil {
 			return nil, err
@@ -136,9 +141,8 @@ func (o *openAPI) buildPathItems(path string, consumes, produces []string, defs 
 		case definition.AsyncDelete:
 			pathItem.Delete = op
 		}
-		specPaths[path] = pathItem
 	}
-	return specPaths, nil
+	return &pathItem, nil
 }
 
 func (o *openAPI) buildOperation(def *definition.Definition, consumes, produces []string, defaultStatusCode int) (*spec.Operation, error) {
