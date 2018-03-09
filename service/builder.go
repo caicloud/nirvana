@@ -20,7 +20,6 @@ import (
 	"context"
 	"net/http"
 	"strings"
-	"sync"
 
 	"github.com/caicloud/nirvana/definition"
 	"github.com/caicloud/nirvana/log"
@@ -203,7 +202,6 @@ func (b *builder) Build() (Service, error) {
 		logger:    b.logger,
 		producers: AllProducers(),
 	}
-	s.pool.New = newHTTPContext
 	return s, nil
 }
 
@@ -233,7 +231,6 @@ type service struct {
 	filters   []Filter
 	logger    log.Logger
 	producers []Producer
-	pool      sync.Pool
 }
 
 func (s *service) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
@@ -242,10 +239,7 @@ func (s *service) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 			return
 		}
 	}
-	ctx := s.pool.Get().(*httpCtx)
-	defer s.pool.Put(ctx)
-	ctx.reset(resp, req)
-	defer ctx.clear()
+	ctx := newHTTPContext(resp, req)
 
 	executor, err := s.root.Match(ctx, &ctx.container, req.URL.Path)
 	if err != nil {
