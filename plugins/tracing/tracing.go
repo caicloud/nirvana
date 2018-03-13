@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package middleware
+package tracing
 
 import (
 	"context"
@@ -210,4 +210,25 @@ func (l *loggerAdapter) Error(msg string) {
 // Infof logs a message at info priority
 func (l *loggerAdapter) Infof(msg string, args ...interface{}) {
 	l.logger.Infof(msg, args...)
+}
+
+// Option contains basic configurations of tracing.
+type Option struct {
+	// ServiceName is the trace service name
+	ServiceName string
+	// AgentHostPort instructs reporter to send spans to jaeger-agent at this address
+	AgentHostPort string
+}
+
+// Name returns plugin name.
+func (p *Option) Name() string {
+	return ExternalConfigName
+}
+
+// Configure configures nirvana config via current options.
+func (p *Option) Configure(cfg *nirvana.Config) error {
+	cfg.Configure(
+		DefaultTracer(p.ServiceName, p.AgentHostPort),
+	)
+	return nil
 }

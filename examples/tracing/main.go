@@ -24,7 +24,7 @@ import (
 	"github.com/caicloud/nirvana/config"
 	"github.com/caicloud/nirvana/definition"
 	"github.com/caicloud/nirvana/log"
-	tracingMiddleware "github.com/caicloud/nirvana/plugins/tracing/middleware"
+	"github.com/caicloud/nirvana/plugins/tracing"
 	"github.com/caicloud/nirvana/service"
 )
 
@@ -58,7 +58,7 @@ func main() {
 
 	cfg := nirvana.NewDefaultConfig().
 		Configure(
-			tracingMiddleware.DefaultTracer("example", "127.0.0.1:6831"),
+			tracing.DefaultTracer("example", "127.0.0.1:6831"),
 			nirvana.Descriptor(example),
 		)
 
