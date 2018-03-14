@@ -448,20 +448,19 @@ func (g *AutoParameterGenerator) split(tag string) (source, name string, atp aut
 }
 
 func (g *AutoParameterGenerator) Generate(ctx context.Context, vc ValueContainer, consumers []Consumer, name string, target reflect.Type) (interface{}, error) {
-	var result interface{}
+	var result reflect.Value
 	var value reflect.Value
 	if target.Kind() == reflect.Struct {
-		value = reflect.New(target).Elem()
-		result = value.Interface()
+		result = reflect.New(target).Elem()
+		value = result
 	} else {
-		value = reflect.New(target.Elem())
-		result = value.Interface()
-		value = value.Elem()
+		result = reflect.New(target.Elem())
+		value = result.Elem()
 	}
 	if err := g.generate(ctx, vc, consumers, value); err != nil {
 		return nil, err
 	}
-	return result, nil
+	return result.Interface(), nil
 }
 
 func (g *AutoParameterGenerator) generate(ctx context.Context, vc ValueContainer, consumers []Consumer, value reflect.Value) error {
