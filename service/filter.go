@@ -86,15 +86,15 @@ func ParseRequestForm() Filter {
 	}
 }
 
-func isZero(length string) bool {
+func isGTZero(length string) bool {
 	if length == "" {
-		return true
+		return false
 	}
 	i, err := strconv.Atoi(length)
 	if err != nil {
 		return false
 	}
-	return i == 0
+	return i > 0
 }
 
 // ContentType is a util to get content type from a request.
@@ -103,7 +103,7 @@ func ContentType(req *http.Request) (string, error) {
 	if ct == "" {
 		length := req.Header.Get("Content-Length")
 		transfer := req.Header.Get("Transfer-Encoding")
-		if !isZero(length) || transfer != "" {
+		if isGTZero(length) || transfer != "" {
 			return definition.MIMEOctetStream, nil
 		}
 		return definition.MIMENone, nil
