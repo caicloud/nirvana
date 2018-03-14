@@ -152,7 +152,7 @@ func TestAddDefinition(t *testing.T) {
 						Name:   "a",
 					},
 				},
-				Function: func(a []int) {
+				Function: func(a []*int) {
 				},
 			},
 			noConverter,
