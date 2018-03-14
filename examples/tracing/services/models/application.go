@@ -14,22 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package main
+package models
 
-import (
-	"github.com/caicloud/nirvana/examples/tracing/services/api"
-	"github.com/caicloud/nirvana/examples/tracing/services/config"
-	"github.com/caicloud/nirvana/log"
-)
+import "time"
 
-func main() {
-	go func() {
-		if err := config.NewServer(); err != nil {
-			log.Error(err)
-		}
-	}()
-
-	if err := api.NewServer(); err != nil {
-		log.Error(err)
-	}
+type Application struct {
+	Namespace    string            `json:"namespace"`
+	Name         string            `json:"name"`
+	ConfigData   map[string]string `json:"configData"`
+	CreationTime time.Time         `json:"creationTime"`
 }
