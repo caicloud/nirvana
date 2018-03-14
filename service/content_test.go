@@ -117,3 +117,217 @@ func TestProducer(t *testing.T) {
 		}
 	}
 }
+
+func TestConverterFor(t *testing.T) {
+	tests := []struct {
+		tpy     reflect.Type
+		data    []string
+		want    interface{}
+		pointer bool
+	}{
+		{
+			reflect.TypeOf(bool(false)),
+			[]string{"true", "false"},
+			true,
+			false,
+		},
+		{
+			reflect.TypeOf(int(0)),
+			[]string{"1", "2"},
+			1,
+			false,
+		},
+		{
+			reflect.TypeOf(int8(0)),
+			[]string{"1", "2"},
+			int8(1),
+			false,
+		},
+		{
+			reflect.TypeOf(int32(0)),
+			[]string{"1", "2"},
+			int32(1),
+			false,
+		},
+		{
+			reflect.TypeOf(int64(0)),
+			[]string{"1", "2"},
+			int64(1),
+			false,
+		},
+		{
+			reflect.TypeOf(uint(0)),
+			[]string{"1", "2"},
+			uint(1),
+			false,
+		},
+		{
+			reflect.TypeOf(uint8(0)),
+			[]string{"1", "2"},
+			uint8(1),
+			false,
+		},
+		{
+			reflect.TypeOf(uint16(0)),
+			[]string{"1", "2"},
+			uint16(1),
+			false,
+		},
+		{
+			reflect.TypeOf(uint64(0)),
+			[]string{"1", "2"},
+			uint64(1),
+			false,
+		},
+		{
+			reflect.TypeOf(float32(0)),
+			[]string{"1.2", "2"},
+			float32(1.2),
+			false,
+		},
+		{
+			reflect.TypeOf(float64(0)),
+			[]string{"1.2", "2"},
+			float64(1.2),
+			false,
+		},
+		{
+			reflect.TypeOf(string("")),
+			[]string{"1", "2"},
+			"1",
+			false,
+		},
+		{
+			reflect.TypeOf(new(bool)),
+			[]string{"true", "2"},
+			true,
+			true,
+		},
+		{
+			reflect.TypeOf(new(int)),
+			[]string{"1", "2"},
+			1,
+			true,
+		},
+		{
+			reflect.TypeOf(new(int8)),
+			[]string{"1", "2"},
+			int8(1),
+			true,
+		},
+		{
+			reflect.TypeOf(new(int16)),
+			[]string{"1", "2"},
+			int16(1),
+			true,
+		},
+		{
+			reflect.TypeOf(new(int32)),
+			[]string{"1", "2"},
+			int32(1),
+			true,
+		},
+		{
+			reflect.TypeOf(new(int64)),
+			[]string{"1", "2"},
+			int64(1),
+			true,
+		},
+		{
+			reflect.TypeOf(new(uint)),
+			[]string{"1", "2"},
+			uint(1),
+			true,
+		},
+		{
+			reflect.TypeOf(new(uint8)),
+			[]string{"1", "2"},
+			uint8(1),
+			true,
+		},
+
+		{
+			reflect.TypeOf(new(uint16)),
+			[]string{"1", "2"},
+			uint16(1),
+			true,
+		},
+
+		{
+			reflect.TypeOf(new(uint32)),
+			[]string{"1", "2"},
+			uint32(1),
+			true,
+		},
+
+		{
+			reflect.TypeOf(new(uint64)),
+			[]string{"1", "2"},
+			uint64(1),
+			true,
+		},
+		{
+			reflect.TypeOf(new(float32)),
+			[]string{"1.2", "2"},
+			float32(1.2),
+			true,
+		},
+		{
+			reflect.TypeOf(new(float64)),
+			[]string{"1.2", "2"},
+			float64(1.2),
+			true,
+		},
+		{
+			reflect.TypeOf(new(string)),
+			[]string{"1.2", "2"},
+			"1.2",
+			true,
+		},
+		{
+			reflect.TypeOf([]bool{}),
+			[]string{"true", "false"},
+			[]bool{true, false},
+			false,
+		},
+		{
+			reflect.TypeOf([]int{}),
+			[]string{"1", "2"},
+			[]int{1, 2},
+			false,
+		},
+		{
+			reflect.TypeOf([]float64{}),
+			[]string{"1.2", "2.2"},
+			[]float64{1.2, 2.2},
+			false,
+		},
+		{
+			reflect.TypeOf([]string{}),
+			[]string{"1.2", "2.2"},
+			[]string{"1.2", "2.2"},
+			false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run("", func(t *testing.T) {
+			converter := ConverterFor(tt.tpy)
+			got, err := converter(context.TODO(), tt.data)
+
+			if err != nil {
+				t.Errorf("ConvertToXXX() type %v, error = %v, ", tt.tpy, err)
+				return
+			}
+			if !tt.pointer && !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("ConvertToXXX() type %v, got %v, want %v", tt.tpy, got, tt.want)
+			}
+			if tt.pointer {
+				value := reflect.ValueOf(got).Elem().Interface()
+				if !reflect.DeepEqual(value, tt.want) {
+					t.Errorf("ConvertToXXX() type %v, got %v, want %v", tt.tpy, value, tt.want)
+				}
+			}
+		})
+	}
+
+}
