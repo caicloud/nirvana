@@ -153,6 +153,10 @@ type NirvanaCommand interface {
 	ExecuteWithConfig(cfg *nirvana.Config) error
 	// Command returns a command for command.
 	Command(cfg *nirvana.Config) *cobra.Command
+	// SetHook sets nirvana command hook.
+	SetHook(hook NirvanaCommandHook)
+	// Hook returns nirvana command hook.
+	Hook() NirvanaCommandHook
 }
 
 // NewDefaultNirvanaCommand creates a nirvana command with default option.
@@ -175,6 +179,7 @@ func NewNamedNirvanaCommand(name string, option *Option) NirvanaCommand {
 		option:  option,
 		plugins: []Plugin{},
 		fields:  map[string]*configField{},
+		hook:    &NirvanaCommandHookFunc{},
 	}
 	cmd.EnablePlugin(cmd.option)
 	return cmd
@@ -195,6 +200,7 @@ type command struct {
 	option  *Option
 	plugins []Plugin
 	fields  map[string]*configField
+	hook    NirvanaCommandHook
 }
 
 // EnablePlugin enables plugins.
@@ -350,8 +356,13 @@ func (s *command) Command(cfg *nirvana.Config) *cobra.Command {
 					logger.Fatalf("Failed to install plugin %s: %s", plugin.Name(), err.Error())
 				}
 			}
+			server := nirvana.NewServer(cfg)
+			if err := s.hook.PreServe(cfg, server); err != nil {
+				logger.Fatal(err)
+			}
 			logger.Infof("Listening on %s:%d", cfg.IP(), cfg.Port())
-			if err := nirvana.NewServer(cfg).Serve(); err != nil {
+			err := server.Serve()
+			if err := s.hook.PostServe(cfg, server, err); err != nil {
 				logger.Fatal(err)
 			}
 		},
@@ -550,4 +561,17 @@ func chooseValue(key string, value interface{}, env string, envValue interface{}
 		desc = fmt.Sprintf(" (env %s)", env) + desc
 	}
 	return desc, val
+}
+
+// SetHook sets nirvana command hook.
+func (s *command) SetHook(hook NirvanaCommandHook) {
+	if hook == nil {
+		hook = &NirvanaCommandHookFunc{}
+	}
+	s.hook = hook
+}
+
+// Hook returns nirvana command hook.
+func (s *command) Hook() NirvanaCommandHook {
+	return s.hook
 }
