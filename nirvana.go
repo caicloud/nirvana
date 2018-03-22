@@ -35,6 +35,9 @@ type Server interface {
 	// Serve starts to listen and serve requests.
 	// The method won't return except an error occurs.
 	Serve() error
+	// Shutdown gracefully shuts down the server without interrupting any
+	// active connections.
+	Shutdown(ctx context.Context) error
 	// Builder create a service builder for current server. Don't use this method directly except
 	// there is a special server to hold http services. After server shutdown, clean resources via
 	// returned cleaner.
