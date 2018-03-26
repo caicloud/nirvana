@@ -449,7 +449,8 @@ func ConvertToBoolP(ctx context.Context, data []string) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &ret, nil
+	value := ret.(bool)
+	return &value, nil
 }
 
 // ConvertToInt converts []string to int. Only the first data is used.
@@ -468,7 +469,8 @@ func ConvertToIntP(ctx context.Context, data []string) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &ret, nil
+	value := ret.(int)
+	return &value, nil
 }
 
 // ConvertToInt8 converts []string to int8. Only the first data is used.
@@ -487,7 +489,8 @@ func ConvertToInt8P(ctx context.Context, data []string) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &ret, nil
+	value := ret.(int8)
+	return &value, nil
 }
 
 // ConvertToInt16 converts []string to int16. Only the first data is used.
@@ -506,7 +509,8 @@ func ConvertToInt16P(ctx context.Context, data []string) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &ret, nil
+	value := ret.(int16)
+	return &value, nil
 }
 
 // ConvertToInt32 converts []string to int32. Only the first data is used.
@@ -525,7 +529,8 @@ func ConvertToInt32P(ctx context.Context, data []string) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &ret, nil
+	value := ret.(int32)
+	return &value, nil
 }
 
 // ConvertToInt64 converts []string to int64. Only the first data is used.
@@ -544,7 +549,8 @@ func ConvertToInt64P(ctx context.Context, data []string) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &ret, nil
+	value := ret.(int64)
+	return &value, nil
 }
 
 // ConvertToUint converts []string to uint. Only the first data is used.
@@ -563,7 +569,8 @@ func ConvertToUintP(ctx context.Context, data []string) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &ret, nil
+	value := ret.(uint)
+	return &value, nil
 }
 
 // ConvertToUint8 converts []string to uint8. Only the first data is used.
@@ -582,7 +589,8 @@ func ConvertToUint8P(ctx context.Context, data []string) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &ret, nil
+	value := ret.(uint8)
+	return &value, nil
 }
 
 // ConvertToUint16 converts []string to uint16. Only the first data is used.
@@ -601,7 +609,8 @@ func ConvertToUint16P(ctx context.Context, data []string) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &ret, nil
+	value := ret.(uint16)
+	return &value, nil
 }
 
 // ConvertToUint32 converts []string to uint32. Only the first data is used.
@@ -620,7 +629,8 @@ func ConvertToUint32P(ctx context.Context, data []string) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &ret, nil
+	value := ret.(uint32)
+	return &value, nil
 }
 
 // ConvertToUint64 converts []string to uint64. Only the first data is used.
@@ -639,7 +649,8 @@ func ConvertToUint64P(ctx context.Context, data []string) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &ret, nil
+	value := ret.(uint64)
+	return &value, nil
 }
 
 // ConvertToFloat32 converts []string to float32. Only the first data is used.
@@ -658,7 +669,8 @@ func ConvertToFloat32P(ctx context.Context, data []string) (interface{}, error) 
 	if err != nil {
 		return nil, err
 	}
-	return &ret, nil
+	value := ret.(float32)
+	return &value, nil
 }
 
 // ConvertToFloat64 converts []string to float64. Only the first data is used.
@@ -677,7 +689,8 @@ func ConvertToFloat64P(ctx context.Context, data []string) (interface{}, error) 
 	if err != nil {
 		return nil, err
 	}
-	return &ret, nil
+	value := ret.(float64)
+	return &value, nil
 }
 
 // ConvertToString return the first element in []string.
