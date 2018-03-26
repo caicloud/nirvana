@@ -326,8 +326,10 @@ func (s *command) Add(pointer interface{}, key string, shortFlag string, desc st
 // Execute runs nirvana server.
 func (s *command) Execute(descriptors ...definition.Descriptor) error {
 	cfg := nirvana.NewDefaultConfig()
-	cfg.Configure(nirvana.Descriptor(descriptors...))
-	return s.Command(cfg).Execute()
+	if len(descriptors) > 0 {
+		cfg.Configure(nirvana.Descriptor(descriptors...))
+	}
+	return s.ExecuteWithConfig(cfg)
 }
 
 // ExecuteWithConfig runs nirvana server from a custom config.
@@ -351,18 +353,23 @@ func (s *command) Command(cfg *nirvana.Config) *cobra.Command {
 				}
 				Set(f.key, val.Interface())
 			}
+			if err := s.hook.PreConfigure(cfg); err != nil {
+				logger.Fatal(err)
+			}
 			for _, plugin := range s.plugins {
 				if err := plugin.Configure(cfg); err != nil {
 					logger.Fatalf("Failed to install plugin %s: %s", plugin.Name(), err.Error())
 				}
+			}
+			if err := s.hook.PostConfigure(cfg); err != nil {
+				logger.Fatal(err)
 			}
 			server := nirvana.NewServer(cfg)
 			if err := s.hook.PreServe(cfg, server); err != nil {
 				logger.Fatal(err)
 			}
 			logger.Infof("Listening on %s:%d", cfg.IP(), cfg.Port())
-			err := server.Serve()
-			if err := s.hook.PostServe(cfg, server, err); err != nil {
+			if err := s.hook.PostServe(cfg, server, server.Serve()); err != nil {
 				logger.Fatal(err)
 			}
 		},

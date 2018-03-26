@@ -22,6 +22,10 @@ import (
 
 // NirvanaCommandHook provides several hook points for NirvanaCommand.
 type NirvanaCommandHook interface {
+	// PreConfigure runs before installing plugins.
+	PreConfigure(config *nirvana.Config) error
+	// PostConfigure runs after installing plugins and before creating nirvana server.
+	PostConfigure(config *nirvana.Config) error
 	// PreServe runs before nirvana server serving.
 	PreServe(config *nirvana.Config, server nirvana.Server) error
 	// PostServe runs after nirvana server shutting down or any error occurring.
@@ -31,8 +35,26 @@ type NirvanaCommandHook interface {
 // NirvanaCommandHookFunc is a helper to generate NirvanaCommandHook. Hook points
 // are optional.
 type NirvanaCommandHookFunc struct {
-	PreServeFunc  func(config *nirvana.Config, server nirvana.Server) error
-	PostServeFunc func(config *nirvana.Config, server nirvana.Server, err error) error
+	PreConfigureFunc  func(config *nirvana.Config) error
+	PostConfigureFunc func(config *nirvana.Config) error
+	PreServeFunc      func(config *nirvana.Config, server nirvana.Server) error
+	PostServeFunc     func(config *nirvana.Config, server nirvana.Server, err error) error
+}
+
+// PreConfigure runs before installing plugins.
+func (h *NirvanaCommandHookFunc) PreConfigure(config *nirvana.Config) error {
+	if h.PreConfigureFunc != nil {
+		return h.PreConfigure(config)
+	}
+	return nil
+}
+
+// PostConfigure runs after installing plugins and before creating nirvana server.
+func (h *NirvanaCommandHookFunc) PostConfigure(config *nirvana.Config) error {
+	if h.PostConfigureFunc != nil {
+		return h.PostConfigureFunc(config)
+	}
+	return nil
 }
 
 // PreServe runs before nirvana server serving.
