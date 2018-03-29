@@ -73,8 +73,8 @@ func (*SilentLogger) Fatalf(string, ...interface{}) {}
 // Arguments are handled in the manner of fmt.Println; a newline is appended if missing.
 func (*SilentLogger) Fatalln(v ...interface{}) {}
 
-// clone clones current logger with new wrapper.
+// Clone clones current logger with new wrapper.
 // A positive wrapper indicates how many wrappers outside the logger.
-func (l *SilentLogger) clone(wrapper int) Logger {
+func (l *SilentLogger) Clone(wrapper int) Logger {
 	return l
 }
