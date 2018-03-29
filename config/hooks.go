@@ -44,7 +44,7 @@ type NirvanaCommandHookFunc struct {
 // PreConfigure runs before installing plugins.
 func (h *NirvanaCommandHookFunc) PreConfigure(config *nirvana.Config) error {
 	if h.PreConfigureFunc != nil {
-		return h.PreConfigure(config)
+		return h.PreConfigureFunc(config)
 	}
 	return nil
 }
