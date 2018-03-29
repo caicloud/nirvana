@@ -73,15 +73,21 @@ func (p *Table) String() string {
 					colWidth = p.maxColWidth
 				}
 				str := cell.NextLine(colWidth - 2)
-				buf.WriteString(str)
+				if _, err := buf.WriteString(str); err != nil {
+					panic(err)
+				}
 				for i := LengthForString(str); i < colWidth; i++ {
-					buf.WriteByte(' ')
+					if err := buf.WriteByte(' '); err != nil {
+						panic(err)
+					}
 				}
 				if !hasData && !cell.Empty() {
 					hasData = true
 				}
 			}
-			buf.WriteByte('\n')
+			if err := buf.WriteByte('\n'); err != nil {
+				panic(err)
+			}
 		}
 	}
 	return buf.String()
