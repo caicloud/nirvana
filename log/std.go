@@ -133,9 +133,9 @@ func (l *stdLogger) Fatalln(a ...interface{}) {
 	l.outputln(SeverityFatal, a...)
 }
 
-// clone clones current logger with new wrapper.
+// Clone clones current logger with new wrapper.
 // A positive wrapper indicates how many wrappers outside the logger.
-func (l *stdLogger) clone(wrapper int) Logger {
+func (l *stdLogger) Clone(wrapper int) Logger {
 	return &stdLogger{
 		level:   l.level,
 		stream:  l.stream,
