@@ -55,6 +55,8 @@ var noConnectionHijacker = errors.InternalServerError.Build("Nirvana:Service:NoC
 var definitionNoMethod = errors.InternalServerError.Build("Nirvana:Service:DefinitionNoMethod", "no http method in [${method}]${path}")
 var definitionNoConsumes = errors.InternalServerError.Build("Nirvana:Service:DefinitionNoConsumes", "no content type to consume in [${method}]${path}")
 var definitionNoProduces = errors.InternalServerError.Build("Nirvana:Service:DefinitionNoProduces", "no content type to produce in [${method}]${path}")
+var definitionNoErrorProduces = errors.InternalServerError.Build("Nirvana:Service:DefinitionNoErrorProduces",
+	"no content type to produce error in [${method}]${path}")
 var definitionNoFunction = errors.InternalServerError.Build("Nirvana:Service:DefinitionNoFunction", "no function in [${method}]${path}")
 var definitionInvalidFunctionType = errors.InternalServerError.Build("Nirvana:Service:DefinitionInvalidFunctionType",
 	"${type} is not function in [${method}]${path}")

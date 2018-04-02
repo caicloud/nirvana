@@ -58,22 +58,34 @@ func TestAddDefinition(t *testing.T) {
 				Consumes: []string{definition.MIMENone},
 				Produces: []string{definition.MIMEJSON},
 			},
+			definitionNoErrorProduces,
+		},
+
+		{
+			definition.Definition{
+				Method:        definition.Get,
+				Consumes:      []string{definition.MIMENone},
+				Produces:      []string{definition.MIMEJSON},
+				ErrorProduces: []string{definition.MIMEJSON},
+			},
 			definitionNoFunction,
 		},
 		{
 			definition.Definition{
-				Method:   definition.Get,
-				Consumes: []string{definition.MIMENone},
-				Produces: []string{definition.MIMEJSON},
-				Function: 1,
+				Method:        definition.Get,
+				Consumes:      []string{definition.MIMENone},
+				Produces:      []string{definition.MIMEJSON},
+				ErrorProduces: []string{definition.MIMEJSON},
+				Function:      1,
 			},
 			definitionInvalidFunctionType,
 		},
 		{
 			definition.Definition{
-				Method:   definition.Get,
-				Consumes: []string{"invalid-content-type"},
-				Produces: []string{definition.MIMEJSON},
+				Method:        definition.Get,
+				Consumes:      []string{"invalid-content-type"},
+				Produces:      []string{definition.MIMEJSON},
+				ErrorProduces: []string{definition.MIMEJSON},
 				Function: func() {
 				},
 			},
@@ -81,9 +93,10 @@ func TestAddDefinition(t *testing.T) {
 		},
 		{
 			definition.Definition{
-				Method:   definition.Get,
-				Consumes: []string{definition.MIMENone},
-				Produces: []string{"invalid-content-type"},
+				Method:        definition.Get,
+				Consumes:      []string{definition.MIMENone},
+				Produces:      []string{"invalid-content-type"},
+				ErrorProduces: []string{definition.MIMEJSON},
 				Function: func() {
 				},
 			},
@@ -91,9 +104,10 @@ func TestAddDefinition(t *testing.T) {
 		},
 		{
 			definition.Definition{
-				Method:   definition.Get,
-				Consumes: []string{definition.MIMENone},
-				Produces: []string{"invalid-content-type"},
+				Method:        definition.Get,
+				Consumes:      []string{definition.MIMENone},
+				Produces:      []string{"invalid-content-type"},
+				ErrorProduces: []string{definition.MIMEJSON},
 				Function: func() {
 				},
 			},
@@ -101,9 +115,10 @@ func TestAddDefinition(t *testing.T) {
 		},
 		{
 			definition.Definition{
-				Method:   definition.Get,
-				Consumes: []string{definition.MIMENone},
-				Produces: []string{definition.MIMEJSON},
+				Method:        definition.Get,
+				Consumes:      []string{definition.MIMENone},
+				Produces:      []string{definition.MIMEJSON},
+				ErrorProduces: []string{definition.MIMEJSON},
 				Function: func(ctx context.Context) {
 				},
 			},
@@ -111,9 +126,10 @@ func TestAddDefinition(t *testing.T) {
 		},
 		{
 			definition.Definition{
-				Method:   definition.Get,
-				Consumes: []string{definition.MIMENone},
-				Produces: []string{definition.MIMEJSON},
+				Method:        definition.Get,
+				Consumes:      []string{definition.MIMENone},
+				Produces:      []string{definition.MIMEJSON},
+				ErrorProduces: []string{definition.MIMEJSON},
 				Parameters: []definition.Parameter{
 					{
 						Source: "InvalidSource",
@@ -126,9 +142,10 @@ func TestAddDefinition(t *testing.T) {
 		},
 		{
 			definition.Definition{
-				Method:   definition.Get,
-				Consumes: []string{definition.MIMENone},
-				Produces: []string{definition.MIMEJSON},
+				Method:        definition.Get,
+				Consumes:      []string{definition.MIMENone},
+				Produces:      []string{definition.MIMEJSON},
+				ErrorProduces: []string{definition.MIMEJSON},
 				Parameters: []definition.Parameter{
 					{
 						Source:  definition.Path,
@@ -143,9 +160,10 @@ func TestAddDefinition(t *testing.T) {
 		},
 		{
 			definition.Definition{
-				Method:   definition.Get,
-				Consumes: []string{definition.MIMENone},
-				Produces: []string{definition.MIMEJSON},
+				Method:        definition.Get,
+				Consumes:      []string{definition.MIMENone},
+				Produces:      []string{definition.MIMEJSON},
+				ErrorProduces: []string{definition.MIMEJSON},
 				Parameters: []definition.Parameter{
 					{
 						Source: definition.Path,
@@ -159,9 +177,10 @@ func TestAddDefinition(t *testing.T) {
 		},
 		{
 			definition.Definition{
-				Method:   definition.Get,
-				Consumes: []string{definition.MIMENone},
-				Produces: []string{definition.MIMEJSON},
+				Method:        definition.Get,
+				Consumes:      []string{definition.MIMENone},
+				Produces:      []string{definition.MIMEJSON},
+				ErrorProduces: []string{definition.MIMEJSON},
 				Parameters: []definition.Parameter{
 					{
 						Source: definition.Query,
@@ -180,9 +199,10 @@ func TestAddDefinition(t *testing.T) {
 		},
 		{
 			definition.Definition{
-				Method:   definition.Get,
-				Consumes: []string{definition.MIMENone},
-				Produces: []string{definition.MIMEJSON},
+				Method:        definition.Get,
+				Consumes:      []string{definition.MIMENone},
+				Produces:      []string{definition.MIMEJSON},
+				ErrorProduces: []string{definition.MIMEJSON},
 				Parameters: []definition.Parameter{
 					{
 						Source: definition.Query,
@@ -204,9 +224,10 @@ func TestAddDefinition(t *testing.T) {
 		},
 		{
 			definition.Definition{
-				Method:   definition.Get,
-				Consumes: []string{definition.MIMENone},
-				Produces: []string{definition.MIMEJSON},
+				Method:        definition.Get,
+				Consumes:      []string{definition.MIMENone},
+				Produces:      []string{definition.MIMEJSON},
+				ErrorProduces: []string{definition.MIMEJSON},
 				Function: func() int {
 					return 0
 				},
@@ -215,9 +236,10 @@ func TestAddDefinition(t *testing.T) {
 		},
 		{
 			definition.Definition{
-				Method:   definition.Get,
-				Consumes: []string{definition.MIMENone},
-				Produces: []string{definition.MIMEJSON},
+				Method:        definition.Get,
+				Consumes:      []string{definition.MIMENone},
+				Produces:      []string{definition.MIMEJSON},
+				ErrorProduces: []string{definition.MIMEJSON},
 				Results: []definition.Result{
 					{
 						Destination: definition.Destination("InvalidDestination"),
@@ -231,9 +253,10 @@ func TestAddDefinition(t *testing.T) {
 		},
 		{
 			definition.Definition{
-				Method:   definition.Get,
-				Consumes: []string{definition.MIMENone},
-				Produces: []string{definition.MIMEJSON},
+				Method:        definition.Get,
+				Consumes:      []string{definition.MIMENone},
+				Produces:      []string{definition.MIMEJSON},
+				ErrorProduces: []string{definition.MIMEJSON},
 				Results: []definition.Result{
 					{
 						Destination: definition.Data,
@@ -252,9 +275,10 @@ func TestAddDefinition(t *testing.T) {
 		},
 		{
 			definition.Definition{
-				Method:   definition.Get,
-				Consumes: []string{definition.MIMENone},
-				Produces: []string{definition.MIMEJSON},
+				Method:        definition.Get,
+				Consumes:      []string{definition.MIMENone},
+				Produces:      []string{definition.MIMEJSON},
+				ErrorProduces: []string{definition.MIMEJSON},
 				Function: func() {
 				},
 			},
@@ -262,9 +286,10 @@ func TestAddDefinition(t *testing.T) {
 		},
 		{
 			definition.Definition{
-				Method:   definition.Get,
-				Consumes: []string{definition.MIMENone},
-				Produces: []string{definition.MIMEJSON},
+				Method:        definition.Get,
+				Consumes:      []string{definition.MIMENone},
+				Produces:      []string{definition.MIMEJSON},
+				ErrorProduces: []string{definition.MIMEJSON},
 				Function: func() {
 				},
 			},
