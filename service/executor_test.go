@@ -264,7 +264,7 @@ func TestAddDefinition(t *testing.T) {
 			definition.Definition{
 				Method:   definition.Get,
 				Consumes: []string{definition.MIMENone},
-				Produces: []string{definition.MIMEXML},
+				Produces: []string{definition.MIMEJSON},
 				Function: func() {
 				},
 			},
