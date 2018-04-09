@@ -154,7 +154,7 @@ func (i *inspector) conflictCheck(c *executor) error {
 	cMap := c.ctMap()
 	for k, vs := range cMap {
 		for _, v := range vs {
-			if !ctMap[k+":"+v] {
+			if ctMap[k+":"+v] {
 				return definitionConflict.Error(k, v, c.method, i.path)
 			}
 		}
