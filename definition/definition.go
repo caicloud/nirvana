@@ -194,6 +194,11 @@ type Definition struct {
 	// Produces indicates how many content types the handler can produce.
 	// It will override parent descriptor's produces.
 	Produces []string
+	// ErrorProduces is used to generate data for error. If this field is empty,
+	// it means that this field equals to Produces.
+	// In some cases, succeessful data and error data should be generated in
+	// different ways.
+	ErrorProduces []string
 	// Function is a function handler. It must be func type.
 	Function interface{}
 	// Parameters describes function parameters.

@@ -20,7 +20,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -28,6 +27,7 @@ import (
 	"testing"
 
 	"github.com/caicloud/nirvana/definition"
+	"github.com/caicloud/nirvana/errors"
 )
 
 type responseWriter struct {
@@ -368,7 +368,7 @@ func defaultParamsHandler(ctx context.Context, q1, q2, tenant, tenant2 string, u
 	if q1 == "q1" && q2 == "" && tenant == "" && tenant2 == "tenant2" && u.Username == "name" && u.Password == "pwd" {
 		return "match", nil
 	}
-	return "", errors.New("not match params")
+	return "", errors.NotFound.Error("not match params")
 
 }
 
@@ -402,6 +402,85 @@ func TestDefaultParams(t *testing.T) {
 
 	if resp.code != 200 && resp.buf.String() != "match" {
 		t.Fatalf("Response code should be 200, but got: %d", resp.code)
+	}
+}
+
+var errDesc = definition.Descriptor{
+	Path:        "/api/v1/",
+	Definitions: []definition.Definition{},
+	Consumes:    []string{definition.MIMEAll},
+	Produces:    []string{definition.MIMEJSON},
+	Children: []definition.Descriptor{
+		{
+			Path: "/{err}",
+			Definitions: []definition.Definition{
+				{
+					Method:        definition.Get,
+					ErrorProduces: []string{definition.MIMEXML},
+					Function: func(err bool) (*Application, error) {
+						if err {
+							return nil, errors.NotFound.Error("error for test ${test}", err)
+						}
+						return &Application{
+							Name: "test",
+						}, nil
+					},
+					Parameters: []definition.Parameter{
+						{
+							Source: definition.Path,
+							Name:   "err",
+						},
+					},
+					Results: definition.DataErrorResults(""),
+				},
+			},
+		},
+	},
+}
+
+func TestErrorProduces(t *testing.T) {
+	builder := NewBuilder()
+	err := builder.AddDescriptor(errDesc)
+	if err != nil {
+		t.Fatal(err)
+	}
+	s, err := builder.Build()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	req := &http.Request{
+		Method: "GET",
+		Header: http.Header{
+			"Accept": []string{"application/json, application/xml"},
+		},
+	}
+	req = req.WithContext(context.Background())
+
+	u, _ := url.Parse("/api/v1/true")
+	req.URL = u
+	resp := newRW()
+	s.ServeHTTP(resp, req)
+
+	if resp.code != 404 {
+		t.Fatalf("Response code should be 404, but got: %d", resp.code)
+	}
+	desired := `<message><Message>error for test true</Message><Data><test>true</test></Data></message>`
+	if resp.buf.String() != desired {
+		t.Fatalf("Response data is not desired: %s", resp.buf.String())
+	}
+
+	u, _ = url.Parse("/api/v1/false")
+	req.URL = u
+	resp = newRW()
+	s.ServeHTTP(resp, req)
+
+	if resp.code != 200 {
+		t.Fatalf("Response code should be 200, but got: %d", resp.code)
+	}
+	desired = `{"name":"test","namespace":"","target":"","target2":0,"target1":false}` + "\n"
+	if resp.buf.String() != desired {
+		t.Fatalf("Response data is not desired: %s", resp.buf.String())
 	}
 }
 

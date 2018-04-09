@@ -55,6 +55,9 @@ func (i *inspector) addDefinition(d definition.Definition) error {
 	if len(d.Produces) <= 0 {
 		return definitionNoProduces.Error(d.Method, i.path)
 	}
+	if len(d.ErrorProduces) <= 0 {
+		return definitionNoErrorProduces.Error(d.Method, i.path)
+	}
 	if d.Function == nil {
 		return definitionNoFunction.Error(d.Method, i.path)
 	}
@@ -109,6 +112,28 @@ func (i *inspector) addDefinition(d definition.Definition) error {
 		for _, producer := range AllProducers() {
 			if !produces[producer.ContentType()] {
 				c.producers = append(c.producers, producer)
+			}
+		}
+	}
+	errorProduceAll := false
+	errorProduces := map[string]bool{}
+	for _, ct := range d.ErrorProduces {
+		if ct == definition.MIMEAll {
+			errorProduceAll = true
+			continue
+		}
+		if producer := ProducerFor(ct); producer != nil {
+			c.errorProducers = append(c.errorProducers, producer)
+			errorProduces[producer.ContentType()] = true
+		} else {
+			return definitionNoProducer.Error(ct, d.Method, i.path)
+		}
+	}
+	if errorProduceAll {
+		// Add remaining producers to executor.
+		for _, producer := range AllProducers() {
+			if !errorProduces[producer.ContentType()] {
+				c.errorProducers = append(c.errorProducers, producer)
 			}
 		}
 	}
@@ -337,14 +362,15 @@ func (i *inspector) Inspect(ctx context.Context) (router.Executor, error) {
 }
 
 type executor struct {
-	logger     log.Logger
-	method     string
-	code       int
-	consumers  []Consumer
-	producers  []Producer
-	parameters []parameter
-	results    []result
-	function   reflect.Value
+	logger         log.Logger
+	method         string
+	code           int
+	consumers      []Consumer
+	producers      []Producer
+	errorProducers []Producer
+	parameters     []parameter
+	results        []result
+	function       reflect.Value
 }
 
 type parameter struct {
@@ -381,15 +407,19 @@ func (e *executor) acceptable(ct string) bool {
 	return false
 }
 
-func (e *executor) producible(ats []string) bool {
+func (e *executor) check(producers []Producer, ats []string) bool {
 	for _, at := range ats {
-		for _, c := range e.producers {
+		for _, c := range producers {
 			if c.ContentType() == at {
 				return true
 			}
 		}
 	}
 	return false
+}
+
+func (e *executor) producible(ats []string) bool {
+	return e.check(e.producers, ats) && e.check(e.errorProducers, ats)
 }
 
 // Execute executes with context.
@@ -402,7 +432,7 @@ func (e *executor) Execute(ctx context.Context) (err error) {
 	for _, p := range e.parameters {
 		result, err := p.generator.Generate(ctx, c.ValueContainer(), e.consumers, p.name, p.targetType)
 		if err != nil {
-			return writeError(ctx, e.producers, err)
+			return writeError(ctx, e.errorProducers, err)
 		}
 		if result == nil {
 			if p.defaultValue != nil {
@@ -414,11 +444,11 @@ func (e *executor) Execute(ctx context.Context) (err error) {
 		for _, operator := range p.operators {
 			result, err = operator.Operate(ctx, p.name, result)
 			if err != nil {
-				return writeError(ctx, e.producers, err)
+				return writeError(ctx, e.errorProducers, err)
 			}
 		}
 		if result == nil {
-			return writeError(ctx, e.producers, requiredField.Error(p.name, p.generator.Source()))
+			return writeError(ctx, e.errorProducers, requiredField.Error(p.name, p.generator.Source()))
 		} else if closer, ok := result.(io.Closer); ok {
 			defer func() {
 				if e := closer.Close(); e != nil && err == nil {
@@ -451,7 +481,12 @@ func (e *executor) Execute(ctx context.Context) (err error) {
 				}()
 			}
 		}
-		goon, err := r.handler.Handle(ctx, e.producers, e.code, data)
+		producers := e.producers
+		if r.handler.Destination() == definition.Error {
+			// Select correct producers to produce error.
+			producers = e.errorProducers
+		}
+		goon, err := r.handler.Handle(ctx, producers, e.code, data)
 		if err != nil {
 			return err
 		}

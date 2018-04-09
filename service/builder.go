@@ -149,6 +149,9 @@ func (b *builder) copyDefinition(d *definition.Definition, consumes []string, pr
 		r.Description = ""
 		newOne.Results[i] = r
 	}
+	if len(newOne.ErrorProduces) <= 0 {
+		newOne.ErrorProduces = newOne.Produces
+	}
 	return newOne
 }
 
@@ -176,7 +179,9 @@ func (b *builder) Build() (Service, error) {
 			for _, d := range bd.definitions {
 				b.logger.V(log.LevelDebug).Infof("  Method: %s Consumes: %v Produces: %v",
 					d.Method, d.Consumes, d.Produces)
-				b.modifier(&d)
+				if b.modifier != nil {
+					b.modifier(&d)
+				}
 				if err := inspector.addDefinition(d); err != nil {
 					return nil, err
 				}
