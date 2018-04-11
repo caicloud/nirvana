@@ -89,6 +89,12 @@ func (b *builder) AddDescriptor(descriptors ...definition.Descriptor) error {
 
 func (b *builder) addDescriptor(prefix string, consumes []string, produces []string, descriptor definition.Descriptor) {
 	path := strings.Join([]string{prefix, strings.Trim(descriptor.Path, "/")}, "/")
+	if descriptor.Consumes != nil {
+		consumes = descriptor.Consumes
+	}
+	if descriptor.Produces != nil {
+		produces = descriptor.Produces
+	}
 	if len(descriptor.Middlewares) > 0 || len(descriptor.Definitions) > 0 {
 		bd, ok := b.bindings[path]
 		if !ok {
@@ -109,12 +115,6 @@ func (b *builder) addDescriptor(prefix string, consumes []string, produces []str
 				bd.definitions = append(bd.definitions, *b.copyDefinition(&d, consumes, produces))
 			}
 		}
-	}
-	if descriptor.Consumes != nil {
-		consumes = descriptor.Consumes
-	}
-	if descriptor.Produces != nil {
-		produces = descriptor.Produces
 	}
 	for _, child := range descriptor.Children {
 		b.addDescriptor(strings.TrimRight(path, "/"), consumes, produces, child)
