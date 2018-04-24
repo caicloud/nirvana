@@ -14,7 +14,7 @@ There are some environment requirements:
 
 ### Find something you are interested in
 
-Nirvana is in rapid development, many of things are not complete. There are many components that you can dig into:
+Nirvana is in rapid development, many things are not complete. There are many components that you can dig into:
 
 - Docs
   - English
@@ -81,8 +81,8 @@ Here are some workflows for you:
 
 ### Code review
 
-Nirvana use a automatic tool to manage the project. Its basic functionalities is assigning pull requests to reviewers and merging pull requests if it received `/lgtm` and `/approve`.  
-Many of directories of Nirvana have `OWNERS`, these files contains github account names of reviewers and approvers.
+Nirvana use an automatic tool to manage the project. Its basic functionalities is assigning pull requests to reviewers and merging pull requests if it received `/lgtm` and `/approve`.  
+Many directories of Nirvana have `OWNERS`, these files contains github account names of reviewers and approvers.
 
 - Reviewers can review pull requests and reply `/lgtm` if they are satisfied with those pull requests.
 - Approvers can provide a final approval by `/approve` to indicate whether a change to a directory or subdirectory should be accepted.

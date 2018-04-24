@@ -19,7 +19,7 @@
   - Project structure
 - Test coverage 60% ([#67](https://github.com/caicloud/nirvana/issues/67))
 - Performance ([#148](https://github.com/caicloud/nirvana/issues/148))
-- Monitoring
+- Monitoring architechture examples
   - Tracing (OpenTracing)
   - Metrics (Prometheus)
 - Docs ([#39](https://github.com/caicloud/nirvana/issues/39) [#154](https://github.com/caicloud/nirvana/issues/154))
