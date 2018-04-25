@@ -47,6 +47,7 @@ func TestMiddleware(t *testing.T) {
 	config := nirvana.NewDefaultConfig().
 		Configure(
 			DefaultTracer("example", "127.0.0.1:6831"),
+			AddHook(&DefaultHook{}),
 			nirvana.Descriptor(test),
 		)
 

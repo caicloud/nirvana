@@ -44,6 +44,7 @@ type config struct {
 	agentHostPort string
 	tracer        opentracing.Tracer
 	closer        io.Closer
+	hook          Hook
 }
 
 type tracingInstaller struct{}
@@ -77,9 +78,10 @@ func (i *tracingInstaller) Install(builder service.Builder, cfg *nirvana.Config)
 				return
 			}
 		}
-		err = builder.AddDescriptor(descriptor(c.tracer))
+		err = builder.AddDescriptor(descriptor(c.tracer, c.hook))
 	})
 	return err
+
 }
 
 // Uninstall uninstalls stuffs after server terminating.
@@ -136,6 +138,16 @@ func DefaultTracer(serviceName string, agentHostPort string) nirvana.Configurer 
 	}
 }
 
+// AddHook returns a configurer to set request hook.
+func AddHook(hook Hook) nirvana.Configurer {
+	return func(c *nirvana.Config) error {
+		wapper(c, func(c *config) {
+			c.hook = hook
+		})
+		return nil
+	}
+}
+
 type event string
 
 const (
@@ -144,15 +156,15 @@ const (
 )
 
 // descriptor creates descriptor for middleware.
-func descriptor(tracer opentracing.Tracer) definition.Descriptor {
+func descriptor(tracer opentracing.Tracer, hook Hook) definition.Descriptor {
 	return definition.Descriptor{
 		Path:        "/",
-		Middlewares: []definition.Middleware{middleware(tracer)},
+		Middlewares: []definition.Middleware{middleware(tracer, hook)},
 	}
 }
 
 // middleware created definition middleware for tracing.
-func middleware(tracer opentracing.Tracer) definition.Middleware {
+func middleware(tracer opentracing.Tracer, hook Hook) definition.Middleware {
 	return func(ctx context.Context, next definition.Chain) error {
 		httpCtx := service.HTTPContextFrom(ctx)
 		req := httpCtx.Request()
@@ -160,26 +172,30 @@ func middleware(tracer opentracing.Tracer) definition.Middleware {
 		// Don't check errors. if "spanContext" is nil, it will start a new trace id.
 		spanContext, _ := tracer.Extract(opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(req.Header)) // #nosec
 
-		// TODO(yejiayu): abstract path
-		span := tracer.StartSpan(req.URL.Path, ext.RPCServerOption(spanContext))
+		span := tracer.StartSpan(httpCtx.RoutePath(), ext.RPCServerOption(spanContext))
 		defer span.Finish()
 
 		// set standard tags
 		ext.HTTPUrl.Set(span, req.URL.String())
 		ext.HTTPMethod.Set(span, req.Method)
 		ext.Component.Set(span, "nirvana/middlewares/trace")
-		span.SetTag("Request-Id", req.Header.Get("Request-Id"))
 
 		span.LogFields(
 			tlog.String("event", string(eventRequest)),
 		)
 
+		if hook != nil {
+			hook.Before(ctx, span)
+		}
 		ctx = opentracing.ContextWithSpan(ctx, span)
 
 		defer func() {
 			span.LogFields(
 				tlog.String("event", string(eventResponse)),
 			)
+			if hook != nil {
+				hook.After(ctx, span)
+			}
 		}()
 		if err := next.Continue(ctx); err != nil {
 			ext.HTTPStatusCode.Set(span, 500)
