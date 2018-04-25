@@ -152,7 +152,33 @@
             
         </li>
     
-        <li class="chapter " data-level="1.6" data-path="topics/tracing.html">
+        <li class="chapter " data-level="1.6" data-path="topics/openapi.html">
+            
+                <a href="topics/openapi.html">
+            
+                    
+                    Open API
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.7" data-path="topics/metrics.html">
+            
+                <a href="topics/metrics.html">
+            
+                    
+                    Metrics
+            
+                </a>
+            
+
+            
+        </li>
+    
+        <li class="chapter " data-level="1.8" data-path="topics/tracing.html">
             
                 <a href="topics/tracing.html">
             
@@ -165,7 +191,7 @@
             
         </li>
     
-        <li class="chapter " data-level="1.7" data-path="topics/testing.html">
+        <li class="chapter " data-level="1.9" data-path="topics/testing.html">
             
                 <a href="topics/testing.html">
             
@@ -230,6 +256,87 @@ handling, etc. with sensible defaults and options for complete control. Built
 for developers with &#x2764;&#xFE0F; by developers in <a href="http://caicloud.io/" target="_blank">Caicloud</a>.</p>
 <h2 id="status">Status</h2>
 <p>Currently the framework is &#x1F6A7; WIP &#x1F6A7;, any comments or contributions are welcome!</p>
+<h2 id="getting-started">Getting Started</h2>
+<p>In Nirvana, APIs are defined via <code>definition.Descriptor</code>. We will not introduce details of the concept <code>Descriptor</code>,
+instead, let&apos;s take a look at a contrived example:</p>
+<pre><code class="lang-go"><span class="hljs-comment">// API descriptor.</span>
+<span class="hljs-keyword">var</span> echo = definition.Descriptor{
+    Path:        <span class="hljs-string">&quot;/echo&quot;</span>,
+    Description: <span class="hljs-string">&quot;Echo API&quot;</span>,
+    Definitions: []definition.Definition{
+        {
+            Method: definition.Get,
+            Function: Echo,
+            Consumes: []<span class="hljs-keyword">string</span>{definition.MIMEAll},
+            Produces: []<span class="hljs-keyword">string</span>{definition.MIMEText},
+            Parameters: []definition.Parameter{
+                {
+                    Source: definition.Query,
+                    Name: <span class="hljs-string">&quot;msg&quot;</span>,
+                    Description: <span class="hljs-string">&quot;Corresponding to the second parameter&quot;</span>,
+                },
+            },
+            Results: []definition.Result{
+                {
+                    Destination: definition.Data,
+                    Description: <span class="hljs-string">&quot;Corresponding to the first result&quot;</span>,
+                },
+                {
+                    Destination: definition.Error,
+                    Description: <span class="hljs-string">&quot;Corresponding to the second result&quot;</span>,
+                },
+            },
+        },
+    },
+}
+</code></pre>
+<p>This is an echo server API descriptor. The descriptor is a bit complex at first glance, but is actually quite
+simple. Below is a partially translated HTTP language:</p>
+<pre><code>HTTP Path: /echo[?msg=]
+HTTP Method: Get
+HTTP Headers:
+    Content-Type: Any Type
+    Accept: text/plain or */*
+</code></pre><p>The request handler <code>Echo</code> receives two parameters and returns two results, as defined in our descriptor.
+Note the first parameter is always <code>context.Context</code> - it is injected by default config.</p>
+<pre><code class="lang-go"><span class="hljs-comment">// API function.</span>
+<span class="hljs-keyword">func</span> Echo(ctx context.Context, msg <span class="hljs-keyword">string</span>) (<span class="hljs-keyword">string</span>, error) {
+    <span class="hljs-keyword">return</span> msg, <span class="hljs-literal">nil</span>
+}
+</code></pre>
+<p>Nirvana will parse incoming request and generate function parameters for <code>Echo</code> function as defined via
+<code>Definition.Parameters</code> - parameters will be converted into the exact type defined in <code>Echo</code>. Once done,
+Nirvana collects the results and sends back response.</p>
+<p>With our API descriptors ready, we can now create a server to serve requests:</p>
+<pre><code class="lang-go"><span class="hljs-keyword">package</span> main
+
+<span class="hljs-keyword">import</span> (
+    <span class="hljs-string">&quot;context&quot;</span>
+
+    <span class="hljs-string">&quot;github.com/caicloud/nirvana&quot;</span>
+    <span class="hljs-string">&quot;github.com/caicloud/nirvana/definition&quot;</span>
+    <span class="hljs-string">&quot;github.com/caicloud/nirvana/log&quot;</span>
+)
+
+<span class="hljs-keyword">func</span> main() {
+    config := nirvana.NewDefaultConfig(<span class="hljs-string">&quot;&quot;</span>, <span class="hljs-number">8080</span>)
+    config.Configure(nirvana.Descriptor(echo))
+    log.Infof(<span class="hljs-string">&quot;Listening on %s:%d&quot;</span>, config.IP, config.Port)
+    <span class="hljs-keyword">if</span> err := nirvana.NewServer(config).Serve(); err != <span class="hljs-literal">nil</span> {
+        log.Fatal(err)
+    }
+}
+</code></pre>
+<p>Now run the server and test it:</p>
+<pre><code>go run ./examples/getting-started/basics/echo.go
+INFO  0202-16:34:38.663+08 echo.go:65 | Listening on :8080
+INFO  0202-16:34:38.663+08 builder.go:163 | Definitions: 1 Middlewares: 0 Path: /echo
+INFO  0202-16:34:38.663+08 builder.go:178 |   Method: Get Consumes: [*/*] Produces: [text/plain]
+</code></pre><p>In another terminal:</p>
+<pre><code class="lang-sh">$ curl <span class="hljs-string">&quot;http://localhost:8080/echo?msg=test&quot;</span>
+<span class="hljs-built_in">test</span>
+</code></pre>
+<p>For full example code, see <a href="https://github.com/caicloud/nirvana/tree/master/examples/getting-started/basics" target="_blank">basics</a>.</p>
 
                                 
                                 </section>
@@ -269,7 +376,7 @@ for developers with &#x2764;&#xFE0F; by developers in <a href="http://caicloud.i
     <script>
         var gitbook = gitbook || [];
         gitbook.push(function() {
-            gitbook.page.hasChanged({"page":{"title":"Introduction","level":"1.1","depth":1,"next":{"title":"Routes","level":"1.2","depth":1,"path":"topics/routes.md","ref":"topics/routes.md","articles":[]},"dir":"ltr"},"config":{"gitbook":"*","theme":"default","variables":{},"plugins":[],"pluginsConfig":{"highlight":{},"search":{},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"fontsettings":{"theme":"white","family":"sans","size":2},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"}},"file":{"path":"README.md","mtime":"2017-12-20T09:36:16.067Z","type":"markdown"},"gitbook":{"version":"3.2.3","time":"2018-01-06T14:42:39.551Z"},"basePath":".","book":{"language":""}});
+            gitbook.page.hasChanged({"page":{"title":"Introduction","level":"1.1","depth":1,"next":{"title":"Routes","level":"1.2","depth":1,"path":"topics/routes.md","ref":"topics/routes.md","articles":[]},"dir":"ltr"},"config":{"gitbook":"*","theme":"default","variables":{},"plugins":[],"pluginsConfig":{"highlight":{},"search":{},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"fontsettings":{"theme":"white","family":"sans","size":2},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"}},"file":{"path":"README.md","mtime":"2018-02-06T14:58:32.210Z","type":"markdown"},"gitbook":{"version":"3.2.3","time":"2018-02-06T14:59:17.344Z"},"basePath":".","book":{"language":""}});
         });
     </script>
 </div>
