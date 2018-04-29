@@ -12,16 +12,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-PKGS := $(shell go list ./... | grep -v /vendor | grep -v /tests)
-
 .PHONY: test
 test:
-	@go test -cover $(PKGS)
 	hack/verify_boilerplate.py
 	hack/verify-govet.sh
 	hack/verify-gofmt.sh
+	@go test -race -cover ./...
 
 
 .PHONY: license
 license:
-	go run ./hack/license/apache.go --go-header-file hack/boilerplate/boilerplate.go.txt
+	@go run ./hack/license/apache.go --go-header-file hack/boilerplate/boilerplate.go.txt
+
+.PHONY: format
+format:
+	@find . ! -path "./vendor/*" -name "*.go" | xargs gofmt -s -w
+
+.PHONY: refine
+refine: format license

@@ -7,9 +7,10 @@ before_install:
   - go get github.com/mattn/goveralls
   - go get -u github.com/alecthomas/gometalinter
   - gometalinter --install
-  - go test -i $(go list ./... | grep -v /vendor | grep -v /tests)
 
 script:
-  - gometalinter --config=config.json ./...
-  - goveralls -service=travis-ci
   - make test
+  - gometalinter --config=config.json ./...
+  - GO_COVER_PROFILE=$(mktemp -u)
+  - go test ./... -race -covermode atomic -coverprofile $GO_COVER_PROFILE
+  - goveralls -service=travis-ci -coverprofile $GO_COVER_PROFILE
