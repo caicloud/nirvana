@@ -30,3 +30,7 @@ format:
 
 .PHONY: refine
 refine: format license
+
+.PHONY: gitbook
+gitbook:
+	@gitbook build ./manuals ./docs
