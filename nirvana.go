@@ -48,6 +48,10 @@ type Server interface {
 
 // Config describes configuration of server.
 type Config struct {
+	// tls cert file
+	certFile string
+	// tls ket file
+	keyFile string
 	// ip is the ip to listen. Empty means `0.0.0.0`.
 	ip string
 	// port is the port to listen.
@@ -276,9 +280,14 @@ func (s *server) Serve() (e error) {
 	if err != nil {
 		return err
 	}
+
 	s.server = &http.Server{
 		Addr:    fmt.Sprintf("%s:%d", s.config.ip, s.config.port),
 		Handler: service,
+	}
+
+	if len(s.config.certFile) != 0 && len(s.config.keyFile) != 0 {
+		return s.server.ListenAndServeTLS(s.config.certFile, s.config.keyFile)
 	}
 	return s.server.ListenAndServe()
 }
@@ -321,6 +330,15 @@ func RegisterConfigInstaller(ci ConfigInstaller) {
 func IP(ip string) Configurer {
 	return func(c *Config) error {
 		c.ip = ip
+		return nil
+	}
+}
+
+// TLS returns a configurer to set certFile and keyFile in config.
+func TLS(certFile, keyFile string) Configurer {
+	return func(c *Config) error {
+		c.certFile = certFile
+		c.keyFile = keyFile
 		return nil
 	}
 }
