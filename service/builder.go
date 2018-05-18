@@ -28,20 +28,30 @@ import (
 
 // Builder builds service.
 type Builder interface {
+	// Logger returns logger of builder.
+	Logger() log.Logger
 	// SetLogger sets logger to server.
 	SetLogger(logger log.Logger)
+	// Logger returns modifier of builder.
+	Modifier() DefinitionModifier
 	// SetModifier sets definition modifier.
 	SetModifier(m DefinitionModifier)
+	// Filters returns all request filters.
+	Filters() []Filter
 	// AddFilters add filters to filter requests.
 	AddFilter(filters ...Filter)
 	// AddDescriptors adds descriptors to router.
 	AddDescriptor(descriptors ...definition.Descriptor) error
+	// Middlewares returns all router middlewares.
+	Middlewares() map[string][]definition.Middleware
+	// Definitions returns all definitions. If a modifier exists, it will be executed.
+	Definitions() map[string][]definition.Definition
 	// Build builds a service to handle request.
 	Build() (Service, error)
 }
 
 type binding struct {
-	middlewares []router.Middleware
+	middlewares []definition.Middleware
 	definitions []definition.Definition
 }
 
@@ -60,18 +70,35 @@ func NewBuilder() Builder {
 	}
 }
 
+// Filters returns all request filters.
+func (b *builder) Filters() []Filter {
+	result := make([]Filter, len(b.filters))
+	copy(result, b.filters)
+	return result
+}
+
 // AddFilters add filters to filter requests.
 func (b *builder) AddFilter(filters ...Filter) {
 	b.filters = append(b.filters, filters...)
 }
 
-// SetLogger sets logger to server.
+// Logger returns logger of builder.
+func (b *builder) Logger() log.Logger {
+	return b.logger
+}
+
+// SetLogger sets logger to builder.
 func (b *builder) SetLogger(logger log.Logger) {
 	if logger != nil {
 		b.logger = logger
 	} else {
 		b.logger = &log.SilentLogger{}
 	}
+}
+
+// Modifier returns modifier of builder.
+func (b *builder) Modifier() DefinitionModifier {
+	return b.modifier
 }
 
 // SetModifier sets definition modifier.
@@ -102,13 +129,7 @@ func (b *builder) addDescriptor(prefix string, consumes []string, produces []str
 			b.bindings[path] = bd
 		}
 		if len(descriptor.Middlewares) > 0 {
-			for _, m := range descriptor.Middlewares {
-				func(m definition.Middleware) {
-					bd.middlewares = append(bd.middlewares, func(ctx context.Context, chain router.RoutingChain) error {
-						return m(ctx, chain)
-					})
-				}(m)
-			}
+			bd.middlewares = append(bd.middlewares, descriptor.Middlewares...)
 		}
 		if len(descriptor.Definitions) > 0 {
 			for _, d := range descriptor.Definitions {
@@ -121,38 +142,83 @@ func (b *builder) addDescriptor(prefix string, consumes []string, produces []str
 	}
 }
 
+// copyDefinition creates a deep copy from original definition. The copy not very deep for those
+// fields which type is interface{}.
 func (b *builder) copyDefinition(d *definition.Definition, consumes []string, produces []string) *definition.Definition {
-	// It copy fields except document.
-	newOne := &definition.Definition{}
-	*newOne = *d
-	if d.Consumes != nil {
-		newOne.Consumes = make([]string, len(d.Consumes))
-		copy(newOne.Consumes, d.Consumes)
-	} else if consumes != nil {
-		newOne.Consumes = make([]string, len(consumes))
-		copy(newOne.Consumes, consumes)
+	newOne := &definition.Definition{
+		Method:      d.Method,
+		Function:    d.Function,
+		Description: d.Description,
 	}
-	if d.Produces != nil {
-		newOne.Produces = make([]string, len(d.Produces))
-		copy(newOne.Produces, d.Produces)
-	} else if produces != nil {
-		newOne.Produces = make([]string, len(produces))
-		copy(newOne.Produces, produces)
+	if len(d.Consumes) > 0 {
+		consumes = d.Consumes
 	}
+	newOne.Consumes = make([]string, len(consumes))
+	copy(newOne.Consumes, consumes)
+
+	if len(d.Produces) > 0 {
+		produces = d.Produces
+	}
+	newOne.Produces = make([]string, len(produces))
+	copy(newOne.Produces, produces)
+
+	if len(d.ErrorProduces) > 0 {
+		produces = d.ErrorProduces
+	}
+	newOne.ErrorProduces = make([]string, len(produces))
+	copy(newOne.ErrorProduces, produces)
+
 	newOne.Parameters = make([]definition.Parameter, len(d.Parameters))
 	for i, p := range d.Parameters {
-		p.Description = ""
-		newOne.Parameters[i] = p
+		newParameter := p
+		newParameter.Operators = make([]definition.Operator, len(p.Operators))
+		copy(newParameter.Operators, p.Operators)
+		newOne.Parameters[i] = newParameter
 	}
 	newOne.Results = make([]definition.Result, len(d.Results))
 	for i, r := range d.Results {
-		r.Description = ""
-		newOne.Results[i] = r
+		newResult := r
+		newResult.Operators = make([]definition.Operator, len(r.Operators))
+		copy(newResult.Operators, r.Operators)
+		newOne.Results[i] = newResult
 	}
-	if len(newOne.ErrorProduces) <= 0 {
-		newOne.ErrorProduces = newOne.Produces
-	}
+	newOne.Examples = make([]definition.Example, len(d.Examples))
+	copy(newOne.Examples, d.Examples)
 	return newOne
+}
+
+// Middlewares returns all router middlewares.
+func (b *builder) Middlewares() map[string][]definition.Middleware {
+	result := make(map[string][]definition.Middleware)
+	for path, bd := range b.bindings {
+		if len(bd.middlewares) > 0 {
+			middlewares := make([]definition.Middleware, len(bd.middlewares))
+			copy(middlewares, bd.middlewares)
+			result[path] = middlewares
+		}
+	}
+	return result
+}
+
+// Definitions returns all definitions. If a modifier exists, it will be executed.
+// All results are copied from original definitions. Modifications can not affect
+// original data.
+func (b *builder) Definitions() map[string][]definition.Definition {
+	result := make(map[string][]definition.Definition)
+	for path, bd := range b.bindings {
+		if len(bd.definitions) > 0 {
+			definitions := make([]definition.Definition, len(bd.definitions))
+			for i, d := range bd.definitions {
+				newCopy := b.copyDefinition(&d, nil, nil)
+				if b.modifier != nil {
+					b.modifier(newCopy)
+				}
+				definitions[i] = *newCopy
+			}
+			result[path] = definitions
+		}
+	}
+	return result
 }
 
 // Build builds a service to handle request.
@@ -164,7 +230,7 @@ func (b *builder) Build() (Service, error) {
 	for path, bd := range b.bindings {
 		b.logger.V(log.LevelDebug).Infof("Definitions: %d Middlewares: %d Path: %s",
 			len(bd.definitions), len(bd.middlewares), path)
-		router, leaf, err := router.Parse(path)
+		top, leaf, err := router.Parse(path)
 		if err != nil {
 			b.logger.Errorf("Can't parse path: %s, %s", path, err.Error())
 			return nil, err
@@ -189,16 +255,16 @@ func (b *builder) Build() (Service, error) {
 
 			leaf.SetInspector(inspector)
 		}
-		if len(bd.middlewares) > 0 {
-			leaf.AddMiddleware(bd.middlewares...)
+		for _, m := range bd.middlewares {
+			m := m
+			leaf.AddMiddleware(func(ctx context.Context, chain router.RoutingChain) error {
+				return m(ctx, chain)
+			})
 		}
 		if root == nil {
-			root = router
-		} else {
-			root, err = root.Merge(router)
-			if err != nil {
-				return nil, err
-			}
+			root = top
+		} else if root, err = root.Merge(top); err != nil {
+			return nil, err
 		}
 	}
 	s := &service{

@@ -47,20 +47,20 @@ type Producer interface {
 
 var consumers = map[string]Consumer{
 	definition.MIMENone:        &NoneSerializer{},
-	definition.MIMEText:        &TextSerializer{},
+	definition.MIMEText:        NewSimpleSerializer(definition.MIMEText),
 	definition.MIMEJSON:        &JSONSerializer{},
 	definition.MIMEXML:         &XMLSerializer{},
-	definition.MIMEOctetStream: &OctetStreamSerializer{},
+	definition.MIMEOctetStream: NewSimpleSerializer(definition.MIMEOctetStream),
 	definition.MIMEURLEncoded:  &URLEncodedConsumer{},
 	definition.MIMEFormData:    &FormDataConsumer{},
 }
 
 var producers = map[string]Producer{
 	definition.MIMENone:        &NoneSerializer{},
-	definition.MIMEText:        &TextSerializer{},
+	definition.MIMEText:        NewSimpleSerializer(definition.MIMEText),
 	definition.MIMEJSON:        &JSONSerializer{},
 	definition.MIMEXML:         &XMLSerializer{},
-	definition.MIMEOctetStream: &OctetStreamSerializer{},
+	definition.MIMEOctetStream: NewSimpleSerializer(definition.MIMEOctetStream),
 }
 
 // AllConsumers returns all consumers.
@@ -137,6 +137,7 @@ func (s *NoneSerializer) Produce(w io.Writer, v interface{}) error {
 	return invalidTypeForProducer.Error(s.ContentType(), reflect.TypeOf(v))
 }
 
+// RawSerializer implements a raw serializer.
 type RawSerializer struct{}
 
 // CanConsumeData checks if raw serializer can consume type v with specified content type.
@@ -198,50 +199,31 @@ func (s *RawSerializer) ProduceData(contentType string, w io.Writer, v interface
 	return invalidTypeForProducer.Error(contentType, reflect.TypeOf(v))
 }
 
-// TextSerializer implements Consumer and Producer for content type "text/plain"
-type TextSerializer struct{ OctetStreamSerializer }
+// SimpleSerializer implements a simple serializer.
+type SimpleSerializer struct {
+	RawSerializer
+	contentType string
+}
+
+// NewSimpleSerializer creates a simple serializer.
+func NewSimpleSerializer(contentType string) *SimpleSerializer {
+	return &SimpleSerializer{
+		contentType: contentType,
+	}
+}
 
 // ContentType returns plain text MIME type.
-func (s *TextSerializer) ContentType() string {
-	return definition.MIMEText
+func (s *SimpleSerializer) ContentType() string {
+	return s.contentType
 }
 
 // Consume reads data and converts it to string, []byte.
-func (s *TextSerializer) Consume(r io.Reader, v interface{}) error {
+func (s *SimpleSerializer) Consume(r io.Reader, v interface{}) error {
 	return s.ConsumeData(s.ContentType(), r, v)
 }
 
 // Produce writes v to writer. v should be string, []byte, io.Reader.
-func (s *TextSerializer) Produce(w io.Writer, v interface{}) error {
-	if s.CanProduceData(s.ContentType(), w, v) {
-		return s.ProduceData(s.ContentType(), w, v)
-	}
-	if r, ok := v.(error); ok {
-		_, err := io.WriteString(w, r.Error())
-		return err
-	}
-	if r, ok := v.(fmt.Stringer); ok {
-		_, err := io.WriteString(w, r.String())
-		return err
-	}
-	return invalidTypeForProducer.Error(s.ContentType(), reflect.TypeOf(v))
-}
-
-// OctetStreamSerializer implements Consumer and Producer for content type "application/octet-stream"
-type OctetStreamSerializer struct{ RawSerializer }
-
-// ContentType returns octet stream MIME type.
-func (s *OctetStreamSerializer) ContentType() string {
-	return definition.MIMEOctetStream
-}
-
-// Consume reads data and converts it to string, []byte.
-func (s *OctetStreamSerializer) Consume(r io.Reader, v interface{}) error {
-	return s.ConsumeData(s.ContentType(), r, v)
-}
-
-// Produce writes v to writer. v should be string, []byte, io.Reader.
-func (s *OctetStreamSerializer) Produce(w io.Writer, v interface{}) error {
+func (s *SimpleSerializer) Produce(w io.Writer, v interface{}) error {
 	if s.CanProduceData(s.ContentType(), w, v) {
 		return s.ProduceData(s.ContentType(), w, v)
 	}

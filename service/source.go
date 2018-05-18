@@ -18,6 +18,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"mime/multipart"
 	"reflect"
@@ -357,21 +358,6 @@ func (g *PrefabParameterGenerator) Generate(ctx context.Context, vc ValueContain
 // }
 type AutoParameterGenerator struct{}
 
-type autoTagParams map[paramsKey]string
-type paramsKey string
-
-const (
-	keyDefault paramsKey = "default"
-)
-
-func (params autoTagParams) get(key paramsKey) string {
-	return params[key]
-}
-
-func (params autoTagParams) set(key paramsKey, value string) {
-	params[key] = value
-}
-
 func (g *AutoParameterGenerator) Source() definition.Source { return definition.Auto }
 func (g *AutoParameterGenerator) Validate(name string, defaultValue interface{}, target reflect.Type) error {
 	err := assignable(defaultValue, target)
@@ -382,17 +368,17 @@ func (g *AutoParameterGenerator) Validate(name string, defaultValue interface{},
 		return invalidAutoParameter.Error(target)
 	}
 	f := func(index []int, field reflect.StructField) error {
-		source, name, params, err := g.split(field.Tag.Get("source"))
+		source, name, params, err := ParseAutoParameterTag(field.Tag.Get("source"))
 		if err != nil {
 			return err
 		}
-		generator := ParameterGeneratorFor(definition.Source(source))
+		generator := ParameterGeneratorFor(source)
 		if generator == nil {
 			return noParameterGenerator.Error(source)
 		}
 
 		var value interface{}
-		defaultValue := params.get(keyDefault)
+		defaultValue := params.Get(AutoParameterConfigKeyDefaultValue)
 		if defaultValue != "" {
 			if c := ConverterFor(field.Type); c != nil {
 				var err error
@@ -413,40 +399,6 @@ func (g *AutoParameterGenerator) Validate(name string, defaultValue interface{},
 	return err
 }
 
-func (g *AutoParameterGenerator) split(tag string) (source, name string, atp autoTagParams, err error) {
-	atp = make(autoTagParams)
-	result := strings.Split(tag, ",")
-
-	length := len(result)
-
-	if length < 1 {
-		return "", "", nil, invalidFieldTag.Error(tag)
-	}
-
-	if length >= 1 {
-		source = strings.Title(strings.ToLower(strings.TrimSpace(result[0])))
-	}
-	if length >= 2 {
-		name = strings.TrimSpace(result[1])
-	}
-	if length >= 3 {
-		params := result[2:]
-
-		for _, param := range params {
-			keyValue := strings.Split(param, "=")
-			if len(keyValue) == 2 {
-				key := paramsKey(strings.TrimSpace(keyValue[0]))
-				value := strings.TrimSpace(keyValue[1])
-				if key == keyDefault {
-					atp.set(key, value)
-				}
-			}
-		}
-	}
-
-	return
-}
-
 func (g *AutoParameterGenerator) Generate(ctx context.Context, vc ValueContainer, consumers []Consumer, name string, target reflect.Type) (interface{}, error) {
 	var result reflect.Value
 	var value reflect.Value
@@ -465,11 +417,11 @@ func (g *AutoParameterGenerator) Generate(ctx context.Context, vc ValueContainer
 
 func (g *AutoParameterGenerator) generate(ctx context.Context, vc ValueContainer, consumers []Consumer, value reflect.Value) error {
 	f := func(index []int, field reflect.StructField) error {
-		source, name, params, err := g.split(field.Tag.Get("source"))
+		source, name, params, err := ParseAutoParameterTag(field.Tag.Get("source"))
 		if err != nil {
 			return err
 		}
-		generator := ParameterGeneratorFor(definition.Source(source))
+		generator := ParameterGeneratorFor(source)
 		if generator == nil {
 			return noParameterGenerator.Error(source)
 		}
@@ -478,7 +430,7 @@ func (g *AutoParameterGenerator) generate(ctx context.Context, vc ValueContainer
 			return err
 		}
 
-		defaultValue := params.get(keyDefault)
+		defaultValue := params.Get(AutoParameterConfigKeyDefaultValue)
 		if ins == nil && defaultValue != "" {
 			if c := ConverterFor(field.Type); c != nil {
 				// After passing the validation phase, here will never return an error
@@ -509,4 +461,60 @@ func (g *AutoParameterGenerator) enum(index []int, typ reflect.Type, f func(inde
 		}
 	}
 	return nil
+}
+
+// AutoParameterConfig contains configs of AutoParameter.
+type AutoParameterConfig map[AutoParameterConfigKey]string
+
+// AutoParameterConfigKey is the key of AutoParameterConfig.
+type AutoParameterConfigKey string
+
+const (
+	// AutoParameterConfigKeyDefaultValue is the key of default value.
+	AutoParameterConfigKeyDefaultValue AutoParameterConfigKey = "default"
+	// AutoParameterConfigKeyAnonymous is the prefix of anonymous configs.
+	AutoParameterConfigKeyAnonymous AutoParameterConfigKey = " anonymous"
+)
+
+// Get gets value of a config key.
+func (f AutoParameterConfig) Get(key AutoParameterConfigKey) string {
+	return f[key]
+}
+
+// Set sets value for a config key.
+func (f AutoParameterConfig) Set(key AutoParameterConfigKey, value string) {
+	f[key] = value
+}
+
+// ParseAutoParameterTag parse the tag of AutoParameter.
+func ParseAutoParameterTag(tag string) (source definition.Source, name string, apc AutoParameterConfig, err error) {
+	apc = make(AutoParameterConfig)
+	// This operation is problematic.
+	result := strings.Split(tag, ",")
+
+	length := len(result)
+	if length <= 0 {
+		return "", "", nil, invalidFieldTag.Error(tag)
+	}
+	if length >= 1 {
+		source = definition.Source(strings.Title(strings.ToLower(strings.TrimSpace(result[0]))))
+	}
+	if length >= 2 {
+		name = strings.TrimSpace(result[1])
+	}
+	if length >= 3 {
+		result := result[2:]
+		anonymous := 0
+		for _, param := range result {
+			index := strings.Index(param, "=")
+			key := ""
+			if index > 0 {
+				key = strings.TrimSpace(param[:index])
+			} else {
+				key = fmt.Sprint(AutoParameterConfigKeyAnonymous, anonymous)
+			}
+			apc.Set(AutoParameterConfigKey(key), strings.TrimSpace(param[index+1:]))
+		}
+	}
+	return
 }
