@@ -16,6 +16,8 @@ limitations under the License.
 
 package log
 
+import "os"
+
 // SilentLogger logs nothing.
 type SilentLogger struct{}
 
@@ -63,15 +65,21 @@ func (*SilentLogger) Errorln(...interface{}) {}
 
 // Fatal logs to the FATAL logs, then calls os.Exit(1).
 // Arguments are handled in the manner of fmt.Print; a newline is appended if missing.
-func (*SilentLogger) Fatal(v ...interface{}) {}
+func (*SilentLogger) Fatal(v ...interface{}) {
+	os.Exit(1)
+}
 
 // Fatalf logs to the FATAL logs, then calls os.Exit(1).
 // Arguments are handled in the manner of fmt.Printf; a newline is appended if missing.
-func (*SilentLogger) Fatalf(string, ...interface{}) {}
+func (*SilentLogger) Fatalf(string, ...interface{}) {
+	os.Exit(1)
+}
 
 // Fatalln logs to the FATAL logs, then calls os.Exit(1).
 // Arguments are handled in the manner of fmt.Println; a newline is appended if missing.
-func (*SilentLogger) Fatalln(v ...interface{}) {}
+func (*SilentLogger) Fatalln(v ...interface{}) {
+	os.Exit(1)
+}
 
 // Clone clones current logger with new wrapper.
 // A positive wrapper indicates how many wrappers outside the logger.
