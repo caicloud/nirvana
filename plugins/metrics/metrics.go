@@ -196,6 +196,14 @@ type Option struct {
 	Path string `desc:"Metrics path"`
 }
 
+// NewDefaultOption creates default option.
+func NewDefaultOption() *Option {
+	return &Option{
+		Namespace: "nirvana",
+		Path:      "/metrics",
+	}
+}
+
 // Name returns plugin name.
 func (p *Option) Name() string {
 	return ExternalConfigName

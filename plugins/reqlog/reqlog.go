@@ -285,6 +285,16 @@ type Option struct {
 	RequestIDKey string `desc:"Request header key for request id"`
 }
 
+// NewDefaultOption creates default option.
+func NewDefaultOption() *Option {
+	return &Option{
+		DoubleLog:    false,
+		SourceAddr:   false,
+		RequestID:    false,
+		RequestIDKey: "X-Request-Id",
+	}
+}
+
 // Name returns plugin name.
 func (p *Option) Name() string {
 	return ExternalConfigName

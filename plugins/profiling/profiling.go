@@ -195,6 +195,14 @@ type Option struct {
 	Path string `desc:"Profiling path"`
 }
 
+// NewDefaultOption creates default option.
+func NewDefaultOption() *Option {
+	return &Option{
+		Contention: false,
+		Path:       "/debug/pprof/",
+	}
+}
+
 // Name returns plugin name.
 func (p *Option) Name() string {
 	return ExternalConfigName
