@@ -71,7 +71,7 @@ type Validate struct {
 	structCache      *structCache
 }
 
-// New returns a new instacne of 'validate' with sane defaults.
+// New returns a new instance of 'validate' with sane defaults.
 func New() *Validate {
 
 	tc := new(tagCache)
@@ -97,7 +97,7 @@ func New() *Validate {
 	for k, val := range bakedInValidators {
 
 		// no need to error check here, baked in will always be valid
-		v.registerValidation(k, wrapFunc(val), true)
+		_ = v.registerValidation(k, wrapFunc(val), true)
 	}
 
 	v.pool = &sync.Pool{
@@ -370,39 +370,37 @@ func (v *Validate) StructPartialCtx(ctx context.Context, s interface{}, fields .
 	typ := val.Type()
 	name := typ.Name()
 
-	if fields != nil {
-		for _, k := range fields {
+	for _, k := range fields {
 
-			flds := strings.Split(k, namespaceSeparator)
-			if len(flds) > 0 {
+		flds := strings.Split(k, namespaceSeparator)
+		if len(flds) > 0 {
 
-				vd.misc = append(vd.misc[0:0], name...)
-				vd.misc = append(vd.misc, '.')
+			vd.misc = append(vd.misc[0:0], name...)
+			vd.misc = append(vd.misc, '.')
 
-				for _, s := range flds {
+			for _, s := range flds {
 
-					idx := strings.Index(s, leftBracket)
+				idx := strings.Index(s, leftBracket)
 
-					if idx != -1 {
-						for idx != -1 {
-							vd.misc = append(vd.misc, s[:idx]...)
-							vd.includeExclude[string(vd.misc)] = struct{}{}
-
-							idx2 := strings.Index(s, rightBracket)
-							idx2++
-							vd.misc = append(vd.misc, s[idx:idx2]...)
-							vd.includeExclude[string(vd.misc)] = struct{}{}
-							s = s[idx2:]
-							idx = strings.Index(s, leftBracket)
-						}
-					} else {
-
-						vd.misc = append(vd.misc, s...)
+				if idx != -1 {
+					for idx != -1 {
+						vd.misc = append(vd.misc, s[:idx]...)
 						vd.includeExclude[string(vd.misc)] = struct{}{}
-					}
 
-					vd.misc = append(vd.misc, '.')
+						idx2 := strings.Index(s, rightBracket)
+						idx2++
+						vd.misc = append(vd.misc, s[idx:idx2]...)
+						vd.includeExclude[string(vd.misc)] = struct{}{}
+						s = s[idx2:]
+						idx = strings.Index(s, leftBracket)
+					}
+				} else {
+
+					vd.misc = append(vd.misc, s...)
+					vd.includeExclude[string(vd.misc)] = struct{}{}
 				}
+
+				vd.misc = append(vd.misc, '.')
 			}
 		}
 	}
@@ -491,7 +489,7 @@ func (v *Validate) StructExceptCtx(ctx context.Context, s interface{}, fields ..
 //
 // WARNING: a struct can be passed for validation eg. time.Time is a struct or
 // if you have a custom type and have registered a custom type handler, so must
-// allow it; however unforseen validations will occur if trying to validate a
+// allow it; however unforeseen validations will occur if trying to validate a
 // struct that is meant to be passed to 'validate.Struct'
 //
 // It returns InvalidValidationError for bad values passed in and nil or ValidationErrors as error otherwise.
@@ -509,7 +507,7 @@ func (v *Validate) Var(field interface{}, tag string) error {
 //
 // WARNING: a struct can be passed for validation eg. time.Time is a struct or
 // if you have a custom type and have registered a custom type handler, so must
-// allow it; however unforseen validations will occur if trying to validate a
+// allow it; however unforeseen validations will occur if trying to validate a
 // struct that is meant to be passed to 'validate.Struct'
 //
 // It returns InvalidValidationError for bad values passed in and nil or ValidationErrors as error otherwise.
@@ -520,36 +518,18 @@ func (v *Validate) VarCtx(ctx context.Context, field interface{}, tag string) (e
 		return nil
 	}
 
-	// find cached tag
-	ctag, ok := v.tagCache.Get(tag)
-	if !ok {
-		v.tagCache.lock.Lock()
-		defer v.tagCache.lock.Unlock()
-
-		// could have been multiple trying to access, but once first is done this ensures tag
-		// isn't parsed again.
-		ctag, ok = v.tagCache.Get(tag)
-		if !ok {
-			ctag, _ = v.parseFieldTagsRecursive(tag, "", "", false)
-			v.tagCache.Set(tag, ctag)
-		}
-	}
-
+	ctag := v.fetchCacheTag(tag)
 	val := reflect.ValueOf(field)
-
 	vd := v.pool.Get().(*validate)
 	vd.top = val
 	vd.isPartial = false
-
 	vd.traverseField(ctx, val, val, vd.ns[0:0], vd.actualNs[0:0], defaultCField, ctag)
 
 	if len(vd.errs) > 0 {
 		err = vd.errs
 		vd.errs = nil
 	}
-
 	v.pool.Put(vd)
-
 	return
 }
 
@@ -561,7 +541,7 @@ func (v *Validate) VarCtx(ctx context.Context, field interface{}, tag string) (e
 //
 // WARNING: a struct can be passed for validation eg. time.Time is a struct or
 // if you have a custom type and have registered a custom type handler, so must
-// allow it; however unforseen validations will occur if trying to validate a
+// allow it; however unforeseen validations will occur if trying to validate a
 // struct that is meant to be passed to 'validate.Struct'
 //
 // It returns InvalidValidationError for bad values passed in and nil or ValidationErrors as error otherwise.
@@ -580,7 +560,7 @@ func (v *Validate) VarWithValue(field interface{}, other interface{}, tag string
 //
 // WARNING: a struct can be passed for validation eg. time.Time is a struct or
 // if you have a custom type and have registered a custom type handler, so must
-// allow it; however unforseen validations will occur if trying to validate a
+// allow it; however unforeseen validations will occur if trying to validate a
 // struct that is meant to be passed to 'validate.Struct'
 //
 // It returns InvalidValidationError for bad values passed in and nil or ValidationErrors as error otherwise.
@@ -590,36 +570,17 @@ func (v *Validate) VarWithValueCtx(ctx context.Context, field interface{}, other
 	if len(tag) == 0 || tag == skipValidationTag {
 		return nil
 	}
-
-	// find cached tag
-	ctag, ok := v.tagCache.Get(tag)
-	if !ok {
-		v.tagCache.lock.Lock()
-		defer v.tagCache.lock.Unlock()
-
-		// could have been multiple trying to access, but once first is done this ensures tag
-		// isn't parsed again.
-		ctag, ok = v.tagCache.Get(tag)
-		if !ok {
-			ctag, _ = v.parseFieldTagsRecursive(tag, "", "", false)
-			v.tagCache.Set(tag, ctag)
-		}
-	}
-
+	ctag := v.fetchCacheTag(tag)
 	otherVal := reflect.ValueOf(other)
-
 	vd := v.pool.Get().(*validate)
 	vd.top = otherVal
 	vd.isPartial = false
-
 	vd.traverseField(ctx, otherVal, reflect.ValueOf(field), vd.ns[0:0], vd.actualNs[0:0], defaultCField, ctag)
 
 	if len(vd.errs) > 0 {
 		err = vd.errs
 		vd.errs = nil
 	}
-
 	v.pool.Put(vd)
-
 	return
 }

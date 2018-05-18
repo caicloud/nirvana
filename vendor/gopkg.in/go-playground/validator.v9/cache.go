@@ -91,12 +91,14 @@ type cTag struct {
 	aliasTag       string
 	actualAliasTag string
 	param          string
-	typeof         tagType
 	keys           *cTag // only populated when using tag's 'keys' and 'endkeys' for map key validation
 	next           *cTag
+	fn             FuncCtx
+	typeof         tagType
 	hasTag         bool
 	hasAlias       bool
-	fn             FuncCtx
+	hasParam       bool // true if parameter used eg. eq= where the equal sign has been set
+	isBlockEnd     bool // indicates the current tag represents the last validation in the block
 }
 
 func (v *Validate) extractStructCache(current reflect.Value, sName string) *cStruct {
@@ -221,7 +223,7 @@ func (v *Validate) parseFieldTagsRecursive(tag string, fieldName string, alias s
 			current.typeof = typeKeys
 
 			if i == 0 || prevTag != typeDive {
-				panic(fmt.Sprintf("'%s' tag must be immediately preceeded by the '%s' tag", keysTag, diveTag))
+				panic(fmt.Sprintf("'%s' tag must be immediately preceded by the '%s' tag", keysTag, diveTag))
 			}
 
 			current.typeof = typeKeys
@@ -291,6 +293,7 @@ func (v *Validate) parseFieldTagsRecursive(tag string, fieldName string, alias s
 					current.next = &cTag{aliasTag: alias, actualAliasTag: current.actualAliasTag, hasAlias: hasAlias, hasTag: true}
 					current = current.next
 				}
+				current.hasParam = len(vals) > 1
 
 				current.tag = vals[0]
 				if len(current.tag) == 0 {
@@ -309,8 +312,26 @@ func (v *Validate) parseFieldTagsRecursive(tag string, fieldName string, alias s
 					current.param = strings.Replace(strings.Replace(vals[1], utf8HexComma, ",", -1), utf8Pipe, "|", -1)
 				}
 			}
+			current.isBlockEnd = true
 		}
 	}
-
 	return
+}
+
+func (v *Validate) fetchCacheTag(tag string) *cTag {
+	// find cached tag
+	ctag, found := v.tagCache.Get(tag)
+	if !found {
+		v.tagCache.lock.Lock()
+		defer v.tagCache.lock.Unlock()
+
+		// could have been multiple trying to access, but once first is done this ensures tag
+		// isn't parsed again.
+		ctag, found = v.tagCache.Get(tag)
+		if !found {
+			ctag, _ = v.parseFieldTagsRecursive(tag, "", "", false)
+			v.tagCache.Set(tag, ctag)
+		}
+	}
+	return ctag
 }
