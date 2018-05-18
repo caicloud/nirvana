@@ -205,6 +205,8 @@ type Definition struct {
 	Parameters []Parameter
 	// Results describes function retrun values.
 	Results []Result
+	// Summary is a one-line brief of this definition.
+	Summary string
 	// Description describes the API handler.
 	Description string
 	// Examples contains many examples for the API handler.
