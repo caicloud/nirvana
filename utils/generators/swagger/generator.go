@@ -146,7 +146,7 @@ func (g *Generator) buildSwaggerInfo(
 	swagger.Info = &spec.Info{}
 	swagger.Info.Title = title
 	swagger.Info.Version = version
-	swagger.Info.Description = description
+	swagger.Info.Description = g.escapeNewline(description)
 	if len(contacts) > 0 {
 		swagger.Info.Contact = &spec.ContactInfo{
 			Name:  contacts[0].Name,
@@ -235,6 +235,7 @@ func (g *Generator) schemaForType(typ *api.Type) *spec.Schema {
 }
 
 func (g *Generator) schemaForStruct(typ *api.Type) *spec.Schema {
+	const rawSchemaKey = "raw"
 	typeName := typ.TypeName()
 	schema, ok := g.schemaMappings[typeName]
 	if ok {
@@ -249,16 +250,36 @@ func (g *Generator) schemaForStruct(typ *api.Type) *spec.Schema {
 	schema = &spec.Schema{}
 	schema.Title = ref.Title
 	for _, field := range typ.Fields {
+		jsontag := strings.TrimSpace(field.Tag.Get("json"))
+		if jsontag == "-" {
+			continue
+		}
 		fieldSchema := g.schemaForTypeName(field.Type)
 		if fieldSchema == nil {
 			// Ignore invalid field.
 			continue
 		}
-		fieldSchema.Description = field.Comments
-		schema.SetProperty(field.Name, *fieldSchema)
+		raw, ok := fieldSchema.ExtraProps[rawSchemaKey]
+		if field.Anonymous && ok {
+			rawSchema := raw.(*spec.Schema)
+			for name, property := range rawSchema.Properties {
+				schema.SetProperty(name, property)
+			}
+		} else {
+			name := jsontag
+			if comma := strings.Index(jsontag, ","); comma > 0 {
+				name = strings.TrimSpace(jsontag[:comma])
+			}
+			if name == "" {
+				name = field.Name
+			}
+			fieldSchema.Description = g.escapeNewline(field.Comments)
+			schema.SetProperty(name, *fieldSchema)
+		}
 	}
 	g.schemas[key] = schema
-	return g.copySchema(ref)
+	ref.ExtraProps = map[string]interface{}{rawSchemaKey: schema}
+	return ref
 }
 
 func (g *Generator) schemaForBasicType(typ *api.Type) *spec.Schema {
@@ -389,6 +410,7 @@ func (g *Generator) operationFor(def *api.Definition) *spec.Operation {
 			operation.Description = typ.Comments
 		}
 	}
+	operation.Description = g.escapeNewline(operation.Description)
 	for _, param := range def.Parameters {
 		parameters := g.generateParameter(&param)
 		if len(parameters) > 0 {
@@ -417,7 +439,7 @@ func (g *Generator) generateParameter(param *api.Parameter) []spec.Parameter {
 	parameter := spec.Parameter{
 		ParamProps: spec.ParamProps{
 			Name:        param.Name,
-			Description: param.Description,
+			Description: g.escapeNewline(param.Description),
 			Schema:      schema,
 			In:          source,
 		},
@@ -460,7 +482,7 @@ func (g *Generator) enum(typ *api.Type) []spec.Parameter {
 				parameters = g.generateParameter(&api.Parameter{
 					Source:      source,
 					Name:        name,
-					Description: field.Comments,
+					Description: g.escapeNewline(field.Comments),
 					Type:        field.Type,
 					Default:     []byte(defaultValue),
 				})
@@ -483,7 +505,7 @@ func (g *Generator) generateResponse(results []api.Result, examples []api.Exampl
 	for _, result := range results {
 		switch g.destinationMapping[result.Destination] {
 		case "body":
-			response.Description = result.Description
+			response.Description = g.escapeNewline(result.Description)
 			schema := g.schemaForTypeName(result.Type)
 			response.Schema = schema
 		}
@@ -497,6 +519,9 @@ func (g *Generator) generateResponse(results []api.Result, examples []api.Exampl
 		}
 	}
 	return response
+}
+func (g *Generator) escapeNewline(content string) string {
+	return strings.Replace(strings.TrimSpace(content), "\n", "<br/>", -1)
 }
 
 type rawJSON []byte

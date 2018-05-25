@@ -75,7 +75,10 @@ func (a *Analyzer) Import(path string) (*types.Package, error) {
 	}
 	a.packageFiles[pkg.ImportPath] = files
 	parsedPkg, err := cfg.Check(pkg.ImportPath, a.fileset, files, nil)
-	a.packages[pkg.ImportPath] = parsedPkg
+	a.packages[path] = parsedPkg
+	if pkg.ImportPath != path {
+		a.packages[pkg.ImportPath] = parsedPkg
+	}
 	return parsedPkg, err
 }
 
@@ -141,7 +144,7 @@ func (a *Analyzer) Comments(pos token.Pos) *ast.CommentGroup {
 // ObjectOf returns declaration object of target.
 func (a *Analyzer) ObjectOf(pkg, name string) (types.Object, error) {
 	p, err := a.Import(pkg)
-	if err != nil {
+	if p == nil && err != nil {
 		return nil, err
 	}
 	obj := p.Scope().Lookup(name)
