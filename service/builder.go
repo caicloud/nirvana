@@ -32,7 +32,7 @@ type Builder interface {
 	Logger() log.Logger
 	// SetLogger sets logger to server.
 	SetLogger(logger log.Logger)
-	// Logger returns modifier of builder.
+	// Modifier returns modifier of builder.
 	Modifier() DefinitionModifier
 	// SetModifier sets definition modifier.
 	SetModifier(m DefinitionModifier)
@@ -142,8 +142,7 @@ func (b *builder) addDescriptor(prefix string, consumes []string, produces []str
 	}
 }
 
-// copyDefinition creates a deep copy from original definition. The copy not very deep for those
-// fields which type is interface{}.
+// copyDefinition creates a copy from original definition. Those fields with type interface{} only have shallow copies.
 func (b *builder) copyDefinition(d *definition.Definition, consumes []string, produces []string) *definition.Definition {
 	newOne := &definition.Definition{
 		Method:      d.Method,
