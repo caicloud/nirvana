@@ -227,7 +227,8 @@ func (o *initOptions) templates(project string) map[string]string {
 		"pkg/version/version.go":                    o.templateVersion(),
 		"Gopkg.toml":                                o.templateGopkg(),
 		"Makefile":                                  o.templateMakefile(),
-		"project.yaml":                              o.templateProject(),
+		"nirvana.yaml":                              o.templateProject(),
+		"README.md":                                 o.templateReadme(),
 	}
 }
 
@@ -726,8 +727,8 @@ func (o *initOptions) templateProject() string {
 {{ .SharpBoilerplate }}
 #
 {{ end -}}
-# This file is used to generate api docs.
-# All fileds in this file are descriptions and won't affect your nirvana configurations.
+# This file describes your project. It's used to generate api docs and
+# clients. All fields in this file won't affect nirvana configurations.
 
 project: {{ .ProjectName }}
 description: This project uses nirvana as API framework
@@ -747,6 +748,45 @@ versions:
 `
 }
 
+func (o *initOptions) templateReadme() string {
+	return `
+# Project {{ .ProjectName }}
+
+<!-- Write one paragraph of this project description here -->
+
+## Getting Started
+
+### Prerequisites
+
+<!-- Describe packages, tools and everything we needed here -->
+
+### Building
+
+<!-- Describe how to build this project -->
+
+### Running
+
+<!-- Describe how to run this project -->
+
+## Versioning
+
+<!-- Place versions of this project and write comments for every version -->
+
+## Contributing
+
+<!-- Tell others how to contribute this project -->
+
+## Authors
+
+<!-- Put authors here -->
+
+## License
+
+<!-- A link to license file -->
+
+`
+}
+
 func (o *initOptions) Manuals() string {
 	return `
 This command generates standard nirvana project structure.
@@ -758,8 +798,6 @@ This command generates standard nirvana project structure.
 ├── cmd
 │   └── <project-name>
 │       └── main.go
-├── Gopkg.toml
-├── Makefile
 ├── pkg
 │   ├── api
 │   │   ├── api.go
@@ -776,7 +814,10 @@ This command generates standard nirvana project structure.
 │   │   └── message.go
 │   └── version
 │       └── version.go
-├── project.yaml
-└── vendor
+├── vendor
+├── Gopkg.toml
+├── nirvana.yaml
+├── Makefile
+└── README.md
 `
 }
