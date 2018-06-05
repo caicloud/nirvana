@@ -94,7 +94,7 @@ func (o *apiOptions) Run(cmd *cobra.Command, args []string) error {
 	}
 	config := &swagger.Config{}
 	if file == "" {
-		log.Warning("can't find project.yaml, use empty config as instead")
+		log.Warning("can't find nirvana.yaml, use empty config as instead")
 	} else {
 		config, err = swagger.LoadConfig(file)
 		if err != nil {
@@ -133,35 +133,35 @@ func (o *apiOptions) findAllChildernPaths(paths ...string) []string {
 	for _, path := range paths {
 		err := filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
 			if info.IsDir() {
-				if walked[path] {
+				if info.Name() == "vendor" || walked[path] {
 					return filepath.SkipDir
 				}
 				walked[path] = true
+				return nil
 			}
 			if strings.HasSuffix(path, ".go") {
-				goDir[filepath.Dir(path)] = true
+				dir := filepath.Dir(path)
+				goDir[dir] = true
 			}
 			return nil
 		})
 		_ = err
 	}
 	results := []string{}
-	for path := range walked {
-		if goDir[path] {
-			results = append(results, path)
-		}
+	for path := range goDir {
+		results = append(results, path)
 	}
 	return results
 }
 
-// findProjectFile find the path of project.yaml.
+// findProjectFile find the path of nirvana.yaml.
 // It will find the path itself and its parents recursively.
 func (o *apiOptions) findProjectFile(path string) (string, error) {
 	goPath, absPath, err := utils.GoPath(path)
 	if err != nil {
 		return "", err
 	}
-	fileName := "project.yaml"
+	fileName := "nirvana.yaml"
 	for len(absPath) > len(goPath) {
 		path = filepath.Join(absPath, fileName)
 		info, err := os.Stat(path)
@@ -170,7 +170,7 @@ func (o *apiOptions) findProjectFile(path string) (string, error) {
 		}
 		absPath = filepath.Dir(absPath)
 	}
-	return "", fmt.Errorf("can't find project.yaml")
+	return "", fmt.Errorf("can't find nirvana.yaml")
 }
 
 func (o *apiOptions) write(apis map[string][]byte) error {
