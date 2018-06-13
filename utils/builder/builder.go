@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package utils
+package builder
 
 import (
 	"bytes"
@@ -32,6 +32,7 @@ import (
 	"strings"
 
 	"github.com/caicloud/nirvana/utils/api"
+	"github.com/caicloud/nirvana/utils/project"
 )
 
 var buildTagRegexp = regexp.MustCompile(`^[ \t]*\+nirvana:api[ \t]*=(.*)\n`)
@@ -53,7 +54,7 @@ func (b *APIBuilder) Build() (*api.Definitions, error) {
 	analyzer := api.NewAnalyzer()
 	parents := []string{}
 	for _, path := range b.paths {
-		path, err := PackageForPath(path)
+		path, err := project.PackageForPath(path)
 		if err != nil {
 			return nil, err
 		}
