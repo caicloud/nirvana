@@ -20,12 +20,12 @@ import (
 	"fmt"
 	"net/http"
 	"reflect"
-	"regexp"
 	"strings"
 
 	"github.com/caicloud/nirvana/definition"
 	"github.com/caicloud/nirvana/service"
 	"github.com/caicloud/nirvana/utils/api"
+	"github.com/caicloud/nirvana/utils/project"
 	"github.com/go-openapi/spec"
 )
 
@@ -47,7 +47,7 @@ var defaultDestinationMapping = map[definition.Destination]string{
 
 // Generator is for generating swagger specifications.
 type Generator struct {
-	config             *Config
+	config             *project.Config
 	apis               *api.Definitions
 	schemas            map[string]*spec.Schema
 	schemaMappings     map[api.TypeName]*spec.Schema
@@ -58,7 +58,7 @@ type Generator struct {
 
 // NewDefaultGenerator creates a swagger generator with default mappings.
 func NewDefaultGenerator(
-	config *Config,
+	config *project.Config,
 	apis *api.Definitions,
 ) *Generator {
 	return NewGenerator(config, apis, nil, nil)
@@ -66,7 +66,7 @@ func NewDefaultGenerator(
 
 // NewGenerator creates a swagger generator.
 func NewGenerator(
-	config *Config,
+	config *project.Config,
 	apis *api.Definitions,
 	sourceMapping map[definition.Source]string,
 	destinationMapping map[definition.Destination]string,
@@ -134,8 +134,8 @@ func (g *Generator) buildSwaggerInfo(
 	title, version, description string,
 	schemes []string,
 	hosts []string,
-	contacts []Contact,
-	rules []string,
+	contacts []project.Contact,
+	rules []project.PathRule,
 ) *spec.Swagger {
 	swagger := &spec.Swagger{}
 	swagger.Swagger = "2.0"
@@ -161,13 +161,10 @@ func (g *Generator) buildSwaggerInfo(
 		swagger.Definitions[path] = *definition
 	}
 	if len(rules) > 0 {
-		regexps := make([]*regexp.Regexp, 0, len(rules))
-		for _, rule := range rules {
-			regexps = append(regexps, regexp.MustCompile(rule))
-		}
 		for path, item := range g.paths {
-			for _, rule := range regexps {
-				if rule.FindString(path) != "" {
+			for _, rule := range rules {
+				path = rule.Replace(path)
+				if path != "" {
 					swagger.Paths.Paths[path] = *item
 					break
 				}

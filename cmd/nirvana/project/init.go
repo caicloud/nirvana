@@ -29,8 +29,8 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/caicloud/nirvana/cmd/nirvana/utils"
 	"github.com/caicloud/nirvana/log"
+	"github.com/caicloud/nirvana/utils/project"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -130,7 +130,7 @@ func (o *initOptions) Run(cmd *cobra.Command, args []string) error {
 		BuildImage:    o.BuildImage,
 		RuntimeImage:  o.RuntimeImage,
 	}
-	td.ProjectPackage, err = utils.PackageForPath(pathToProject)
+	td.ProjectPackage, err = project.PackageForPath(pathToProject)
 	if err != nil {
 		return err
 	}
@@ -212,23 +212,23 @@ func (o *initOptions) directories(project string) []string {
 	}
 }
 
-func (o *initOptions) templates(project string) map[string]string {
+func (o *initOptions) templates(proj string) map[string]string {
 	return map[string]string{
-		fmt.Sprintf("cmd/%s/main.go", project):      o.templateMain(),
-		fmt.Sprintf("build/%s/Dockerfile", project): o.templateDockerfile(),
-		"pkg/api/filters/filters.go":                o.templateFilters(),
-		"pkg/api/middlewares/middlewares.go":        o.templateMiddlewares(),
-		"pkg/api/modifiers/modifiers.go":            o.templateModifiers(),
-		"pkg/api/v1/descriptors/descriptors.go":     o.templateDescriptors(),
-		"pkg/api/v1/descriptors/message.go":         o.templateMessageAPI(),
-		"pkg/api/v1/middlewares/middlewares.go":     o.templateMiddlewares(),
-		"pkg/api/api.go":                            o.templateAPI(),
-		"pkg/message/message.go":                    o.templateMessage(),
-		"pkg/version/version.go":                    o.templateVersion(),
-		"Gopkg.toml":                                o.templateGopkg(),
-		"Makefile":                                  o.templateMakefile(),
-		"nirvana.yaml":                              o.templateProject(),
-		"README.md":                                 o.templateReadme(),
+		fmt.Sprintf("cmd/%s/main.go", proj):      o.templateMain(),
+		fmt.Sprintf("build/%s/Dockerfile", proj): o.templateDockerfile(),
+		"pkg/api/filters/filters.go":             o.templateFilters(),
+		"pkg/api/middlewares/middlewares.go":     o.templateMiddlewares(),
+		"pkg/api/modifiers/modifiers.go":         o.templateModifiers(),
+		"pkg/api/v1/descriptors/descriptors.go":  o.templateDescriptors(),
+		"pkg/api/v1/descriptors/message.go":      o.templateMessageAPI(),
+		"pkg/api/v1/middlewares/middlewares.go":  o.templateMiddlewares(),
+		"pkg/api/api.go":                         o.templateAPI(),
+		"pkg/message/message.go":                 o.templateMessage(),
+		"pkg/version/version.go":                 o.templateVersion(),
+		"Gopkg.toml":                             o.templateGopkg(),
+		"Makefile":                               o.templateMakefile(),
+		project.DefaultProjectFileName:           o.templateProject(),
+		"README.md":                              o.templateReadme(),
 	}
 }
 
@@ -744,7 +744,7 @@ versions:
 - name: v1
   description: The v1 version is the first version of this project
   rules:
-  - "^/api/v1.*"
+  - prefix: /api/v1
 `
 }
 
