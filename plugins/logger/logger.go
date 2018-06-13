@@ -42,6 +42,15 @@ type Option struct {
 	OverrideGlobal bool `desc:"Override global logger"`
 }
 
+// NewDefaultOption creates default option.
+func NewDefaultOption() *Option {
+	return &Option{
+		Debug:          false,
+		Level:          0,
+		OverrideGlobal: false,
+	}
+}
+
 // Name returns plugin name.
 func (p *Option) Name() string {
 	return ExternalConfigName

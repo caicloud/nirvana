@@ -21,7 +21,12 @@
   "Aggregate": true,
   "WarnUnmatchedNolint": true,
   "LineLength": 160,
-  "Exclude": ["comment or be unexported"],
+  "Exclude": [
+    "comment or be unexported",
+    "Use of unsafe calls should be audited",
+    "Expect directory permissions to be 0700 or less",
+    "Subprocess launching with variable"
+  ],
   "Deadline": "300s",
   "Skip": ["examples", "docs", "website"]
 }

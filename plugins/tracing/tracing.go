@@ -60,6 +60,7 @@ func (i *tracingInstaller) Install(builder service.Builder, cfg *nirvana.Config)
 	wapper(cfg, func(c *config) {
 		if c.tracer == nil {
 			tcfg := tconfig.Configuration{
+				ServiceName: c.serviceName,
 				Sampler: &tconfig.SamplerConfig{
 					Type:  "const",
 					Param: 1,
@@ -70,8 +71,7 @@ func (i *tracingInstaller) Install(builder service.Builder, cfg *nirvana.Config)
 					LocalAgentHostPort:  c.agentHostPort,
 				},
 			}
-			c.tracer, c.closer, err = tcfg.New(
-				c.serviceName,
+			c.tracer, c.closer, err = tcfg.NewTracer(
 				tconfig.Logger(&loggerAdapter{cfg.Logger()}),
 			)
 			if err != nil {
@@ -234,6 +234,14 @@ type Option struct {
 	ServiceName string
 	// AgentHostPort instructs reporter to send spans to jaeger-agent at this address
 	AgentHostPort string
+}
+
+// NewDefaultOption creates default option.
+func NewDefaultOption() *Option {
+	return &Option{
+		ServiceName:   "",
+		AgentHostPort: "",
+	}
 }
 
 // Name returns plugin name.

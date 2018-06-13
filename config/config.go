@@ -32,51 +32,6 @@ import (
 	"github.com/spf13/pflag"
 )
 
-var banner = `
-                                                '-:::::-
-                                            .:/oo+++oo+:
-                                         .:+++//+sys.'
-                             .:.       :+++//+sysss+
-                            /o++     :o++//osysos+.     ''.......'
-                           oo/o-   -o+///ossoos+.'--/+oooooooooooooo/-.
-                          +o//y  '+o///+ssooos::+oooooooossooooooooooooo'
-                         's//o+ .s+///osoooohoooooosooo+:-...''''''''''.'
-                     '// /+//y./s+//+ssooooosoooso/-.'  '-
-                     s+s/s///ysh+///ysoooooooos+-'      yh'  ::
-                    'h//yy///sd+///ssoooooooso:..'   '+-dys'-h+
-                    'y//ys///+s///+hoooooooso'h++o+'.-hydhyyshy'
-                     y//++////////ssooooooos 'y+/sso+++syyyyyhyo  ''
-                     o+///////+s//yoooooooh:+oo+:/:::::::+++ooshss++o
-                     's///////yh//ysoooooodo/:::::::::::::::::::/sss+
-                   //:/s//////hyo/+hoooosh+:::::::::::::::::::::::/y.
-                   s/+os////++hoh//ysoosh/::::::::::::+o///+o/:::::/h'
-                   y////////hyhosy//yssh::::::::::::/o-     ':s/::::so.
-                   +o//////+yshyosy+/sd/::::::::::::y      '+hyy::::o+:o.
-                   'y//////+hoodyooy+/+ssoo+/+oooo::s      .mNsy::::s::dy
-///.                /+//////ssoosyooss+////+++//+y::s:        ++:/ssh .ss
-++/oo/.    o+/.      s////+yosyooooooossso++++//y/:::+o/-''-/o+s++syy-//
- +o///o+/. oo/+o/- -soh+///yysyhoooooooooooosyoso:::::::/++/::/s....o:
-  .+o////+o/os+//+o/y++so///+ssssooooooooossh/-::/:::::::::::::o/oo//
-    .+o+////+shy+///oy+/oso////++ossssssso+os+++/::::::::::::::+oy+/:
-      '-+o+////+o+///////ossssoo+++++oooooo/:::::::::o/::::::::/h/::/
-       s++sys+//yysssso+oysssm///+++////::::::::::::/s:::/+:::/y'''
-       :+o+++oo/+ssssoosyyhyod:::::::::::::::::::::+o:::+h++:/s'
-        '-+++/////+++shyyooooys::::::::::::::::::::s++++sooh+s'
-           './oysoo///osssssssho::::::::::::::::::::/:::o+/so'
-              ss+++//////////+oys/:::::::::::::::::::::::+o:
-              '.:/+++++++++//-.'.soo/o::::::::::::::::/oo:'
-                   ''''''        h/-./ss+++///////++oo/-'
-                                 oo++/.''o+/y////::-.
-                                         ://-
-        ____  _____   _
-       |_   \|_   _| (_)
-         |   \ | |   __   _ .--.  _   __  ,--.   _ .--.   ,--.
-         | |\ \| |  [  | [ '/''\][ \ [  ]''_\ : [ '.-. | ''_\ :
-        _| |_\   |_  | |  | |     \ \/ / // | |, | | | | // | |,
-       |_____|\____|[___][___]     \__/  \'-;__/[___||__]\'-;__/
-
-`
-
 // CustomOption must be a pointer to struct.
 //
 // Here is an example:
@@ -321,8 +276,6 @@ func (s *command) Command(cfg *nirvana.Config) *cobra.Command {
 		Short: "Starting a nirvana server to handle http requests",
 		Run: func(cmd *cobra.Command, args []string) {
 			fs := cmd.Flags()
-			logger := cfg.Logger()
-			logger.Info(banner)
 			// Restore configs.
 			for _, f := range s.fields {
 				val := reflect.ValueOf(f.pointer).Elem()
@@ -332,23 +285,23 @@ func (s *command) Command(cfg *nirvana.Config) *cobra.Command {
 				Set(f.key, val.Interface())
 			}
 			if err := s.hook.PreConfigure(cfg); err != nil {
-				logger.Fatal(err)
+				cfg.Logger().Fatal(err)
 			}
 			for _, plugin := range s.plugins {
 				if err := plugin.Configure(cfg); err != nil {
-					logger.Fatalf("Failed to install plugin %s: %s", plugin.Name(), err.Error())
+					cfg.Logger().Fatalf("Failed to install plugin %s: %s", plugin.Name(), err.Error())
 				}
 			}
 			if err := s.hook.PostConfigure(cfg); err != nil {
-				logger.Fatal(err)
+				cfg.Logger().Fatal(err)
 			}
 			server := nirvana.NewServer(cfg)
 			if err := s.hook.PreServe(cfg, server); err != nil {
-				logger.Fatal(err)
+				cfg.Logger().Fatal(err)
 			}
-			logger.Infof("Listening on %s:%d", cfg.IP(), cfg.Port())
+			cfg.Logger().Infof("Listening on %s:%d", cfg.IP(), cfg.Port())
 			if err := s.hook.PostServe(cfg, server, server.Serve()); err != nil {
-				logger.Fatal(err)
+				cfg.Logger().Fatal(err)
 			}
 		},
 	}
