@@ -25,6 +25,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/caicloud/nirvana"
@@ -71,7 +72,7 @@ type apiOptions struct {
 }
 
 func (o *apiOptions) Install(flags *pflag.FlagSet) {
-	flags.StringVar(&o.Serve, "serve", "localhost:8080", "Start a server to host api docs")
+	flags.StringVar(&o.Serve, "serve", "127.0.0.1:8080", "Start a server to host api docs")
 	flags.StringVar(&o.Output, "output", "", "Directory to output api specifications")
 }
 
@@ -185,6 +186,22 @@ func (o *apiOptions) write(apis map[string][]byte) error {
 }
 
 func (o *apiOptions) serve(apis map[string][]byte) error {
+	hosts := strings.Split(o.Serve, ":")
+	ip := strings.TrimSpace(hosts[0])
+	if ip == "" {
+		ip = "127.0.0.1"
+	}
+	port := uint16(8080)
+	if len(hosts) >= 2 {
+		p := strings.TrimSpace(hosts[1])
+		if p != "" {
+			pt, err := strconv.Atoi(p)
+			if err != nil {
+				return err
+			}
+			port = uint16(pt)
+		}
+	}
 	log.SetDefaultLogger(log.NewStdLogger(0))
 	cfg := nirvana.NewDefaultConfig()
 	versions := []string{}
@@ -200,6 +217,8 @@ func (o *apiOptions) serve(apis map[string][]byte) error {
 	}
 	cfg.Configure(
 		nirvana.Descriptor(o.descriptorForData("/", data, mimeHTML)),
+		nirvana.IP(ip),
+		nirvana.Port(port),
 	)
 	log.Infof("Listening on %s:%d. Please open your browser to view api docs", cfg.IP(), cfg.Port())
 	return nirvana.NewServer(cfg).Serve()
