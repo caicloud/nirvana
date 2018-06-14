@@ -249,6 +249,7 @@ func (h *helper) Types() []Type {
 
 // Types returns functions which is required to generate.
 func (h *helper) Functions() []function {
+	functionNames := map[string]int{}
 	functions := []function{}
 	for path, defs := range h.definitions.Definitions {
 		for _, def := range defs {
@@ -256,8 +257,40 @@ func (h *helper) Functions() []function {
 				Path:     path,
 				Method:   def.HTTPMethod,
 				Code:     def.HTTPCode,
-				Name:     h.namer.Name(def.Function),
 				Comments: h.namer.Comments(def.Function),
+			}
+			// The priority of summary is higher than original function name.
+			if def.Summary != "" {
+				// Remove invalid chars and regard as function name.
+				fn.Name = nameReplacer.ReplaceAllString(def.Summary, "")
+			}
+
+			if fn.Name == "" {
+				// If original function is public and there is no summary,
+				// original function name is selected.
+				name := strings.TrimSpace(h.namer.Name(def.Function))
+				if name != "" && name[0] >= 'A' && name[0] <= 'Z' {
+					fn.Name = name
+				}
+			}
+
+			if fn.Name == "" {
+				// Anonymous function.
+				fn.Name = "AnonymousAPI"
+			}
+
+			count := functionNames[fn.Name]
+			functionNames[fn.Name]++
+			if count > 0 {
+				fn.Name += strconv.Itoa(count)
+			}
+
+			if fn.Comments == "" {
+				comments := fmt.Sprintf("%s does not have comments.\n", fn.Name)
+				if def.Description != "" {
+					comments += fmt.Sprintf("API description: %s", def.Description)
+				}
+				fn.Comments = api.ParseComments(comments).LineComments()
 			}
 			sigNames := h.namer.nameContainer()
 
