@@ -456,7 +456,7 @@ func init() {
 }
 
 var listMessages = def.Definition{
-	Method:   def.Get,
+	Method:   def.List,
 	Summary: "List Messages",
 	Description: "Query a specified number of messages and returns an array",
 	Function: message.ListMessages,
