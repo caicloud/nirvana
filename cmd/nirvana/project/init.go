@@ -576,7 +576,9 @@ ARG TARGET={{ .ProjectName }}
 
 COPY --from=0 /tmp/${TARGET} /${TARGET}
 
-ENTRYPOINT [/${TARGET}]
+RUN ln -s /${TARGET} /entrypoint
+
+ENTRYPOINT ["/entrypoint"]
 `
 }
 
