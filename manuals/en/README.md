@@ -1,5 +1,7 @@
 # Nirvana
 
+**English version of this docs is expired. We will rewrite it in the future. If you have any idea or you want to contribute to this docs, PLEASE let us know it.**
+
 Nirvana is a Golang web framework with a focus on developer efficiency and
 performance. It handles request routing, input validation, logging, error
 handling, etc. with sensible defaults and options for complete control. Built

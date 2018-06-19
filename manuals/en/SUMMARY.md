@@ -1,9 +1,6 @@
 # Summary
 
 * [Introduction](README.md)
-* Proposals
-  * [Kickoff](proposals/kickoff.md)
-  * [Framework](proposals/framework.md)
 * Topics
   * [Routes](topics/routes.md)
   * [CLI](topics/cli.md)
