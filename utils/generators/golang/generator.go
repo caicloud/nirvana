@@ -37,7 +37,7 @@ type Generator struct {
 	pkg    string
 }
 
-// NewGenerator creates a golang cleint generator.
+// NewGenerator creates a golang client generator.
 func NewGenerator(
 	config *project.Config,
 	apis *api.Definitions,
