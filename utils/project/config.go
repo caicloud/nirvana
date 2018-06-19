@@ -75,7 +75,7 @@ func (r *PathRule) Replace(path string) string {
 	if !r.Check(path) {
 		return ""
 	}
-	if r.Replacement != "" {
+	if r.Replacement == "" {
 		return path
 	}
 	if r.Prefix != "" {
@@ -128,6 +128,8 @@ func (v *Version) Validate() error {
 
 // Config describes configurations of a project.
 type Config struct {
+	// Root is the directory of this config.
+	Root string `yaml:"-"`
 	// Project is project name.
 	Project string `yaml:"project"`
 	// Description describes this project.
@@ -164,6 +166,11 @@ func LoadConfig(path string) (*Config, error) {
 	if err := yaml.Unmarshal(data, config); err != nil {
 		return nil, err
 	}
+	absPath, err := filepath.Abs(path)
+	if err != nil {
+		return nil, err
+	}
+	config.Root = filepath.Dir(absPath)
 	return config, config.Validate()
 }
 
