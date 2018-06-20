@@ -161,8 +161,9 @@ func (c *Client) {{ .Name }}(ctx context.Context{{ range .Parameters }},{{ .Prop
 	{{ range .Results }}
 	{{- if ne .Creator "" }}
 	{{ .Destination }}({{ .ProposedName }}).
-    {{- end }}
+    {{- else }}
 	{{ .Destination }}(&{{ .ProposedName }}).
+    {{- end }}
     {{ end }}
 	Do(ctx)
 	return 
@@ -210,7 +211,7 @@ type Interface interface {
 {{- end }}
 }
 
-// Client for version {{ .Version }}.
+// Client contains versioned clients.
 type Client struct {
 	{{ range .Pakcages }}
 	{{ .Version }} *{{ .Version }}.Client

@@ -25,11 +25,9 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
-	"path"
 	"path/filepath"
 	"reflect"
 	"regexp"
-	"strings"
 
 	"github.com/caicloud/nirvana/utils/api"
 	"github.com/caicloud/nirvana/utils/project"
@@ -39,19 +37,21 @@ var buildTagRegexp = regexp.MustCompile(`^[ \t]*\+nirvana:api[ \t]*=(.*)\n`)
 
 // APIBuilder builds api definitions by specified package.
 type APIBuilder struct {
+	root  string
 	paths []string
 }
 
 // NewAPIBuilder creates an api builder.
-func NewAPIBuilder(paths ...string) *APIBuilder {
+func NewAPIBuilder(root string, paths ...string) *APIBuilder {
 	return &APIBuilder{
+		root:  root,
 		paths: paths,
 	}
 }
 
 // Build build api definitions.
 func (b *APIBuilder) Build() (*api.Definitions, error) {
-	analyzer := api.NewAnalyzer()
+	analyzer := api.NewAnalyzer(b.root)
 	parents := []string{}
 	for _, path := range b.paths {
 		path, err := project.PackageForPath(path)
@@ -70,23 +70,6 @@ func (b *APIBuilder) Build() (*api.Definitions, error) {
 		for _, pkg := range analyzer.Packages(parent, false) {
 			packages[pkg] = true
 		}
-	}
-
-	const target = "github.com/caicloud/nirvana/definition"
-	results := analyzer.FindPackages(target)
-	found := false
-	prefix := ""
-	for _, real := range results {
-		components := strings.Split(real, "/vendor/")
-		if len(components) > 0 && components[len(components)-1] == target {
-			components = components[:len(components)-1]
-			found = true
-			prefix = path.Join(components...)
-			break
-		}
-	}
-	if !found {
-		return nil, fmt.Errorf("can't find nirvana package %s", target)
 	}
 
 	descriptors := []function{}
@@ -155,7 +138,7 @@ func (b *APIBuilder) Build() (*api.Definitions, error) {
 			}
 		}
 	}
-	return b.runMain(descriptors, modifiers, prefix)
+	return b.runMain(descriptors, modifiers, b.root)
 }
 
 type function struct {
@@ -165,13 +148,15 @@ type function struct {
 }
 
 func (b *APIBuilder) runMain(descriptors, modifiers []function, root string) (*api.Definitions, error) {
-	tempDir, err := ioutil.TempDir(os.TempDir(), "nirvana")
+	tempDir, err := ioutil.TempDir(root, "nirvana-generated")
 	if err != nil {
 		return nil, err
 	}
-	if err := os.MkdirAll(tempDir, 0775); err != nil {
-		return nil, err
-	}
+	defer func() {
+		// Clean temp dir.
+		err := os.RemoveAll(tempDir)
+		_ = err
+	}()
 	data, err := b.file(descriptors, modifiers, root)
 	if err != nil {
 		return nil, err
@@ -209,12 +194,12 @@ import (
 	d{{ $i }} "{{ $d.Pkg }}"
 	{{ end }}
 
-	"{{ .root }}github.com/caicloud/nirvana/utils/api"
-	"{{ .root }}github.com/caicloud/nirvana/log"
+	"github.com/caicloud/nirvana/utils/api"
+	"github.com/caicloud/nirvana/log"
 )
 
 func main() {
-	container := api.NewContainer()
+	container := api.NewContainer("{{ .root }}")
 	{{ range $i,$m := .modifiers }}
 	container.AddModifier(m{{ $i }}.{{ $m.Name }}(){{ if $m.Array }}...{{ end }})
 	{{ end }}

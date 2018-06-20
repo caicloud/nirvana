@@ -28,12 +28,11 @@ import (
 	"strings"
 
 	"github.com/caicloud/nirvana"
+	"github.com/caicloud/nirvana/cmd/nirvana/buildutils"
 	"github.com/caicloud/nirvana/definition"
 	"github.com/caicloud/nirvana/log"
 	"github.com/caicloud/nirvana/service"
-	"github.com/caicloud/nirvana/utils/builder"
 	"github.com/caicloud/nirvana/utils/generators/swagger"
-	"github.com/caicloud/nirvana/utils/project"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -84,21 +83,11 @@ func (o *apiOptions) Validate(cmd *cobra.Command, args []string) error {
 }
 
 func (o *apiOptions) Run(cmd *cobra.Command, args []string) error {
-	builder := builder.NewAPIBuilder(project.Subdirectories(false, args...)...)
-	definitions, err := builder.Build()
+	config, definitions, err := buildutils.Build(args...)
 	if err != nil {
 		return err
 	}
-	config := &project.Config{}
-	for _, path := range args {
-		config, err = project.LoadDefaultProjectFile(path)
-		if err == nil {
-			break
-		}
-	}
-	if err != nil {
-		log.Warning("can't find project file, use empty config as instead")
-	}
+
 	generator := swagger.NewDefaultGenerator(config, definitions)
 	swaggers, err := generator.Generate()
 	if err != nil {

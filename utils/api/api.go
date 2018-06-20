@@ -111,10 +111,10 @@ type Container struct {
 }
 
 // NewContainer creates API container.
-func NewContainer() *Container {
+func NewContainer(root string) *Container {
 	return &Container{
 		typeContainer: NewTypeContainer(),
-		analyzer:      NewAnalyzer(),
+		analyzer:      NewAnalyzer(root),
 	}
 }
 

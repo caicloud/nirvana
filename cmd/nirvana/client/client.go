@@ -22,8 +22,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/caicloud/nirvana/cmd/nirvana/buildutils"
 	"github.com/caicloud/nirvana/log"
-	"github.com/caicloud/nirvana/utils/builder"
 	"github.com/caicloud/nirvana/utils/generators/golang"
 	"github.com/caicloud/nirvana/utils/project"
 	"github.com/spf13/cobra"
@@ -70,21 +70,11 @@ func (o *clientOptions) Validate(cmd *cobra.Command, args []string) error {
 }
 
 func (o *clientOptions) Run(cmd *cobra.Command, args []string) error {
-	builder := builder.NewAPIBuilder(project.Subdirectories(false, args...)...)
-	definitions, err := builder.Build()
+	config, definitions, err := buildutils.Build(args...)
 	if err != nil {
 		return err
 	}
-	config := &project.Config{}
-	for _, path := range args {
-		config, err = project.LoadDefaultProjectFile(path)
-		if err == nil {
-			break
-		}
-	}
-	if err != nil {
-		log.Warning("can't find project file, use empty config as instead")
-	}
+
 	pkg, err := project.PackageForPath(o.Output)
 	if err != nil {
 		return err
