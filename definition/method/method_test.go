@@ -33,7 +33,16 @@ func (t *TestStruct) Number() int {
 	return t.a
 }
 
+type TestStruct2 struct {
+	a int
+}
+
+func (t *TestStruct2) Number() int {
+	return t.a * 2
+}
+
 func TestContainer(t *testing.T) {
+	var ts TestInterface = &TestStruct2{100}
 	cases := []struct {
 		typ      interface{}
 		instance interface{}
@@ -42,6 +51,8 @@ func TestContainer(t *testing.T) {
 	}{
 		{&TestStruct{}, &TestStruct{100}, "Number", 100},
 		{(*TestInterface)(nil), &TestStruct{100}, "Number", 100},
+		{(*TestInterface)(nil), TestInterface(&TestStruct{100}), "Number", 100},
+		{(*TestInterface)(nil), ts, "Number", 200},
 	}
 	for _, c := range cases {
 		f := Get(c.typ, c.method)
