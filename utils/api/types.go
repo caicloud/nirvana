@@ -53,6 +53,14 @@ type StructField struct {
 	Anonymous bool
 }
 
+// FuncField describes a field of function.
+type FuncField struct {
+	// Name is the field name.
+	Name string
+	// Type is field type name.
+	Type TypeName
+}
+
 // Type describes an go type.
 type Type struct {
 	// Name is short type name.
@@ -69,10 +77,10 @@ type Type struct {
 	Elem TypeName
 	// Fields contains all struct fields of a struct.
 	Fields []StructField
-	// In presents type names of function input parameters.
-	In []TypeName
-	// Out presents type names of function output results.
-	Out []TypeName
+	// In presents fields of function input parameters.
+	In []FuncField
+	// Out presents fields of function output results.
+	Out []FuncField
 }
 
 // TypeName retruns type unique name.
@@ -198,10 +206,10 @@ func (tc *TypeContainer) NameOf(typ reflect.Type) TypeName {
 
 func (tc *TypeContainer) fillFunctionSignature(t *Type, typ reflect.Type) {
 	for i := 0; i < typ.NumIn(); i++ {
-		t.In = append(t.In, tc.NameOf(typ.In(i)))
+		t.In = append(t.In, FuncField{Type: tc.NameOf(typ.In(i))})
 	}
 	for i := 0; i < typ.NumOut(); i++ {
-		t.Out = append(t.Out, tc.NameOf(typ.Out(i)))
+		t.Out = append(t.Out, FuncField{Type: tc.NameOf(typ.Out(i))})
 	}
 }
 
@@ -242,26 +250,39 @@ func (tc *TypeContainer) Complete(analyzer *Analyzer) error {
 		if comments := analyzer.Comments(obj.Pos()); comments != nil {
 			typ.Comments = comments.Text()
 		}
-		if typ.Kind != reflect.Struct {
-			continue
-		}
-		o, ok := obj.Type().(*types.Named)
-		if !ok {
-			continue
-		}
-		st, ok := o.Underlying().(*types.Struct)
-		if !ok {
-			continue
-		}
-		for i := 0; i < st.NumFields(); i++ {
-			field := st.Field(i)
-			for j := 0; j < len(typ.Fields); j++ {
-				if typ.Fields[j].Name == field.Name() {
-					if comments := analyzer.Comments(field.Pos()); comments != nil {
-						typ.Fields[j].Comments = comments.Text()
+		switch typ.Kind {
+		case reflect.Struct:
+			o, ok := obj.Type().(*types.Named)
+			if !ok {
+				continue
+			}
+			st, ok := o.Underlying().(*types.Struct)
+			if !ok {
+				continue
+			}
+			for i := 0; i < st.NumFields(); i++ {
+				field := st.Field(i)
+				for j := 0; j < len(typ.Fields); j++ {
+					if typ.Fields[j].Name == field.Name() {
+						if comments := analyzer.Comments(field.Pos()); comments != nil {
+							typ.Fields[j].Comments = comments.Text()
+						}
+						break
 					}
-					break
 				}
+			}
+		case reflect.Func:
+			o, ok := obj.Type().(*types.Signature)
+			if !ok {
+				continue
+			}
+			for i := 0; i < o.Params().Len(); i++ {
+				param := o.Params().At(i)
+				typ.In[i].Name = param.Name()
+			}
+			for i := 0; i < o.Results().Len(); i++ {
+				result := o.Results().At(i)
+				typ.Out[i].Name = result.Name()
 			}
 		}
 	}

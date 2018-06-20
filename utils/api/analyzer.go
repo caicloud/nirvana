@@ -144,6 +144,8 @@ func (a *Analyzer) Comments(pos token.Pos) *ast.CommentGroup {
 // ObjectOf returns declaration object of target.
 func (a *Analyzer) ObjectOf(pkg, name string) (types.Object, error) {
 	p, err := a.Import(pkg)
+	// Ignore the error if p is not nil.
+	// We need to rewrite analyzer with go/parser rather than go/types.
 	if p == nil && err != nil {
 		return nil, err
 	}

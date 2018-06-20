@@ -14,26 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package main
+package client
 
-import (
-	"github.com/caicloud/nirvana/cmd/nirvana/api"
-	"github.com/caicloud/nirvana/cmd/nirvana/client"
-	"github.com/caicloud/nirvana/cmd/nirvana/project"
-	"github.com/caicloud/nirvana/log"
-	"github.com/spf13/cobra"
-)
+import "github.com/spf13/cobra"
 
-var root = &cobra.Command{
-	Use:   "nirvana",
-	Short: "Nirvana toolchains",
-}
-
-func main() {
-	project.Register(root)
-	api.Register(root)
-	client.Register(root)
-	if err := root.Execute(); err != nil {
-		log.Fatalln(err)
-	}
+// Register registers all commands.
+func Register(root *cobra.Command) {
+	root.AddCommand(newClientCommand())
 }
