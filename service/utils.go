@@ -44,10 +44,10 @@ var noExecutorForMethod = errors.MethodNotAllowed.Build("Nirvana:Service:NoExecu
 var noExecutorForContentType = errors.UnsupportedMediaType.Build("Nirvana:Service:NoExecutorForContentType", "unsupported media type")
 var noExecutorToProduce = errors.NotAcceptable.Build("Nirvana:Service:NoExecutorToProduce", "not acceptable")
 var invalidContentType = errors.BadRequest.Build("Nirvana:Service:InvalidContentType", "invalid content type ${type}")
+var invalidConversion = errors.BadRequest.Build("Nirvana:Service:InvalidConversion", "can't convert ${data} to ${type}")
 
 var noRouter = errors.InternalServerError.Build("Nirvana:Service:NoRouter", "no router to build service")
 var invalidService = errors.InternalServerError.Build("Nirvana:Service:NoResponse", "no response")
-var invalidConversion = errors.InternalServerError.Build("Nirvana:Service:InvalidConversion", "can't convert ${data} to ${type}")
 var invalidConsumer = errors.InternalServerError.Build("Nirvana:Service:InvalidConsumer", "${type} is invalid for consumer")
 var invalidProducer = errors.InternalServerError.Build("Nirvana:Service:InvalidProducer", "${type} is invalid for producer")
 var noConnectionHijacker = errors.InternalServerError.Build("Nirvana:Service:NoConnectionHijacker",
