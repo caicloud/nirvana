@@ -57,7 +57,7 @@ func (i *versionInstaller) Name() string {
 // Install installs stuffs before server starting.
 func (i *versionInstaller) Install(builder service.Builder, cfg *nirvana.Config) error {
 	var err error
-	wapper(cfg, func(c *config) {
+	wrapper(cfg, func(c *config) {
 		v := &version{
 			Name:        c.name,
 			Version:     c.version,
@@ -99,7 +99,7 @@ func Path(path string) nirvana.Configurer {
 		path = "/version"
 	}
 	return func(c *nirvana.Config) error {
-		wapper(c, func(c *config) {
+		wrapper(c, func(c *config) {
 			c.path = path
 		})
 		return nil
@@ -109,7 +109,7 @@ func Path(path string) nirvana.Configurer {
 // Name Configurer sets project name.
 func Name(name string) nirvana.Configurer {
 	return func(c *nirvana.Config) error {
-		wapper(c, func(c *config) {
+		wrapper(c, func(c *config) {
 			c.name = name
 		})
 		return nil
@@ -119,7 +119,7 @@ func Name(name string) nirvana.Configurer {
 // Description Configurer sets project description.
 func Description(description string) nirvana.Configurer {
 	return func(c *nirvana.Config) error {
-		wapper(c, func(c *config) {
+		wrapper(c, func(c *config) {
 			c.description = description
 		})
 		return nil
@@ -129,7 +129,7 @@ func Description(description string) nirvana.Configurer {
 // Version Configurer sets version number.
 func Version(version string) nirvana.Configurer {
 	return func(c *nirvana.Config) error {
-		wapper(c, func(c *config) {
+		wrapper(c, func(c *config) {
 			c.version = version
 		})
 		return nil
@@ -139,14 +139,14 @@ func Version(version string) nirvana.Configurer {
 // Hash Configurer sets code hash.
 func Hash(hash string) nirvana.Configurer {
 	return func(c *nirvana.Config) error {
-		wapper(c, func(c *config) {
+		wrapper(c, func(c *config) {
 			c.hash = hash
 		})
 		return nil
 	}
 }
 
-func wapper(c *nirvana.Config, f func(c *config)) {
+func wrapper(c *nirvana.Config, f func(c *config)) {
 	conf := c.Config(ExternalConfigName)
 	var cfg *config
 	if conf == nil {
