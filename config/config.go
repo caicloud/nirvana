@@ -179,7 +179,9 @@ func walkthrough(index []int, typ reflect.Type, f func(index []int, field reflec
 		if field.Anonymous {
 			walkthrough(append(index, i), field.Type, f)
 		} else {
-			f(append(index, i), field)
+			if field.Name != "" && field.Name[0] >= 'A' && field.Name[0] <= 'Z' {
+				f(append(index, i), field)
+			}
 		}
 	}
 }
