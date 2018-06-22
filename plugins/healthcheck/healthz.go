@@ -54,7 +54,7 @@ func (i *healthcheckInstaller) Name() string {
 // Install installs stuffs before server starting.
 func (i *healthcheckInstaller) Install(builder service.Builder, cfg *nirvana.Config) error {
 	var err error
-	wapper(cfg, func(c *config) {
+	wrapper(cfg, func(c *config) {
 		err = builder.AddDescriptor(definition.Descriptor{
 			Path:     c.path,
 			Consumes: []string{definition.MIMEAll},
@@ -88,7 +88,7 @@ func Path(path string) nirvana.Configurer {
 		path = "/healthz"
 	}
 	return func(c *nirvana.Config) error {
-		wapper(c, func(c *config) {
+		wrapper(c, func(c *config) {
 			c.path = path
 		})
 		return nil
@@ -101,14 +101,14 @@ func Checker(checker HealthChecker) nirvana.Configurer {
 		checker = defaultHealthChecker
 	}
 	return func(c *nirvana.Config) error {
-		wapper(c, func(c *config) {
+		wrapper(c, func(c *config) {
 			c.checker = checker
 		})
 		return nil
 	}
 }
 
-func wapper(c *nirvana.Config, f func(c *config)) {
+func wrapper(c *nirvana.Config, f func(c *config)) {
 	conf := c.Config(ExternalConfigName)
 	var cfg *config
 	if conf == nil {

@@ -52,7 +52,7 @@ func (i *profilingInstaller) Name() string {
 // Install installs config to builder.
 func (i *profilingInstaller) Install(builder service.Builder, cfg *nirvana.Config) error {
 	var err error
-	wapper(cfg, func(c *config) {
+	wrapper(cfg, func(c *config) {
 		if err = builder.AddDescriptor(descriptor(c.path)); err != nil {
 			return
 		}
@@ -76,7 +76,7 @@ func Disable() nirvana.Configurer {
 	}
 }
 
-func wapper(c *nirvana.Config, f func(c *config)) {
+func wrapper(c *nirvana.Config, f func(c *config)) {
 	conf := c.Config(ExternalConfigName)
 	var cfg *config
 	if conf == nil {
@@ -103,7 +103,7 @@ func Path(path string) nirvana.Configurer {
 		path = "/debug/pprof/"
 	}
 	return func(c *nirvana.Config) error {
-		wapper(c, func(c *config) {
+		wrapper(c, func(c *config) {
 			c.path = path
 		})
 		return nil
@@ -115,7 +115,7 @@ func Path(path string) nirvana.Configurer {
 // Defaults to false.
 func Contention(enable bool) nirvana.Configurer {
 	return func(c *nirvana.Config) error {
-		wapper(c, func(c *config) {
+		wrapper(c, func(c *config) {
 			c.contention = enable
 		})
 		return nil
