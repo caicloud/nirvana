@@ -342,6 +342,9 @@ func (r *Request) request(ctx context.Context) (*http.Request, error) {
 	}
 	// Reset Content-Type.
 	req.Header.Set("Content-Type", contentType)
+	if ctx != nil {
+		req = req.WithContext(ctx)
+	}
 	return req, nil
 }
 
