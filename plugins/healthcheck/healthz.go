@@ -25,7 +25,7 @@ import (
 )
 
 func init() {
-	nirvana.RegisterConfigInstaller(&versionInstaller{})
+	nirvana.RegisterConfigInstaller(&healthcheckInstaller{})
 }
 
 // HealthChecker checks if current server is healthy.
@@ -38,21 +38,21 @@ func defaultHealthChecker(ctx context.Context) error {
 // ExternalConfigName is the external config name of health check.
 const ExternalConfigName = "healthcheck"
 
-// config is version config.
+// config is healthcheck config.
 type config struct {
 	path    string
 	checker HealthChecker
 }
 
-type versionInstaller struct{}
+type healthcheckInstaller struct{}
 
 // Name is the external config name.
-func (i *versionInstaller) Name() string {
+func (i *healthcheckInstaller) Name() string {
 	return ExternalConfigName
 }
 
 // Install installs stuffs before server starting.
-func (i *versionInstaller) Install(builder service.Builder, cfg *nirvana.Config) error {
+func (i *healthcheckInstaller) Install(builder service.Builder, cfg *nirvana.Config) error {
 	var err error
 	wapper(cfg, func(c *config) {
 		err = builder.AddDescriptor(definition.Descriptor{
@@ -70,11 +70,11 @@ func (i *versionInstaller) Install(builder service.Builder, cfg *nirvana.Config)
 }
 
 // Uninstall uninstalls stuffs after server terminating.
-func (i *versionInstaller) Uninstall(builder service.Builder, cfg *nirvana.Config) error {
+func (i *healthcheckInstaller) Uninstall(builder service.Builder, cfg *nirvana.Config) error {
 	return nil
 }
 
-// Disable returns a configurer to disable version.
+// Disable returns a configurer to disable healthcheck.
 func Disable() nirvana.Configurer {
 	return func(c *nirvana.Config) error {
 		c.Set(ExternalConfigName, nil)
@@ -125,7 +125,7 @@ func wapper(c *nirvana.Config, f func(c *config)) {
 	c.Set(ExternalConfigName, cfg)
 }
 
-// Option contains basic configurations of version.
+// Option contains basic configurations of healthcheck.
 type Option struct {
 	Path    string `desc:"Health check path"`
 	checker HealthChecker
