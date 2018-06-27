@@ -16,6 +16,4 @@ Profiling 插件添加与 `net/http/pprof` 一致的 API，用于取得服务运
   - 关闭插件
 - Path(path string) nirvana.Configurer
   - 设置路径前缀，默认值为 `/debug/pprof`
-- Contention(enable bool) nirvana.Configurer
-  - 启用阻塞事件采样
  

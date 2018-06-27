@@ -9,9 +9,9 @@
 
 func init() {
 	register([]def.Descriptor{{
-        // Path 定义了 API 路径
+		// Path 定义了 API 路径
 		Path:        "/messages",
-        // Definitions 数组包含了这个路径下的所有定义。
+		// Definitions 数组包含了这个路径下的所有定义。
 		Definitions: []def.Definition{listMessages},
 	},
 	}...)
@@ -19,30 +19,30 @@ func init() {
 
 // listMessages 定义了一个返回 Message 列表的 API
 var listMessages = def.Definition{
-    // 这个 API 返回的是资源数组，所以使用 List 方法。
+	// 这个 API 返回的是资源数组，所以使用 List 方法。
 	Method:      def.List,
-    // Summary 是一个短语，用于描述这个 API 的用途。这个短语在生成文档和客户端的时候用于区分 API。
-    // 这个字符串去掉空格后会作为生成客户端时的函数名，因此请确保这个字符串是有意义的。
+	// Summary 是一个短语，用于描述这个 API 的用途。这个短语在生成文档和客户端的时候用于区分 API。
+	// 这个字符串去掉空格后会作为生成客户端时的函数名，因此请确保这个字符串是有意义的。
 	Summary:     "List Messages",
-    // 详细描述这个 API 的用途。
+	// 详细描述这个 API 的用途。
 	Description: "Query a specified number of messages and returns an array",
-    // 业务函数
+	// 业务函数
 	Function:    message.ListMessages,
-    // 对应业务函数的参数信息。用于告知 Nirvana 从请求的那一部分取得数据，然后传递给业务函数。
+	// 对应业务函数的参数信息。用于告知 Nirvana 从请求的那一部分取得数据，然后传递给业务函数。
 	Parameters: []def.Parameter{
 		{
-            // 参数来源
+			// 参数来源
 			Source:      def.Query,
-            // 参数名称，作为 key 从 Source 里取值。
-            // 与业务函数的参数名称无关。
+			// 参数名称，作为 key 从 Source 里取值。
+			// 与业务函数的参数名称无关。
 			Name:        "count",
-            // 默认值
+			// 默认值
 			Default:     10,
-            // 参数描述 
+			// 参数描述 
 			Description: "Number of messages",
 		},
 	},
-    // 对应业务函数的返回结果。用于告知 Nirvana 业务函数返回结果如何放到请求的响应中。
+	// 对应业务函数的返回结果。用于告知 Nirvana 业务函数返回结果如何放到请求的响应中。
 	Results: def.DataErrorResults("A list of messages"),
 }
 ```
@@ -68,7 +68,7 @@ func ListMessages(ctx context.Context, count int) ([]Message, error) {
 	return messages, nil
 }
 ```
-可以看到，业务函数不关心参数的来源和类型转换，而返回值也不用关心如何写如到请求的响应里。
+可以看到，业务函数既不关心参数的来源和类型转换，也不关心如何将返回值写到响应里，只是按照业务需求实现逻辑。
 
 ### Definition Method
 在 Nirvana 中，我们建议所有的 API 都遵守 RESTful 风格，并且在 URL 中携带 API 的版本号。下表中展示了 Nirvana 中定义的动作以及对应的 API 定义。
@@ -109,8 +109,8 @@ Auto 类型的 tag 范例如下：
 
 ```go
 type Example struct {
-    Start       int    `source:"Query,start,default=100"`
-    ContentType string `source:"Header,Content-Type"`
+	Start       int    `source:"Query,start,default=100"`
+	ContentType string `source:"Header,Content-Type"`
 }
 ```
 tag 名称为 `source`。值使用逗号分隔，第一个参数表示参数来源，第二个表示名称。如果是 Body 类型名称可以为空。
@@ -119,13 +119,13 @@ tag 名称为 `source`。值使用逗号分隔，第一个参数表示参数来�
 如果有多个 Auto 结构体，可以组合成一个：
 ```go
 type AnotherAutoStruct struct {
-   ...
+	...
 }
 
 type Example struct {
-    Start       int    `source:"Query,start,default=100"`
-    ContentType string `source:"Header,Content-Type"`
-    AnotherAutoStruct
+	Start       int    `source:"Query,start,default=100"`
+	ContentType string `source:"Header,Content-Type"`
+	AnotherAutoStruct
 }
 ```
 对于没有 `source` 的结构体类型，会递归遍历以寻找带有 `source` 的字段。忽略所有没有 `source` 的字段。
@@ -149,7 +149,7 @@ func init() {
 		Path:        "/messages",
 		Definitions: []def.Definition{listMessages},
 	}, {
-        // 获取一条消息的 Descriptor。
+		// 获取一条消息的 Descriptor。
 		Path:        "/messages/{message}",
 		Definitions: []def.Definition{getMessage},
 	},
@@ -158,15 +158,15 @@ func init() {
 
 // 获取一条消息的 API 定义。
 var getMessage = def.Definition{
-    // 因为只获取一条消息，此处为 Get。
+	// 因为只获取一条消息，此处为 Get。
 	Method:      def.Get,
 	Summary:     "Get Message",
 	Description: "Get a message by id",
-    // 业务函数
+	// 业务函数
 	Function:    message.GetMessage,
 	Parameters: []def.Parameter{
-        // 这是一个工具方法，用于快速生成一个参数结构。
-        // message 是从 API Path 里获取的。
+		// 这是一个工具方法，用于快速生成一个参数结构。
+		// message 是从 API Path 里获取的。
 		def.PathParameterFor("message", "Message id"),
 	},
 	Results: def.DataErrorResults("A message"),

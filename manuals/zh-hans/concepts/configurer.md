@@ -7,12 +7,12 @@ Nirvana 的 Config 实现了 Configurer 机制，用于单独配置每一项信�
 ```go
 // Config describes configuration of server.
 type Config struct {
-    ...
+	...
 }
 
 // Configure configs by configurers. It panics if an error occurs or config is locked.
 func (c *Config) Configure(configurers ...Configurer) *Config {
-    ...
+	...
 }
 
 // Configurer is used to configure server config.

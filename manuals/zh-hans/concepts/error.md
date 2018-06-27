@@ -83,13 +83,13 @@ var messageNotExist = errors.NotFound.Build("MyProject:Message:MessageNotExist",
 // GetMessage return a message by id.
 func GetMessage(ctx context.Context, id int) (*Message, error) {
 	if id > 100 {
-        return nil, messageNotExist.Error(id)
-    }
-    return &Message{
-        ID:      id,
-        Title:   "This is an example",
-        Content: "Example content",
-    }, nil
+		return nil, messageNotExist.Error(id)
+	}
+	return &Message{
+		ID:      id,
+		Title:   "This is an example",
+		Content: "Example content",
+	}, nil
 }
 ```
 编译运行后可以得到结果：
