@@ -18,8 +18,13 @@ package service
 
 import (
 	"context"
+	"io"
+	"mime"
 	"net/http"
+	"os"
+	"path/filepath"
 
+	"github.com/caicloud/nirvana/definition"
 	"github.com/caicloud/nirvana/errors"
 )
 
@@ -37,6 +42,49 @@ func WrapHTTPHandlerFunc(f http.HandlerFunc) func(ctx context.Context) {
 		httpCtx := HTTPContextFrom(ctx)
 		f(httpCtx.ResponseWriter(), httpCtx.Request())
 	}
+}
+
+// FileNotFound is an error factory to show why can't find a file.
+// This error may contains private information. Don't return this error to end users directly.
+var FileNotFound = errors.NotFound.Build("Nirvana:Service:FileNotFound", "can't find file ${path} because ${reason}")
+
+// UnreadableFile is an error factory to show why can't read a file.
+// This error may contains private information. Don't return this error to end users directly.
+var UnreadableFile = errors.InternalServerError.Build("Nirvana:Service:UnreadableFile", "can't read file ${path} because ${reason}")
+
+// UnseekableFile is an error factory to show why can't seek a file.
+// This error may contains private information. Don't return this error to end users directly.
+var UnseekableFile = errors.InternalServerError.Build("Nirvana:Service:UnseekableFile", "can't seek file ${path} because ${reason}")
+
+// ReadFile reads file and returns mime type.
+func ReadFile(path string) (string, io.ReadCloser, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		if os.IsNotExist(err) || os.IsPermission(err) {
+			return "", nil, FileNotFound.Error(path, err)
+		}
+		return "", nil, UnreadableFile.Error(path, err)
+	}
+	ctype := mime.TypeByExtension(filepath.Ext(path))
+	if ctype == "" {
+		// Read a chunk to decide between utf-8 text and binary
+		var buf [512]byte
+		n, _ := io.ReadFull(file, buf[:])
+		ctype = http.DetectContentType(buf[:n])
+		_, err := file.Seek(0, io.SeekStart)
+		if err != nil {
+			return "", nil, UnseekableFile.Error(path, err)
+		}
+	}
+	if ctype == "" {
+		ctype = definition.MIMEOctetStream
+	}
+	return ctype, file, nil
+}
+
+// MetaForContentType returns a meta for content type.
+func MetaForContentType(ctype string) map[string]string {
+	return map[string]string{"Content-Type": ctype}
 }
 
 // Internal error factories:
