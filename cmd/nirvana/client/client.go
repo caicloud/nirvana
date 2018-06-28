@@ -33,7 +33,7 @@ import (
 func newClientCommand() *cobra.Command {
 	options := &clientOptions{}
 	cmd := &cobra.Command{
-		Use:   "client /path/to/project",
+		Use:   "client /path/to/apis",
 		Short: "Create client for project",
 		Long:  options.Manuals(),
 		Run: func(cmd *cobra.Command, args []string) {
@@ -55,14 +55,11 @@ type clientOptions struct {
 }
 
 func (o *clientOptions) Install(flags *pflag.FlagSet) {
-	flags.StringVar(&o.Output, "output", "", "Output directory for generated client")
+	flags.StringVar(&o.Output, "output", "./client", "Output directory for generated client")
 	flags.StringVar(&o.Rest, "rest", "github.com/caicloud/nirvana/rest", "Package of rest client")
 }
 
 func (o *clientOptions) Validate(cmd *cobra.Command, args []string) error {
-	if len(args) < 1 {
-		return fmt.Errorf("must specify an api directory")
-	}
 	if o.Output == "" {
 		return fmt.Errorf("must specify generated client path")
 	}
@@ -70,10 +67,18 @@ func (o *clientOptions) Validate(cmd *cobra.Command, args []string) error {
 }
 
 func (o *clientOptions) Run(cmd *cobra.Command, args []string) error {
+	if len(args) <= 0 {
+		defaultAPIsPath := "pkg/apis"
+		args = append(args, defaultAPIsPath)
+		log.Infof("No packages are specified, defaults to %s", defaultAPIsPath)
+	}
+
 	config, definitions, err := buildutils.Build(args...)
 	if err != nil {
 		return err
 	}
+
+	log.Infof("Project root directory is %s", config.Root)
 
 	pkg, err := project.PackageForPath(o.Output)
 	if err != nil {
@@ -98,6 +103,7 @@ func (o *clientOptions) Run(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	}
+	log.Infof("Generated golang client package %s", pkg)
 	return nil
 }
 
