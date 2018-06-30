@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"html/template"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -76,17 +77,22 @@ func (o *apiOptions) Install(flags *pflag.FlagSet) {
 }
 
 func (o *apiOptions) Validate(cmd *cobra.Command, args []string) error {
-	if len(args) < 1 {
-		return fmt.Errorf("must specify a project path")
-	}
 	return nil
 }
 
 func (o *apiOptions) Run(cmd *cobra.Command, args []string) error {
+	if len(args) <= 0 {
+		defaultAPIsPath := "pkg/apis"
+		args = append(args, defaultAPIsPath)
+		log.Infof("No packages are specified, defaults to %s", defaultAPIsPath)
+	}
+
 	config, definitions, err := buildutils.Build(args...)
 	if err != nil {
 		return err
 	}
+
+	log.Infof("Project root directory is %s", config.Root)
 
 	generator := swagger.NewDefaultGenerator(config, definitions)
 	swaggers, err := generator.Generate()
@@ -100,11 +106,14 @@ func (o *apiOptions) Run(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			return err
 		}
+
 		files[s.Info.Version] = data
 	}
 
 	if o.Output != "" {
-		err = o.write(files)
+		if err = o.write(files); err != nil {
+			return err
+		}
 	}
 
 	if o.Serve != "" {
@@ -115,12 +124,20 @@ func (o *apiOptions) Run(cmd *cobra.Command, args []string) error {
 
 func (o *apiOptions) write(apis map[string][]byte) error {
 	dir := o.Output
+	dir, err := filepath.Abs(dir)
+	if err != nil {
+		return err
+	}
+	if err := os.MkdirAll(dir, 0775); err != nil {
+		return err
+	}
 	for version, data := range apis {
 		file := filepath.Join(dir, o.pathForVersion(version))
 		if err := ioutil.WriteFile(file, data, 0664); err != nil {
 			return err
 		}
 	}
+	log.Infof("Generated openapi schemes to %s", dir)
 	return nil
 }
 
