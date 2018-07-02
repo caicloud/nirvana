@@ -190,3 +190,4 @@ func GetMessage(ctx context.Context, id int) (*Message, error) {
 {"id":100,"title":"This is an example","content":"Example content"}
 ```
 
+这里添加的业务函数都是以 Golang 函数的方式呈现的。如果希望使用实例方法作为业务的处理函数，请参考 [方法包](../concepts/method.md)。
