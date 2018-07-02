@@ -105,6 +105,11 @@ package {{ .Version }}
 import (
 	"context"
 
+	{{- range .Functions }}
+ 	{{ range .Parameters }}{{ .Package }}{{ end }}
+ 	{{ range .Results }}{{ .Package }}{{ end }}
+	{{- end }}
+
 	rest "{{ .Rest }}"
 )
 
@@ -131,7 +136,7 @@ func NewClient(cfg *rest.Config) (*Client, error) {
 	return &Client{client}, nil
 }
 
- // MustNewClient creates a new client or panic if an error occurs.
+// MustNewClient creates a new client or panic if an error occurs.
 func MustNewClient(cfg *rest.Config) *Client {
 	client, err := NewClient(cfg)
 	if err != nil {
@@ -231,7 +236,7 @@ func NewClient(cfg *rest.Config) (Interface, error) {
 	return c, nil
 }
 
- // MustNewClient creates a new client or panic if an error occurs.
+// MustNewClient creates a new client or panic if an error occurs.
 func MustNewClient(cfg *rest.Config) Interface {
 	return &Client{
 	{{- range .Pakcages }}
