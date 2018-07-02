@@ -48,6 +48,10 @@ func WrapHTTPHandlerFunc(f http.HandlerFunc) func(ctx context.Context) {
 // This error may contains private information. Don't return this error to end users directly.
 var FileNotFound = errors.NotFound.Build("Nirvana:Service:FileNotFound", "can't find file ${path} because ${reason}")
 
+// FileForbidden is an error factory to show why can't access a file.
+// This error may contains private information. Don't return this error to end users directly.
+var FileForbidden = errors.Forbidden.Build("Nirvana:Service:FileForbidden", "can't access file ${path} because ${reason}")
+
 // UnreadableFile is an error factory to show why can't read a file.
 // This error may contains private information. Don't return this error to end users directly.
 var UnreadableFile = errors.InternalServerError.Build("Nirvana:Service:UnreadableFile", "can't read file ${path} because ${reason}")
@@ -60,8 +64,11 @@ var UnseekableFile = errors.InternalServerError.Build("Nirvana:Service:Unseekabl
 func ReadFile(path string) (string, io.ReadCloser, error) {
 	file, err := os.Open(path)
 	if err != nil {
-		if os.IsNotExist(err) || os.IsPermission(err) {
+		switch {
+		case os.IsNotExist(err):
 			return "", nil, FileNotFound.Error(path, err)
+		case os.IsPermission(err):
+			return "", nil, FileForbidden.Error(path, err)
 		}
 		return "", nil, UnreadableFile.Error(path, err)
 	}
