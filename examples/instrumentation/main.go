@@ -39,7 +39,7 @@ func main() {
 		// Metrics for http requests is prefixed with 'nirvana' as default.
 		// If you want a different one, set Option.Namespace.
 		&metrics.Option{},
-		&profiling.Option{Contention: true},
+		&profiling.Option{},
 	)
 	if err := cmd.Execute(example); err != nil {
 		log.Fatal(err)

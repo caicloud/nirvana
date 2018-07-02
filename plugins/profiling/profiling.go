@@ -21,7 +21,6 @@ import (
 	"log"
 	"net/http"
 	"net/http/pprof"
-	"runtime"
 	rpprof "runtime/pprof"
 
 	"github.com/caicloud/nirvana"
@@ -38,8 +37,7 @@ const ExternalConfigName = "profiling"
 
 // config is profiling config.
 type config struct {
-	path       string
-	contention bool
+	path string
 }
 
 type profilingInstaller struct{}
@@ -55,9 +53,6 @@ func (i *profilingInstaller) Install(builder service.Builder, cfg *nirvana.Confi
 	wrapper(cfg, func(c *config) {
 		if err = builder.AddDescriptor(descriptor(c.path)); err != nil {
 			return
-		}
-		if c.contention {
-			runtime.SetBlockProfileRate(1)
 		}
 	})
 	return err
@@ -105,18 +100,6 @@ func Path(path string) nirvana.Configurer {
 	return func(c *nirvana.Config) error {
 		wrapper(c, func(c *config) {
 			c.path = path
-		})
-		return nil
-	}
-}
-
-// Contention returns a configurer to enable or
-// disable contention profiling.
-// Defaults to false.
-func Contention(enable bool) nirvana.Configurer {
-	return func(c *nirvana.Config) error {
-		wrapper(c, func(c *config) {
-			c.contention = enable
 		})
 		return nil
 	}
@@ -189,8 +172,6 @@ var indexTmpl = template.Must(template.New("index").Parse(`<html>
 
 // Option contains basic configurations of profiling.
 type Option struct {
-	// Contention enables contention profiling.
-	Contention bool `desc:"Enable contention profiling"`
 	// Path is profiling path.
 	Path string `desc:"Profiling path"`
 }
@@ -198,8 +179,7 @@ type Option struct {
 // NewDefaultOption creates default option.
 func NewDefaultOption() *Option {
 	return &Option{
-		Contention: false,
-		Path:       "/debug/pprof/",
+		Path: "/debug/pprof/",
 	}
 }
 
@@ -211,7 +191,6 @@ func (p *Option) Name() string {
 // Configure configures nirvana config via current options.
 func (p *Option) Configure(cfg *nirvana.Config) error {
 	cfg.Configure(
-		Contention(p.Contention),
 		Path(p.Path),
 	)
 	return nil
