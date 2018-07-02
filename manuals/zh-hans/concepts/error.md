@@ -94,12 +94,12 @@ func GetMessage(ctx context.Context, id int) (*Message, error) {
 ```
 编译运行后可以得到结果：
 
-访问 `curl http://localhost:8080/api/v1/messages/100`，即可得到一个 200 的响应，响应体为：
+访问 `curl http://localhost:8080/apis/v1/messages/100`，即可得到一个 200 的响应，响应体为：
 ```
 {"id":100,"title":"This is an example","content":"Example content"}
 ```
 
-访问 `curl http://localhost:8080/api/v1/messages/101`，即可得到一个 404 的响应，响应体为：
+访问 `curl http://localhost:8080/apis/v1/messages/101`，即可得到一个 404 的响应，响应体为：
 ```
 {"reason":"MyProject:Message:MessageNotExist","message":"there is no message with id 101","data":{"id":"101"}}
 ```
