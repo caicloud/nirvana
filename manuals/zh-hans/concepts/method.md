@@ -53,7 +53,7 @@ main.go 中创建实例并通过 `Put()` 函数放到方法容器中（需要在
 method.Put(message.NewContainer("Method Example", "Method Content"))
 ```
 
-然后编译运行，访问 `http://localhost:8080/api/v1/messages` 即可得到返回结果：
+然后编译运行，访问 `http://localhost:8080/apis/v1/messages` 即可得到返回结果：
 ```
 [{"id":0,"title":"Method Example 0","content":"Method Content 0"},{"id":1,"title":"Method Example 1","content":"Method Content 1"},{"id":2,"title":"Method Example 2","content":"Method Content 2"},{"id":3,"title":"Method Example 3","content":"Method Content 3"},{"id":4,"title":"Method Example 4","content":"Method Content 4"},{"id":5,"title":"Method Example 5","content":"Method Content 5"},{"id":6,"title":"Method Example 6","content":"Method Content 6"},{"id":7,"title":"Method Example 7","content":"Method Content 7"},{"id":8,"title":"Method Example 8","content":"Method Content 8"},{"id":9,"title":"Method Example 9","content":"Method Content 9"}]
 ```

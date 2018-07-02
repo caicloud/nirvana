@@ -5,10 +5,18 @@
 
 API 文档通常足够使用者使用。但是在微服务场景下，服务之间也会存在调用关系。因此需要使调用者方便快速的进行 API 调用，可以生成客户端以供使用：
 ```
-$ nirvana client ./pkg/api --output ./client
+$ nirvana client
+```
+该命令默认会在 `./client` 目录下生成 golang 客户端代码，可以通过 `--output` 指定其他输出目录（目前仅支持生成 golang 客户端，其他语言客户端尚不支持）。
+
+输出日志如下（项目路径和日志时间会有所不同）：
+```
+INFO  0702-15:50:54.156+08 client.go:73 | No packages are specified, defaults to pkg/apis
+INFO  0702-15:50:55.609+08 client.go:81 | Project root directory is /home/go/src/myproject
+INFO  0702-15:50:55.610+08 client.go:106 | Generated golang client package myproject/client
 ```
 
-这样就会在当前项目的 client 目录下生成 golang 的客户端代码（目前仅支持生成 golang 客户端，其他语言客户端尚不支持）：
+生成的客户端代码如下：
 ```
 client
 ├── client.go
@@ -108,7 +116,7 @@ func MustNewClient(cfg *rest.Config) *Client {
 // GetMessage return a message by id.
 func (c *Client) GetMessage(ctx context.Context, message int) (message1 *Message, err error) {
 	message1 = new(Message)
-	err = c.rest.Request("GET", 200, "/api/v1/messages/{message}").
+	err = c.rest.Request("GET", 200, "/apis/v1/messages/{message}").
 		Path("message", message).
 		Data(message1).
 		Do(ctx)
@@ -117,7 +125,7 @@ func (c *Client) GetMessage(ctx context.Context, message int) (message1 *Message
 
 // ListMessages returns all messages.
 func (c *Client) ListMessages(ctx context.Context, count int) (messages []Message, err error) {
-	err = c.rest.Request("GET", 200, "/api/v1/messages").
+	err = c.rest.Request("GET", 200, "/apis/v1/messages").
 		Query("count", count).
 		Data(&messages).
 		Do(ctx)

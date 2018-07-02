@@ -9,7 +9,7 @@ type DefinitionModifier func(d *definition.Definition)
 
 ## Nirvana 提供的 Modifiers
 
-在使用 `nirvana init` 创建的项目中，可以在 `pkg/api/modifiers` 下查看启用的 Modifiers。 
+在使用 `nirvana init` 创建的项目中，可以在 `pkg/apis/modifiers` 下查看启用的 Modifiers。 
 
 默认启用的 Modifiers 包括：FirstContextParameter，ConsumeAllIfConsumesIsEmpty，ProduceAllIfProducesIsEmpty，ConsumeNoneForHTTPGet，ConsumeNoneForHTTPDelete，ProduceNoneForHTTPDelete。
 

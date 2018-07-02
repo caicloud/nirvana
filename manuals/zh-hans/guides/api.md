@@ -5,7 +5,7 @@
 ### Nirvana Definition
 在 Nirvana 中，所有的 API 都是通过 Descriptor 和 Definition 进行描述的。首先看一个 `List Messages` 的 API 定义：
 ```go
-// 在使用 nirvana init 创建的标准项目结构中，这个文件位于 pkg/api/v1/descriptors/message.go
+// 在使用 nirvana init 创建的标准项目结构中，这个文件位于 pkg/apis/v1/descriptors/message.go
 
 func init() {
 	register([]def.Descriptor{{
@@ -73,18 +73,18 @@ func ListMessages(ctx context.Context, count int) ([]Message, error) {
 ### Definition Method
 在 Nirvana 中，我们建议所有的 API 都遵守 RESTful 风格，并且在 URL 中携带 API 的版本号。下表中展示了 Nirvana 中定义的动作以及对应的 API 定义。
 
-| Nirvana 方法 | HTTP 方法 | HTTP 成功状态码 | URL                          | 描述                          |
-|--------------|-----------|-----------------|------------------------------|-------------------------------|
-| List         | GET       | 200             | /api/v1/resources            | 获取资源列表                  |
-| Get          | GET       | 200             | /api/v1/resources/{resource} | 根据资源唯一 ID/Name 获取资源 |
-| Create       | POST      | 201             | /api/v1/resources            | 创建一个资源（非幂等）        |
-| Update       | PUT       | 200             | /api/v1/resources/{resource} | 更新一个资源（幂等）          |
-| Patch        | PATCH     | 200             | /api/v1/resources/{resource} | 修改一个资源的部分内容        |
-| Delete       | DELETE    | 204             | /api/v1/resources/{resource} | 删除一个资源                  |
-| AsyncCreate  | POST      | 202             | /api/v1/resources            | 异步创建资源                  |
-| AsyncUpdate  | PUT       | 202             | /api/v1/resources/{resource} | 异步更新资源                  |
-| AsyncPatch   | PATCH     | 202             | /api/v1/resources/{resource} | 异步修改资源部分内容          |
-| AsyncDelete  | DELETE    | 202             | /api/v1/resources/{resource} | 异步删除资源                  |
+| Nirvana 方法 | HTTP 方法 | HTTP 成功状态码 | URL                           | 描述                          |
+|--------------|-----------|-----------------|-------------------------------|-------------------------------|
+| List         | GET       | 200             | /apis/v1/resources            | 获取资源列表                  |
+| Get          | GET       | 200             | /apis/v1/resources/{resource} | 根据资源唯一 ID/Name 获取资源 |
+| Create       | POST      | 201             | /apis/v1/resources            | 创建一个资源（非幂等）        |
+| Update       | PUT       | 200             | /apis/v1/resources/{resource} | 更新一个资源（幂等）          |
+| Patch        | PATCH     | 200             | /apis/v1/resources/{resource} | 修改一个资源的部分内容        |
+| Delete       | DELETE    | 204             | /apis/v1/resources/{resource} | 删除一个资源                  |
+| AsyncCreate  | POST      | 202             | /apis/v1/resources            | 异步创建资源                  |
+| AsyncUpdate  | PUT       | 202             | /apis/v1/resources/{resource} | 异步更新资源                  |
+| AsyncPatch   | PATCH     | 202             | /apis/v1/resources/{resource} | 异步修改资源部分内容          |
+| AsyncDelete  | DELETE    | 202             | /apis/v1/resources/{resource} | 异步删除资源                  |
 
 对于 Nirvana 异步方法，发出后服务端应当只是将请求加入执行队列，然后立刻返回一个关联的对象或者链接，供客户端后续查询请求执行状态。
 
@@ -185,7 +185,7 @@ func GetMessage(ctx context.Context, id int) (*Message, error) {
 }
 ```
 
-添加 API 之后，编译运行。然后访问 `http://localhost:8080/api/v1/messages/100`，即可获得结果（默认情况下都是 json 类型）：
+添加 API 之后，编译运行。然后访问 `http://localhost:8080/apis/v1/messages/100`，即可获得结果（默认情况下都是 json 类型）：
 ```
 {"id":100,"title":"This is an example","content":"Example content"}
 ```

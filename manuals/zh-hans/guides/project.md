@@ -27,7 +27,7 @@ $ cd ./myproject
 ├── Makefile                           #
 ├── nirvana.yaml                       #
 ├── pkg                                # 所有的业务逻辑都应该在这个目录中
-│   ├── api                            # 所有与 Nirvana API 定义相关的代码都在这个目录中
+│   ├── apis                           # 所有与 Nirvana API 定义相关的代码都在这个目录中
 │   │   ├── api.go                     #
 │   │   ├── filters                    # 存放 HTTP Request 过滤器
 │   │   │   └── filters.go             #
@@ -70,9 +70,9 @@ $ ./bin/myproject
 ```
 启动时会打印出 Nirvana 的 Logo 以及当前项目的版本信息以及监听的端口，默认端口是 8080。
 
-在服务启动之后，可以通过浏览器或者命令行访问 `http://localhost:8080/api/v1/messages`：
+在服务启动之后，可以通过浏览器或者命令行访问 `http://localhost:8080/apis/v1/messages`：
 ```
-$ curl http://localhost:8080/api/v1/messages
+$ curl http://localhost:8080/apis/v1/messages
 ```
 就能够看到 API 的返回结果。
 
@@ -116,14 +116,14 @@ versions:
   description: The v1 version is the first version of this project
   # 版本规则
   rules:
-    # 路径前缀，匹配前缀为 "/api/v1" 的 API
-  - prefix: /api/v1
+    # 路径前缀，匹配前缀为 "/apis/v1" 的 API
+  - prefix: /apis/v1
     # 正则表达式，用于匹配路径
     # 如果设置了 prefix，那么 regexp 字段无效
     regexp: ""
     # 这个字段仅用于在生成文档和客户端的时候，替换匹配的 API 路径。为空时不会进行替换。
     # 比如设置 replacement = "/apis/myproject/v1"
-    # 那么 "/api/v1/someapi" 为被替换为 "/apis/myproject/v1/someapi"
+    # 那么 "/apis/v1/someapi" 为被替换为 "/apis/myproject/v1/someapi"
     replacement: ""
 ```
 这个配置文件不会影响 Server 的运行，只用于描述项目的信息以及区分不同版本的 API。API 文档生成和客户端生成会依赖这个配置文件进行 API 版本识别和 API 路径替换，因此需要正确设置版本规则。
