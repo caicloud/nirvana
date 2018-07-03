@@ -145,12 +145,12 @@ type parameterExtension struct {
 	Name   string
 	Key    string
 }
+
 type functionParameter struct {
 	Source       string
 	Name         string
 	ProposedName string
 	Typ          string
-	Package      string
 	Extensions   []parameterExtension
 }
 
@@ -158,7 +158,6 @@ type functionResult struct {
 	Destination  string
 	ProposedName string
 	Typ          string
-	Package      string
 	Creator      string
 }
 
@@ -176,23 +175,31 @@ type function struct {
 type helper struct {
 	definitions *api.Definitions
 	namer       *typeNamer
+	rootPkg     string
 }
 
 // newHelper creates a generator helper.
-func newHelper(definitions *api.Definitions) (*helper, error) {
-	namer, err := newTypeNamer(definitions.Types)
+func newHelper(rootPkg string, definitions *api.Definitions) (*helper, error) {
+	namer, err := newTypeNamer(rootPkg, definitions.Types)
 	if err != nil {
 		return nil, err
 	}
-	return &helper{definitions, namer}, nil
+	return &helper{definitions, namer, rootPkg}, nil
 }
 
 // Types returns types which is required to generate.
-func (h *helper) Types() []Type {
+func (h *helper) Types() ([]Type, []string) {
 	types := []Type{}
+	generatedTypes := []*api.Type{}
+
 	for name, typ := range h.definitions.Types {
-		if typ.PkgPath == "" || typ.Kind == reflect.Func {
-			// Ignore unnamed types and functions.
+		if typ.Kind == reflect.Func || typ.PkgPath == "" ||
+			strings.Contains(typ.PkgPath, "/vendor/") ||
+			!(typ.PkgPath == h.rootPkg || strings.HasPrefix(typ.PkgPath, h.rootPkg+"/")) {
+			// Ignore functions.
+			// Ignore unnamed types.
+			// Ignore vendored types.
+			// Ignore types which are from standard and third-party libraries.
 			continue
 		}
 		target := h.namer.Name(name)
@@ -206,18 +213,21 @@ func (h *helper) Types() []Type {
 				target:   typ.Kind.String(),
 			})
 		case reflect.Array, reflect.Slice:
+			generatedTypes = append(generatedTypes, typ)
 			types = append(types, &arrayType{
 				name:     target,
 				comments: h.namer.Comments(name),
 				elem:     h.namer.Name(typ.Elem),
 			})
 		case reflect.Ptr:
+			generatedTypes = append(generatedTypes, typ)
 			types = append(types, &pointerType{
 				name:     target,
 				comments: h.namer.Comments(name),
 				elem:     h.namer.Name(typ.Elem),
 			})
 		case reflect.Map:
+			generatedTypes = append(generatedTypes, typ)
 			types = append(types, &mapType{
 				name:     target,
 				comments: h.namer.Comments(name),
@@ -225,6 +235,7 @@ func (h *helper) Types() []Type {
 				elem:     h.namer.Name(typ.Elem),
 			})
 		case reflect.Struct:
+			generatedTypes = append(generatedTypes, typ)
 			s := &structType{
 				name:     target,
 				comments: h.namer.Comments(name),
@@ -247,20 +258,68 @@ func (h *helper) Types() []Type {
 		}
 	}
 	sort.Sort(typeSorter(types))
-	return types
+	return types, h.packages(generatedTypes, true)
+}
+
+// packages generates a list of imported packages with aliases.
+func (h *helper) packages(types []*api.Type, extended bool) []string {
+	pkgMap := map[string]bool{}
+	for _, typ := range types {
+		pkgs := h.pkgs(typ, extended)
+		for _, pkg := range pkgs {
+			pkgMap[pkg] = true
+		}
+	}
+	results := []string{}
+	for pkg := range pkgMap {
+		alias := h.namer.Alias(pkg)
+		results = append(results, fmt.Sprintf(`%s "%s"`, alias, pkg))
+	}
+	return results
+}
+
+// pkgs generates a list of imported packages without aliases.
+func (h *helper) pkgs(typ *api.Type, extended bool) []string {
+	switch typ.Kind {
+	case reflect.Array, reflect.Slice, reflect.Ptr:
+		return h.pkgs(h.definitions.Types[typ.Elem], extended)
+	case reflect.Map:
+		pkgs := h.pkgs(h.definitions.Types[typ.Key], extended)
+		return append(pkgs, h.pkgs(h.definitions.Types[typ.Elem], extended)...)
+	}
+
+	if typ.PkgPath != "" {
+		index := strings.LastIndex(typ.PkgPath, "/vendor/")
+		if index >= 0 ||
+			!(typ.PkgPath == h.rootPkg || strings.HasPrefix(typ.PkgPath, h.rootPkg+"/")) {
+			pkg := typ.PkgPath
+			if index > 0 {
+				pkg = pkg[index+len("/vendor/"):]
+			}
+			return []string{pkg}
+		}
+		if extended && typ.Kind == reflect.Struct {
+			pkgs := []string{}
+			for _, field := range typ.Fields {
+				pkgs = append(pkgs, h.pkgs(h.definitions.Types[field.Type], extended)...)
+			}
+			return pkgs
+		}
+	}
+	return []string{}
 }
 
 // Functions returns functions which is required to generate.
-func (h *helper) Functions() []function {
+func (h *helper) Functions() ([]function, []string) {
 	functionNames := map[string]int{}
 	functions := []function{}
+	types := []*api.Type{}
 	for path, defs := range h.definitions.Definitions {
 		for _, def := range defs {
 			fn := function{
-				Path:     path,
-				Method:   def.HTTPMethod,
-				Code:     def.HTTPCode,
-				Comments: h.namer.Comments(def.Function),
+				Path:   path,
+				Method: def.HTTPMethod,
+				Code:   def.HTTPCode,
 			}
 			// The priority of summary is higher than original function name.
 			if def.Summary != "" {
@@ -288,13 +347,13 @@ func (h *helper) Functions() []function {
 				fn.Name += strconv.Itoa(count)
 			}
 
-			if fn.Comments == "" {
-				comments := fmt.Sprintf("%s does not have comments.\n", fn.Name)
-				if def.Description != "" {
-					comments += fmt.Sprintf("API description: %s", def.Description)
-				}
-				fn.Comments = api.ParseComments(comments).LineComments()
+			comments := fmt.Sprintf("%s ", fn.Name)
+			if def.Description != "" {
+				comments += fmt.Sprintf("description:\n%s", def.Description)
+			} else {
+				comments += "does not have any description."
 			}
+			fn.Comments = api.ParseComments(comments).LineComments()
 			sigNames := h.namer.nameContainer()
 
 			// If there is no specified consumer, defaults to application/json.
@@ -317,10 +376,7 @@ func (h *helper) Functions() []function {
 					ProposedName: sigNames.proposeName(param.Name, param.Type),
 					Typ:          h.namer.Name(param.Type),
 				}
-				alias, pkg := h.namer.Package(param.Type)
-				if pkg != "" {
-					p.Package = fmt.Sprintf(`%s "%s"`, alias, pkg)
-				}
+				types = append(types, h.definitions.Types[param.Type])
 				if param.Source == definition.Body {
 					// Use first consumer as the name of body parameter.
 					p.Name = firstNonEmptyConsume
@@ -358,11 +414,8 @@ func (h *helper) Functions() []function {
 					ProposedName: sigNames.proposeName("", result.Type),
 					Typ:          h.namer.Name(result.Type),
 				}
-				alias, pkg := h.namer.Package(result.Type)
-				if pkg != "" {
-					r.Package = fmt.Sprintf(`%s "%s"`, alias, pkg)
-				}
 				typ := h.definitions.Types[result.Type]
+				types = append(types, typ)
 				if typ.Kind == reflect.Ptr {
 					r.Creator = fmt.Sprintf("new(%s)", h.namer.Name(typ.Elem))
 				}
@@ -372,20 +425,20 @@ func (h *helper) Functions() []function {
 		}
 	}
 	sort.Sort(functionSorter(functions))
-	return functions
+	return functions, h.packages(types, false)
 }
 
 func (h *helper) enumFields(name api.TypeName, key string, fn func(key string, source string, field api.StructField)) {
 	typ := h.definitions.Types[name]
 	if typ.Kind == reflect.Struct {
+		if key != "" {
+			key += "."
+		}
 		for _, field := range typ.Fields {
 			source := field.Tag.Get("source")
-			if key != "" {
-				key += "."
-			}
-			key += field.Name
+			fieldKey := key + field.Name
 			if source != "" {
-				fn(key, source, field)
+				fn(fieldKey, source, field)
 			} else {
 				fieldType := h.definitions.Types[field.Type]
 				if fieldType.Kind == reflect.Struct {
@@ -451,15 +504,17 @@ type typeNamer struct {
 	aliases  map[string]int
 	packages map[string]string
 	comments map[api.TypeName]string
+	rootPkg  string
 }
 
-func newTypeNamer(types map[api.TypeName]*api.Type) (*typeNamer, error) {
+func newTypeNamer(rootPkg string, types map[api.TypeName]*api.Type) (*typeNamer, error) {
 	n := &typeNamer{
 		types:    types,
 		names:    make(map[api.TypeName]string),
 		aliases:  make(map[string]int),
 		packages: make(map[string]string),
 		comments: make(map[api.TypeName]string),
+		rootPkg:  rootPkg,
 	}
 	for tn := range n.types {
 		if _, err := n.parse(tn); err != nil {
@@ -486,65 +541,73 @@ func (n *typeNamer) parse(tn api.TypeName) (string, error) {
 		return "", fmt.Errorf("no type with name %s", tn)
 	}
 	comments := ""
-	switch typ.Kind {
-	case reflect.Bool, reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
-		reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64,
-		reflect.Float32, reflect.Float64, reflect.String:
-		if typ.PkgPath != "" {
-			name, comments = n.reconcileNameAndComments(typ.Name, typ.Comments)
-		} else {
-			name = typ.Kind.String()
-		}
-	case reflect.Array, reflect.Slice:
-		elemName, err := n.parse(typ.Elem)
-		if err != nil {
-			return "", err
-		}
-		if typ.PkgPath != "" {
-			name, comments = n.reconcileNameAndComments(typ.Name, typ.Comments)
-		} else {
-			name = fmt.Sprintf("[]%s", elemName)
-		}
-	case reflect.Ptr:
-		elemName, err := n.parse(typ.Elem)
-		if err != nil {
-			return "", err
-		}
-		if typ.PkgPath != "" {
-			name, comments = n.reconcileNameAndComments(typ.Name, typ.Comments)
-		} else {
-			name = fmt.Sprintf("*%s", elemName)
-		}
-	case reflect.Map:
-		keyName, err := n.parse(typ.Key)
-		if err != nil {
-			return "", err
-		}
-		elemName, err := n.parse(typ.Elem)
-		if err != nil {
-			return "", err
-		}
-		if typ.PkgPath != "" {
-			name, comments = n.reconcileNameAndComments(typ.Name, typ.Comments)
-		} else {
-			name = fmt.Sprintf("map[%s]%s", keyName, elemName)
-		}
-	case reflect.Struct, reflect.Func:
-		name, comments = n.reconcileNameAndComments(typ.Name, typ.Comments)
-	case reflect.Interface:
+	if typ.Kind == reflect.Interface ||
+		typ.PkgPath != "" && (strings.Contains(typ.PkgPath, "/vendor/") ||
+			!(typ.PkgPath == n.rootPkg || strings.HasPrefix(typ.PkgPath, n.rootPkg+"/"))) {
+		// Interfaces, Builtin types, Third-party types, Standard types are imported rather than copied.
 		alias := n.packages[typ.PkgPath]
-		if alias == "" {
+		if alias == "" && typ.PkgPath != "" {
 			alias = path.Base(typ.PkgPath)
 			index := n.aliases[alias]
 			n.aliases[alias]++
 			if index > 0 {
 				alias += strconv.Itoa(index)
 			}
+			n.packages[typ.PkgPath] = alias
 		}
-		n.packages[typ.PkgPath] = alias
-		name = fmt.Sprintf("%s.%s", alias, typ.Name)
-	default:
-		return "", fmt.Errorf("can't generate a name for type %s", tn)
+		name = typ.Name
+		if alias != "" {
+			name = fmt.Sprintf("%s.%s", alias, name)
+		}
+	} else {
+		switch typ.Kind {
+		case reflect.Bool, reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
+			reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64,
+			reflect.Float32, reflect.Float64, reflect.String:
+			if typ.PkgPath != "" {
+				name, comments = n.reconcileNameAndComments(typ.Name, typ.Comments)
+			} else {
+				name = typ.Kind.String()
+			}
+		case reflect.Array, reflect.Slice:
+			elemName, err := n.parse(typ.Elem)
+			if err != nil {
+				return "", err
+			}
+			if typ.PkgPath != "" {
+				name, comments = n.reconcileNameAndComments(typ.Name, typ.Comments)
+			} else {
+				name = fmt.Sprintf("[]%s", elemName)
+			}
+		case reflect.Ptr:
+			elemName, err := n.parse(typ.Elem)
+			if err != nil {
+				return "", err
+			}
+			if typ.PkgPath != "" {
+				name, comments = n.reconcileNameAndComments(typ.Name, typ.Comments)
+			} else {
+				name = fmt.Sprintf("*%s", elemName)
+			}
+		case reflect.Map:
+			keyName, err := n.parse(typ.Key)
+			if err != nil {
+				return "", err
+			}
+			elemName, err := n.parse(typ.Elem)
+			if err != nil {
+				return "", err
+			}
+			if typ.PkgPath != "" {
+				name, comments = n.reconcileNameAndComments(typ.Name, typ.Comments)
+			} else {
+				name = fmt.Sprintf("map[%s]%s", keyName, elemName)
+			}
+		case reflect.Struct, reflect.Func:
+			name, comments = n.reconcileNameAndComments(typ.Name, typ.Comments)
+		default:
+			return "", fmt.Errorf("can't generate a name for type %s", tn)
+		}
 	}
 	n.names[tn] = name
 	n.comments[tn] = comments
@@ -584,6 +647,10 @@ func (n *typeNamer) Package(tn api.TypeName) (alias string, pkg string) {
 		return "", ""
 	}
 	return alias, typ.PkgPath
+}
+
+func (n *typeNamer) Alias(pkg string) string {
+	return n.packages[pkg]
 }
 
 func (n *typeNamer) Comments(tn api.TypeName) string {

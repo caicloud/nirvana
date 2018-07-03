@@ -221,7 +221,7 @@ func (g *Generator) schemaForType(typ *api.Type) *spec.Schema {
 		case reflect.Bool, reflect.Int, reflect.Int8, reflect.Int16,
 			reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint8,
 			reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr,
-			reflect.Float32, reflect.Float64, reflect.String:
+			reflect.Float32, reflect.Float64, reflect.String, reflect.Interface:
 			schema = g.schemaForBasicType(typ)
 		}
 		if schema != nil {
@@ -256,23 +256,15 @@ func (g *Generator) schemaForStruct(typ *api.Type) *spec.Schema {
 			// Ignore invalid field.
 			continue
 		}
-		raw, ok := fieldSchema.ExtraProps[rawSchemaKey]
-		if field.Anonymous && ok {
-			rawSchema := raw.(*spec.Schema)
-			for name, property := range rawSchema.Properties {
-				schema.SetProperty(name, property)
-			}
-		} else {
-			name := jsontag
-			if comma := strings.Index(jsontag, ","); comma > 0 {
-				name = strings.TrimSpace(jsontag[:comma])
-			}
-			if name == "" {
-				name = field.Name
-			}
-			fieldSchema.Description = g.escapeNewline(field.Comments)
-			schema.SetProperty(name, *fieldSchema)
+		name := jsontag
+		if comma := strings.Index(jsontag, ","); comma > 0 {
+			name = strings.TrimSpace(jsontag[:comma])
 		}
+		if name == "" {
+			name = field.Name
+		}
+		fieldSchema.Description = g.escapeNewline(field.Comments)
+		schema.SetProperty(name, *fieldSchema)
 	}
 	g.schemas[key] = schema
 	ref.ExtraProps = map[string]interface{}{rawSchemaKey: schema}
@@ -296,6 +288,9 @@ func (g *Generator) schemaForBasicType(typ *api.Type) *spec.Schema {
 		reflect.Float32: {"number", "float32"},
 		reflect.Float64: {"number", "float64"},
 		reflect.String:  {"string", "string"},
+
+		// Interface is special. It can be anything.
+		reflect.Interface: {"undefined", "interface{}"},
 	}
 	formats, ok := types[typ.Kind]
 	if !ok {
@@ -445,8 +440,19 @@ func (g *Generator) generateParameter(param *api.Parameter) []spec.Parameter {
 		parameter.Required = true
 	}
 	if parameter.In != "body" {
+		// Only body parameter can hold a schema. Other parameters uses type
+		// and format.
 		parameter.Type = schema.Type[0]
 		parameter.Format = schema.Format
+		if parameter.Type == "array" {
+			// Array is a special type. It needs additional configs.
+			// CollectionFormat has two valid valus: csv, multi.
+			// But we don't known which one should be used. So unknown.
+			parameter.CollectionFormat = "unknown"
+			parameter.Items = &spec.Items{}
+			parameter.Items.Type = schema.Items.Schema.Type[0]
+			parameter.Items.Format = schema.Items.Schema.Format
+		}
 		parameter.Schema = nil
 	}
 
@@ -514,6 +520,9 @@ func (g *Generator) generateResponse(results []api.Result, examples []api.Exampl
 			response.AddExample("application/json", &r)
 			break
 		}
+	}
+	if response.Schema == nil && response.Description == "" {
+		response.Description = "No Content"
 	}
 	return response
 }
