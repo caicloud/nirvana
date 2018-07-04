@@ -1,5 +1,7 @@
 # Destination Handler
 
+包路径: `github.com/caicloud/nirvana/service`
+
 Nirvana 默认提供了 3 种类型的 Destination：Meta，Data，Error。
 
 每种 Destination 对应一个 Handler。这些 Handler 负责一种类型的返回结果的数据转换工作。

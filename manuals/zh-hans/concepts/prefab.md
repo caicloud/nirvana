@@ -1,5 +1,7 @@
 # Prefab
 
+包路径: `github.com/caicloud/nirvana/service`
+
 Prefab 是 Nirvana 中一类特殊的 Source。其他的 Source 的数据来源都是来自于请求，而 Prefab 来自于服务端本身。
 
 ```go

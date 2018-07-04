@@ -1,6 +1,8 @@
-# Metrics 插件
+# 监控指标插件
 
-Metrics 插件基于 Prometheus，提供了一个 API 用于暴露服务端指标。
+包路径: `github.com/caicloud/nirvana/plugins/metrics`
+
+监控指标插件基于 Prometheus，提供了一个 API 用于暴露服务端指标。
 
 启用插件后，可以直接向 prometheus 包注册指标。采集端可以通过 `/metrics` 采集指标数据。
 

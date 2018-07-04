@@ -1,6 +1,8 @@
-# Health Check 插件
+# 健康检查插件
 
-Health Check 插件提供一个 API 返回服务当前是否健康。
+包路径: `github.com/caicloud/nirvana/plugins/healthcheck`
+
+健康检查插件提供一个 API 返回服务当前是否健康。API 默认路径为 `/healthz`。
 
 插件提供了一个函数接口：
 ```

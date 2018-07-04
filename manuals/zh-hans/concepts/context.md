@@ -1,5 +1,7 @@
 # Context
 
+包路径: `github.com/caicloud/nirvana/service`
+
 在 Nirvana 中，Context 用于传递请求的上下文。Context 中包含 HTTP 的 Request 和 ResponseWriter。可是使用 service 包的 `HTTPContextFrom()` 方法获得 HTTP Context。HTTP Context 相关接口如下：
 ```go
 // ValueContainer contains values from a request.

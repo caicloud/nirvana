@@ -1,5 +1,7 @@
 # 错误包
 
+包路径: `github.com/caicloud/nirvana/errors`
+
 ## Error 介绍
 
 在业务函数中，除了正常的返回数据以外，还需要处理各种错误。在 golang 中，错误需要实现 error 接口。即：

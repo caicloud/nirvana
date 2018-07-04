@@ -1,5 +1,7 @@
 # Parameter Generator
 
+包路径: `github.com/caicloud/nirvana/service`
+
 Nirvana 默认提供了 8 种类型的 Source：Path，Query，Header，Form，File，Body，Auto，Prefab。
 
 每种 Source 对应一个 Generator。这些 Generator 负责一种类型的参数的验证和类型转换工作。

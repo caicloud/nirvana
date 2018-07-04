@@ -1,6 +1,8 @@
-# Version 插件
+# 版本信息插件
 
-Version 插件提供一个 API 返回服务的版本信息。
+包路径: `github.com/caicloud/nirvana/plugins/profiling`
+
+版本信息插件提供一个 API 返回服务的版本信息。API 路径默认为 `/version`。
 
 插件 Configurer：
 - Disable() nirvana.Configurer

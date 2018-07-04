@@ -1,5 +1,7 @@
 # 配置器机制
 
+包路径: `github.com/caicloud/nirvana`
+
 Nirvana 在启动服务之前需要先创建一个配置，这个配置涵盖了启动服务过程所需要的所有信息。
 
 Nirvana 的 Config 实现了 Configurer 机制，用于单独配置每一项信息：

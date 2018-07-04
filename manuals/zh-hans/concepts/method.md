@@ -1,5 +1,7 @@
 # 方法包
 
+包路径: `github.com/caicloud/nirvana/definition/method`
+
 在 Nirvana 中，业务函数是 API 请求的 Handler，而且表现形式是函数或者同等形式的闭包。但是很多时候我们的业务函数可能是某个实例的方法。
 
 为了保证业务与 API 定义的无关性，Nirvana 提供了 method 包，用于分离实例的创建和 API 定义。
