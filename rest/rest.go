@@ -112,7 +112,7 @@ func (c *Client) parseURL(url string) (*path, error) {
 			segment = segment[1 : len(segment)-1]
 			index := strings.Index(segment, ":")
 			if index > 0 {
-				segment = segment[1:index]
+				segment = segment[:index]
 			}
 			if _, ok := p.names[segment]; ok {
 				return nil, duplicatedPathParameter.Error(segment, p.path)
@@ -348,7 +348,15 @@ func (r *Request) request(ctx context.Context) (*http.Request, error) {
 	return req, nil
 }
 
-func (r *Request) finish(ctx context.Context, req *http.Request, resp *http.Response) error {
+func (r *Request) finish(ctx context.Context, req *http.Request, resp *http.Response) (err error) {
+	reader := &autocloser{resp.Body}
+	defer func() {
+		if err != nil {
+			e := reader.Close()
+			// Ignore error.
+			_ = e
+		}
+	}()
 	// Fill headers.
 	if r.meta != nil {
 		for k, v := range resp.Header {
@@ -371,38 +379,34 @@ func (r *Request) finish(ctx context.Context, req *http.Request, resp *http.Resp
 				return invalidContentType.Error(ct, r.path.String(), err.Error())
 			}
 			switch target := r.data.(type) {
+			case *io.Reader:
+				*target = reader
 			case *io.ReadCloser:
-				*target = resp.Body
+				*target = reader
 			case *[]byte:
-				data, err := ioutil.ReadAll(resp.Body)
-				if err == nil {
-					err = resp.Body.Close()
-				}
+				data, err := ioutil.ReadAll(reader)
 				if err != nil {
 					return unreadableBody.Error(r.path.String(), err.Error())
 				}
 				*target = data
 			case *string:
-				data, err := ioutil.ReadAll(resp.Body)
-				if err == nil {
-					err = resp.Body.Close()
-				}
+				data, err := ioutil.ReadAll(reader)
 				if err != nil {
 					return unreadableBody.Error(r.path.String(), err.Error())
 				}
 				*target = string(data)
-			}
-			switch contentType {
-			case definition.MIMEJSON:
-				if err := json.NewDecoder(resp.Body).Decode(r.data); err != nil {
-					return unreadableBody.Error(r.path.String(), err.Error())
-				}
-			case definition.MIMEXML:
-				if err := xml.NewDecoder(resp.Body).Decode(r.data); err != nil {
-					return unreadableBody.Error(r.path.String(), err.Error())
-				}
 			default:
-				return unrecognizedBody.Error(r.path.String(), err.Error())
+				switch contentType {
+				case definition.MIMEJSON:
+					if err := json.NewDecoder(reader).Decode(r.data); err != nil {
+						return unreadableBody.Error(r.path.String(), err.Error())
+					}
+				case definition.MIMEXML:
+					if err := xml.NewDecoder(reader).Decode(r.data); err != nil {
+						return unreadableBody.Error(r.path.String(), err.Error())
+					}
+				}
+				return unrecognizedBody.Error(r.path.String(), "no appropriate receiver")
 			}
 		}
 	} else {
@@ -411,7 +415,7 @@ func (r *Request) finish(ctx context.Context, req *http.Request, resp *http.Resp
 			return invalidContentType.Error(ct, r.path.String(), err.Error())
 		}
 		// Unmarshal body to error.
-		data, err := ioutil.ReadAll(resp.Body)
+		data, err := ioutil.ReadAll(reader)
 		if err != nil {
 			return unreadableBody.Error(r.path.String(), err.Error())
 		}
@@ -429,4 +433,18 @@ func (r *Request) finish(ctx context.Context, req *http.Request, resp *http.Resp
 		return e
 	}
 	return nil
+}
+
+type autocloser struct {
+	io.ReadCloser
+}
+
+func (ac *autocloser) Read(p []byte) (n int, err error) {
+	count, err := ac.ReadCloser.Read(p)
+	if err == io.EOF {
+		if e := ac.ReadCloser.Close(); e != nil {
+			return count, e
+		}
+	}
+	return count, err
 }

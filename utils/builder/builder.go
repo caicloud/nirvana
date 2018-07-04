@@ -138,6 +138,9 @@ func (b *APIBuilder) Build() (*api.Definitions, error) {
 			}
 		}
 	}
+	if len(descriptors) <= 0 {
+		return nil, fmt.Errorf("can't find descriptors from %v", b.paths)
+	}
 	return b.runMain(descriptors, modifiers, b.root)
 }
 

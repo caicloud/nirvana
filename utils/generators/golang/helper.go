@@ -18,6 +18,7 @@ package golang
 
 import (
 	"fmt"
+	"path"
 	"reflect"
 	"regexp"
 	"sort"
@@ -149,6 +150,7 @@ type functionParameter struct {
 	Name         string
 	ProposedName string
 	Typ          string
+	Package      string
 	Extensions   []parameterExtension
 }
 
@@ -156,6 +158,7 @@ type functionResult struct {
 	Destination  string
 	ProposedName string
 	Typ          string
+	Package      string
 	Creator      string
 }
 
@@ -247,7 +250,7 @@ func (h *helper) Types() []Type {
 	return types
 }
 
-// Types returns functions which is required to generate.
+// Functions returns functions which is required to generate.
 func (h *helper) Functions() []function {
 	functionNames := map[string]int{}
 	functions := []function{}
@@ -314,6 +317,10 @@ func (h *helper) Functions() []function {
 					ProposedName: sigNames.proposeName(param.Name, param.Type),
 					Typ:          h.namer.Name(param.Type),
 				}
+				alias, pkg := h.namer.Package(param.Type)
+				if pkg != "" {
+					p.Package = fmt.Sprintf(`%s "%s"`, alias, pkg)
+				}
 				if param.Source == definition.Body {
 					// Use first consumer as the name of body parameter.
 					p.Name = firstNonEmptyConsume
@@ -350,6 +357,10 @@ func (h *helper) Functions() []function {
 					Destination:  string(result.Destination),
 					ProposedName: sigNames.proposeName("", result.Type),
 					Typ:          h.namer.Name(result.Type),
+				}
+				alias, pkg := h.namer.Package(result.Type)
+				if pkg != "" {
+					r.Package = fmt.Sprintf(`%s "%s"`, alias, pkg)
 				}
 				typ := h.definitions.Types[result.Type]
 				if typ.Kind == reflect.Ptr {
@@ -437,6 +448,8 @@ func (n *nameContainer) deconstruct(name api.TypeName) string {
 type typeNamer struct {
 	types    map[api.TypeName]*api.Type
 	names    map[api.TypeName]string
+	aliases  map[string]int
+	packages map[string]string
 	comments map[api.TypeName]string
 }
 
@@ -444,6 +457,8 @@ func newTypeNamer(types map[api.TypeName]*api.Type) (*typeNamer, error) {
 	n := &typeNamer{
 		types:    types,
 		names:    make(map[api.TypeName]string),
+		aliases:  make(map[string]int),
+		packages: make(map[string]string),
 		comments: make(map[api.TypeName]string),
 	}
 	for tn := range n.types {
@@ -517,7 +532,17 @@ func (n *typeNamer) parse(tn api.TypeName) (string, error) {
 	case reflect.Struct, reflect.Func:
 		name, comments = n.reconcileNameAndComments(typ.Name, typ.Comments)
 	case reflect.Interface:
-		name, comments = n.reconcileNameAndComments(typ.Name, typ.Comments)
+		alias := n.packages[typ.PkgPath]
+		if alias == "" {
+			alias = path.Base(typ.PkgPath)
+			index := n.aliases[alias]
+			n.aliases[alias]++
+			if index > 0 {
+				alias += strconv.Itoa(index)
+			}
+		}
+		n.packages[typ.PkgPath] = alias
+		name = fmt.Sprintf("%s.%s", alias, typ.Name)
 	default:
 		return "", fmt.Errorf("can't generate a name for type %s", tn)
 	}
@@ -547,6 +572,18 @@ func (n *typeNamer) Name(tn api.TypeName) string {
 		panic(fmt.Errorf("can't find type %s", tn))
 	}
 	return name
+}
+
+func (n *typeNamer) Package(tn api.TypeName) (alias string, pkg string) {
+	typ, ok := n.types[tn]
+	if !ok {
+		panic(fmt.Errorf("can't find type %s", tn))
+	}
+	alias, ok = n.packages[typ.PkgPath]
+	if !ok {
+		return "", ""
+	}
+	return alias, typ.PkgPath
 }
 
 func (n *typeNamer) Comments(tn api.TypeName) string {
