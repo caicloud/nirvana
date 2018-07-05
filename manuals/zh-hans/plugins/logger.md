@@ -1,6 +1,8 @@
-# Logger 插件
+# 系统日志插件
 
-Logger 插件是一个伪插件。这个插件本身没有按照 Plugin Framework 编写，只是为了通过 config 包的 Command 暴露 Flag。
+包路径: `github.com/caicloud/nirvana/plugins/logger`
+
+系统日志插件是一个伪插件。这个插件本身没有按照 Plugin Framework 编写，只是为了通过 config 包的 Command 暴露 Flag。
 
 这个插件暴露三个选项：
 ```

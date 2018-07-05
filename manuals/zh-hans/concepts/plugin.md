@@ -1,4 +1,4 @@
-# Plugin
+# 插件机制
 
 Nirvana 的 Config 除了使用 Configurer 配置基本信息以外，还提供了插件机制。
 

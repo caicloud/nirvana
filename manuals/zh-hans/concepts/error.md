@@ -1,4 +1,6 @@
-# Error
+# 错误包
+
+包路径: `github.com/caicloud/nirvana/errors`
 
 ## Error 介绍
 

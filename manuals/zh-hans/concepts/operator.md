@@ -1,5 +1,7 @@
 # Operator
 
+包路径: `github.com/caicloud/nirvana/definition`
+
 在每个 API Definition 中，都有一组 Parameters 和 Results。其中 Parameters 和业务函数的参数一一对应，而 Results 则和业务函数的返回值一一对应。一般情况下，如果我们需要对参数的合法性和结构进行验证和转换，那么就需要在业务函数中实现这些功能。为了让数据验证和结构转换等逻辑更加通用化和标准化，Nirvana 提供了 Operator 接口，可用于针对单个参数或返回值进行验证和修改：
 ```go
 // Operator is used to operate an object and return an replacement object.
@@ -49,6 +51,8 @@ type Operator interface {
 
 ## Validator
 
+包路径: `github.com/caicloud/nirvana/operators/validator`
+
 validator 包的实现基于 [go-playground/validator](https://godoc.org/gopkg.in/go-playground/validator.v9)，提供了用于生成 Operator 的方法：
 ```go
 func Struct(instance interface{}) Validator
@@ -82,6 +86,9 @@ func NewCustom(f interface{}, description string) Validator
 验证器函数必须符合签名 `func(ctx context.Context, object AnyType) error`。其中 AnyType 是具体要验证的类型，不能使用接口。
 
 ## Converter
+
+包路径: `github.com/caicloud/nirvana/operators/converter`
+
 除了对参数进行验证以外，在某些场景下还需要对参数进行类型转换。因此 converter 包提供了工具方法用于将转换函数包装成 Operator：
 ```go
 // For creates converter for a converter func.

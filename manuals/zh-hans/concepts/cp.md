@@ -1,5 +1,7 @@
 # Consumer and Producer
 
+包路径: `github.com/caicloud/nirvana/service`
+
 在 HTTP 请求中，Content-Type 说明了请求和响应中的数据类型。为了根据 Content-Type 自动处理数据转换，Nirvana 提供了 Consumer 和 Producer 接口。其中 Consumer 用于将请求体中的数据转换为业务函数需要的类型，而 Producer 则负责将业务函数的返回结果写入到响应体中。 
 
 Nirvana 默认提供的 Consumers：

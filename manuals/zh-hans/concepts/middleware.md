@@ -1,4 +1,6 @@
-# Middleware
+# 中间件
+
+包路径: `github.com/caicloud/nirvana/definition`
 
 Nirvana 中间件位于路由之后，业务函数执行之前。因此中间件可以对合法的请求进行一些额外的处理。中间件的接口如下： 
 

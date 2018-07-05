@@ -1,4 +1,6 @@
-# Filter
+# 过滤器
+
+包路径: `github.com/caicloud/nirvana/service`
 
 在某些场景下，我们需要从源头对请求进行处理和过滤。Nirvana 提供了 Filter 机制，可以在收到一个请求的时候，立刻进行处理。并根据 Filter 的返回值来确定是直接丢弃该请求还是继续处理。
 

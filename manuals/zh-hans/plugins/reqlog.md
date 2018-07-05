@@ -1,6 +1,8 @@
-# Reqlog 插件
+# 请求日志插件
 
-Reqlog 插件会添加一个在 `/` 上的中间件，用于打印所有路由匹配成功的请求的日志。
+包路径: `github.com/caicloud/nirvana/plugins/reqlog`
+
+请求日志插件会添加一个在 `/` 上的中间件，用于打印所有路由匹配成功的请求的日志。
 
 插件 Configurer：
 - Disable() nirvana.Configurer

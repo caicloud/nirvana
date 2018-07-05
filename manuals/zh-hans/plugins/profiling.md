@@ -1,6 +1,8 @@
-# Profiling 插件
+# 性能分析插件
 
-Profiling 插件添加与 `net/http/pprof` 一致的 API，用于取得服务运行时信息。
+包路径: `github.com/caicloud/nirvana/plugins/profiling`
+
+性能分析插件添加与 `net/http/pprof` 一致的 API，用于取得服务运行时信息。
 
 默认情况下，插件会添加四个 Descriptor：
 

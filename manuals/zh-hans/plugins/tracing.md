@@ -1,6 +1,8 @@
-# Tracing 插件
+# 请求追踪插件
 
-Tracing 插件基于 OpenTracing 接口实现了请求跟踪机制。Tracing 插件会添加一个在 `/` 上的中间件。
+包路径: `github.com/caicloud/nirvana/plugins/tracing`
+
+请求追踪插件基于 OpenTracing 接口实现了请求跟踪机制，会在 `/` 上添加一个中间件用于提取 Tracing 信息。
 
 插件 Configurer：
 - Disable() nirvana.Configurer
