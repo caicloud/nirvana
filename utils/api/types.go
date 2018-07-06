@@ -97,7 +97,7 @@ func (t *Type) RawTypeName() TypeName {
 	return TypeName(t.PkgPath + "." + t.Name)
 }
 
-// TypeName retruns type unique name.
+// TypeName returns type unique name.
 func (t *Type) TypeName() TypeName {
 	tn := t.RawTypeName()
 	if tn != TypeNameInvalid && t.Conflict > 0 {
