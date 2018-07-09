@@ -81,10 +81,13 @@ type Type struct {
 	In []FuncField
 	// Out presents fields of function output results.
 	Out []FuncField
+	// Conflict identifies the index of current type in a list of
+	// types which have same type names. In most cases, this field is 0.
+	Conflict int
 }
 
-// TypeName retruns type unique name.
-func (t *Type) TypeName() TypeName {
+// RawTypeName returns raw type name without confliction.
+func (t *Type) RawTypeName() TypeName {
 	if t.Name == "" {
 		return TypeNameInvalid
 	}
@@ -94,18 +97,27 @@ func (t *Type) TypeName() TypeName {
 	return TypeName(t.PkgPath + "." + t.Name)
 }
 
+// TypeName returns type unique name.
+func (t *Type) TypeName() TypeName {
+	tn := t.RawTypeName()
+	if tn != TypeNameInvalid && t.Conflict > 0 {
+		tn = TypeName(fmt.Sprintf("%s [%d]", tn, t.Conflict))
+	}
+	return tn
+}
+
 // TypeContainer contains types.
 type TypeContainer struct {
 	lock  sync.RWMutex
 	types map[TypeName]*Type
-	real  map[TypeName]reflect.Type
+	real  map[TypeName][]reflect.Type
 }
 
 // NewTypeContainer creates a type container.
 func NewTypeContainer() *TypeContainer {
 	return &TypeContainer{
 		types: make(map[TypeName]*Type),
-		real:  make(map[TypeName]reflect.Type),
+		real:  make(map[TypeName][]reflect.Type),
 	}
 }
 
@@ -126,20 +138,23 @@ func (tc *TypeContainer) Types() map[TypeName]*Type {
 
 // setType sets type with unique name.
 func (tc *TypeContainer) setType(t *Type, typ reflect.Type) {
-	tn := t.TypeName()
+	tn := t.RawTypeName()
 	if tn == TypeNameInvalid {
-		return
-	}
-	if tc.Type(tn) != nil {
 		return
 	}
 	tc.lock.Lock()
 	defer tc.lock.Unlock()
-	if tc.types[tn] != nil {
-		return
+	types := tc.real[tn]
+	index := len(types)
+	for i, originalType := range types {
+		if originalType == typ {
+			index = i
+		}
 	}
+	t.Conflict = index
+	tn = t.TypeName()
 	tc.types[tn] = t
-	tc.real[tn] = typ
+	tc.real[tn] = append(types, typ)
 }
 
 // NameOf gets an unique name of a type.
@@ -148,6 +163,10 @@ func (tc *TypeContainer) NameOf(typ reflect.Type) TypeName {
 		Name:    typ.Name(),
 		PkgPath: typ.PkgPath(),
 		Kind:    typ.Kind(),
+	}
+	if t.Name == "" && t.Kind == reflect.Interface {
+		// Type interface{} has no name. Set it.
+		t.Name = "interface{}"
 	}
 	tn := t.TypeName()
 	if tn != TypeNameInvalid && tc.Type(tn) != nil {

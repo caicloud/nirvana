@@ -84,7 +84,13 @@ func (o *clientOptions) Run(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	generator := golang.NewGenerator(config, definitions, o.Rest, pkg)
+
+	rootPkg, err := project.PackageForPath(config.Root)
+	if err != nil {
+		return err
+	}
+
+	generator := golang.NewGenerator(config, definitions, o.Rest, pkg, rootPkg)
 	files, err := generator.Generate()
 	if err != nil {
 		return err

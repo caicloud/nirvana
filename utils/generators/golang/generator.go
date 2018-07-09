@@ -31,10 +31,11 @@ import (
 
 // Generator is for generating golang client.
 type Generator struct {
-	config *project.Config
-	apis   *api.Definitions
-	rest   string
-	pkg    string
+	config  *project.Config
+	apis    *api.Definitions
+	rest    string
+	pkg     string
+	rootPkg string
 }
 
 // NewGenerator creates a golang client generator.
@@ -43,12 +44,14 @@ func NewGenerator(
 	apis *api.Definitions,
 	rest string,
 	pkg string,
+	rootPkg string,
 ) *Generator {
 	return &Generator{
-		config: config,
-		apis:   apis,
-		rest:   rest,
-		pkg:    pkg,
+		config:  config,
+		apis:    apis,
+		rest:    rest,
+		pkg:     pkg,
+		rootPkg: rootPkg,
 	}
 }
 
@@ -62,17 +65,17 @@ func (g *Generator) Generate() (map[string][]byte, error) {
 	versions := make([]string, 0, len(definitions))
 	for version, defs := range definitions {
 		versions = append(versions, version)
-		helper, err := newHelper(defs)
+		helper, err := newHelper(g.rootPkg, defs)
 		if err != nil {
 			return nil, err
 		}
-		types := helper.Types()
-		typeCodes, err := g.typeCodes(version, types)
+		types, imports := helper.Types()
+		typeCodes, err := g.typeCodes(version, types, imports)
 		if err != nil {
 			return nil, err
 		}
-		functions := helper.Functions()
-		functionCodes, err := g.functionCodes(version, functions)
+		functions, imports := helper.Functions()
+		functionCodes, err := g.functionCodes(version, functions, imports)
 		if err != nil {
 			return nil, err
 		}
@@ -87,27 +90,36 @@ func (g *Generator) Generate() (map[string][]byte, error) {
 	return codes, nil
 }
 
-func (g *Generator) typeCodes(version string, types []Type) ([]byte, error) {
+func (g *Generator) typeCodes(version string, types []Type, imports []string) ([]byte, error) {
 	data := bytes.NewBufferString(fmt.Sprintf("package %s\n", version))
+	writeln := func(str string) {
+		_, err := fmt.Fprintln(data, str)
+		// Ignore this error.
+		_ = err
+	}
+
+	writeln("import (")
+	for _, pkg := range imports {
+		writeln(pkg)
+	}
+	writeln(")")
 	for _, typ := range types {
-		data.WriteByte('\n')
-		data.Write(typ.Generate())
-		data.WriteByte('\n')
+		writeln("")
+		writeln(string(typ.Generate()))
 	}
 	return format.Source(data.Bytes())
 }
 
-func (g *Generator) functionCodes(version string, functions []function) ([]byte, error) {
+func (g *Generator) functionCodes(version string, functions []function, imports []string) ([]byte, error) {
 	buf := bytes.NewBuffer(nil)
 	template, err := template.New("codes").Parse(`
 package {{ .Version }}
 
 import (
-	"context"
+	context "context"
 
-	{{- range .Functions }}
- 	{{ range .Parameters }}{{ .Package }}{{ end }}
- 	{{ range .Results }}{{ .Package }}{{ end }}
+	{{- range .Imports }}
+	{{.}}
 	{{- end }}
 
 	rest "{{ .Rest }}"
@@ -157,7 +169,9 @@ func (c *Client) {{ .Name }}(ctx context.Context{{ range .Parameters }},{{ .Prop
 	err = c.rest.Request("{{ .Method }}", {{ .Code }}, "{{ .Path }}").
 	{{ range .Parameters }}
 	{{ $param := .ProposedName }}
+	{{ if not .Extensions }}
 	{{ .Source }}("{{ .Name }}", {{ $param }}).
+	{{ end }}
 	{{ range .Extensions }}
 	{{ .Source }}("{{ .Name }}", {{ $param }}.{{ .Key }}).
 	{{ end }}
@@ -182,6 +196,7 @@ func (c *Client) {{ .Name }}(ctx context.Context{{ range .Parameters }},{{ .Prop
 		"Version":   version,
 		"Rest":      g.rest,
 		"Functions": functions,
+		"Imports":   imports,
 	})
 	if err != nil {
 		return nil, err
