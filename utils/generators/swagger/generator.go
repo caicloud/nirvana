@@ -206,7 +206,7 @@ func (g *Generator) schemaForType(typ *api.Type) *spec.Schema {
 			if elemSchema == nil {
 				break
 			}
-			schema := spec.MapProperty(elemSchema)
+			schema = spec.MapProperty(elemSchema)
 			schema.Title = fmt.Sprintf("map[%s]%s", keySchema.Title, elemSchema.Title)
 			schema.Items = &spec.SchemaOrArray{
 				Schema: keySchema,
