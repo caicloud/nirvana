@@ -98,5 +98,3 @@ type Logger interface {
 1. 正确实现 logger 的 Clone 方法。Clone 方法用于在对 logger 进行包装的时候，获取正确层级的调用栈信息。
 1. 在 Fatal\* 时候，使用 os.Exit(1) 进行退出，而不是使用其他错误码（除非业务有要求）。这是标准库的日志包使用的退出码。
 
-
-

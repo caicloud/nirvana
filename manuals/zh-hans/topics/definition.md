@@ -225,19 +225,21 @@ Descriptor 结构体包含具有如下含义的字段：
 1. API 路径
 1. 可被 Middlewares，Definitions，Children 继承的字段
 1. 其他与 API 路径同等级别的字段
+
 如果希望对 Descriptor 进行扩展，需要遵守上面这些规则。
 
 Definition 结构体包含了一个具体的 API 定义：
 1. API 方法，这个方法是一个抽象方法，用于描述一种行为（比如 Create）。
 1. API 参数和返回值定义
 1. 其他与具体 API 同等级别的字段
+
 如果希望对 Definition 进行扩展，需要遵守上面这些规则。
 
 Parameter 和 Result 分别对应 API 的参数和返回值，与业务函数的参数与返回值一一对应。字段定义与参数和返回值的转换有关。
 
 在上面的定义中，存在两个额外功能：
 1. 在 Descriptor 中提供了 Middleware
-1. 在 Prameter 和 Result 中，提供了 Operator
+1. 在 Parameter 和 Result 中，提供了 Operator
 
 其中 Middleware 提供了中间件的能力，可以在请求之前让用户对请求进行一些特殊处理。而 Operator 则针对单个的业务参数和返回值，可以对值进行验证和修改。
 

@@ -66,7 +66,7 @@ Builder 构建 Service 来提供 HTTP 服务。因此 Builder 提供了多个方
 
 其中 Definition 修改器用于在生成路由之前修改 API Definition。请求过滤器则是在 Service 执行的时候才会被调用，请求过滤器的优先级高于路由匹配。也就是说，在路由匹配之前，请求就有可能被过滤器直接过滤掉。
 
-uilder 还会将 API Definition 转换为路由需要的数据结构，涉及到以下内容：
+Builder 还会将 API Definition 转换为路由需要的数据结构，涉及到以下内容：
 1. 对应 Consumes 和 Produces 的 Consumer 和 Producer  
   Consumer 针对请求的 body，将数据转换为业务函数需要的数据类型（通常是结构体）。  
   Producer 则是将业务函数的返回值转换并写入到响应的 body 中。  
