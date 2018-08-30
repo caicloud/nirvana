@@ -1,3 +1,36 @@
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
+
+- [Nirvana](#nirvana)
+  - [Installation](#installation)
+  - [Getting Started](#getting-started)
+    - [API quick start](#api-quick-start)
+    - [Validate it!](#validate-it)
+    - [Is it popular?](#is-it-popular)
+    - [Show me the doc](#show-me-the-doc)
+  - [User Guide](#user-guide)
+    - [API Descriptor](#api-descriptor)
+    - [Consumes and Produces](#consumes-and-produces)
+    - [Middleware](#middleware)
+    - [API Definition](#api-definition)
+    - [Parameter](#parameter)
+    - [Result](#result)
+    - [Validation](#validation)
+    - [OpenAPI](#openapi)
+    - [Configurer](#configurer)
+    - [Error](#error)
+    - [Logging](#logging)
+    - [Plugins](#plugins)
+      - [Metrics](#metrics)
+      - [Profiling](#profiling)
+      - [Tracing](#tracing)
+  - [Developer Guide and Proposals](#developer-guide-and-proposals)
+    - [Proposals](#proposals)
+    - [Plugin framework](#plugin-framework)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 # Nirvana
 
 <img align="right" width="225px" src="https://user-images.githubusercontent.com/2191361/35839723-e9e5cdfa-0b2c-11e8-853a-8d3870f9e7ac.png">
