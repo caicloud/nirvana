@@ -67,11 +67,13 @@ func newAPICommand() *cobra.Command {
 }
 
 type apiOptions struct {
+	DryRun bool
 	Serve  string
 	Output string
 }
 
 func (o *apiOptions) Install(flags *pflag.FlagSet) {
+	flags.BoolVar(&o.DryRun, "dry-run", false, "Dry run for testing, does not mutate")
 	flags.StringVar(&o.Serve, "serve", "127.0.0.1:8080", "Start a server to host api docs")
 	flags.StringVar(&o.Output, "output", "", "Directory to output api specifications")
 }
@@ -114,6 +116,11 @@ func (o *apiOptions) Run(cmd *cobra.Command, args []string) error {
 		if err = o.write(files); err != nil {
 			return err
 		}
+	}
+
+	if o.DryRun {
+		log.Infof("Skip serving due to '--dry-run=%v'", o.DryRun)
+		return nil
 	}
 
 	if o.Serve != "" {
