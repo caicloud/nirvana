@@ -569,6 +569,10 @@ ARG CMD_DIR=./cmd
 
 ARG ROOT={{ .ProjectPackage }}
 
+ARG VERSION=
+
+ARG COMMIT=
+
 ARG TARGET={{ .ProjectName }}
 
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64                      \
@@ -687,6 +691,7 @@ BUILD_DIR := ./build
 
 # Git commit sha.
 COMMIT := $(strip $(shell git rev-parse --short HEAD 2>/dev/null))
+COMMIT := $(COMMIT)$(shell [[ -z $$(git status -s) ]] || echo '-dirty')
 COMMIT := $(if $(COMMIT),$(COMMIT),"Unknown")
 
 #
@@ -711,6 +716,8 @@ container:
 	    docker build -t $${registry}$${image}:$(VERSION)                               \
 	      --build-arg ROOT=$(ROOT) --build-arg TARGET=$${target}                       \
 	      --build-arg CMD_DIR=$(CMD_DIR)                                               \
+	      --build-arg VERSION=$(VERSION)                                               \
+	      --build-arg COMMIT=$(COMMIT)                                                 \
 	      -f $(BUILD_DIR)/$${target}/Dockerfile .;                                     \
 	  done                                                                             \
 	done
