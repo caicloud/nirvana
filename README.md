@@ -142,7 +142,7 @@ import (
 func main() {
 	config := nirvana.NewDefaultConfig()
 	config.Configure(nirvana.Descriptor(echo))
-	log.Infof("Listening on %s:%d", config.IP, config.Port)
+	log.Infof("Listening on %s:%d", config.IP(), config.Port())
 	if err := nirvana.NewServer(config).Serve(); err != nil {
 		log.Fatal(err)
 	}
