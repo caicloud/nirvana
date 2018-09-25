@@ -138,20 +138,7 @@
             
         </li>
     
-        <li class="chapter " data-level="1.2.3" data-path="topics/error.html">
-            
-                <a href="topics/error.html">
-            
-                    
-                    Error
-            
-                </a>
-            
-
-            
-        </li>
-    
-        <li class="chapter " data-level="1.2.4" data-path="topics/validation.html">
+        <li class="chapter " data-level="1.2.3" data-path="topics/validation.html">
             
                 <a href="topics/validation.html">
             
@@ -164,7 +151,7 @@
             
         </li>
     
-        <li class="chapter " data-level="1.2.5" data-path="topics/openapi.html">
+        <li class="chapter " data-level="1.2.4" data-path="topics/openapi.html">
             
                 <a href="topics/openapi.html">
             
@@ -177,38 +164,12 @@
             
         </li>
     
-        <li class="chapter " data-level="1.2.6" data-path="topics/metrics.html">
+        <li class="chapter " data-level="1.2.5" data-path="topics/metrics.html">
             
                 <a href="topics/metrics.html">
             
                     
                     Metrics
-            
-                </a>
-            
-
-            
-        </li>
-    
-        <li class="chapter " data-level="1.2.7" data-path="topics/tracing.html">
-            
-                <a href="topics/tracing.html">
-            
-                    
-                    Tracing
-            
-                </a>
-            
-
-            
-        </li>
-    
-        <li class="chapter " data-level="1.2.8" data-path="topics/testing.html">
-            
-                <a href="topics/testing.html">
-            
-                    
-                    Testing
             
                 </a>
             
@@ -266,15 +227,67 @@
     
                                 <section class="normal markdown-section">
                                 
-                                <h1 id="nirvana">Nirvana</h1>
+                                <!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+<p><strong>Table of Contents</strong>  <em>generated with <a href="https://github.com/thlorenz/doctoc" target="_blank">DocToc</a></em></p>
+<ul>
+<li><a href="#nirvana">Nirvana</a><ul>
+<li><a href="#installation">Installation</a></li>
+<li><a href="#getting-started">Getting Started</a><ul>
+<li><a href="#api-quick-start">API quick start</a></li>
+<li><a href="#validate-it">Validate it!</a></li>
+<li><a href="#is-it-popular">Is it popular?</a></li>
+<li><a href="#show-me-the-doc">Show me the doc</a></li>
+</ul>
+</li>
+<li><a href="#user-guide">User Guide</a><ul>
+<li><a href="#api-descriptor">API Descriptor</a></li>
+<li><a href="#consumes-and-produces">Consumes and Produces</a></li>
+<li><a href="#middleware">Middleware</a></li>
+<li><a href="#api-definition">API Definition</a></li>
+<li><a href="#parameter">Parameter</a></li>
+<li><a href="#result">Result</a></li>
+<li><a href="#validation">Validation</a></li>
+<li><a href="#openapi">OpenAPI</a></li>
+<li><a href="#configurer">Configurer</a></li>
+<li><a href="#error">Error</a></li>
+<li><a href="#logging">Logging</a></li>
+<li><a href="#plugins">Plugins</a><ul>
+<li><a href="#metrics">Metrics</a></li>
+<li><a href="#profiling">Profiling</a></li>
+<li><a href="#tracing">Tracing</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#developer-guide-and-proposals">Developer Guide and Proposals</a><ul>
+<li><a href="#proposals">Proposals</a></li>
+<li><a href="#plugin-framework">Plugin framework</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+<h1 id="nirvana">Nirvana</h1>
 <p><strong>English version of this docs is expired. We will rewrite it in the future. If you have any idea or you want to contribute to this docs, PLEASE let us know it.</strong></p>
-<p>Nirvana is a Golang web framework with a focus on developer efficiency and
-performance. It handles request routing, input validation, logging, error
-handling, etc. with sensible defaults and options for complete control. Built
-for developers with &#x2764;&#xFE0F; by developers in <a href="http://caicloud.io/" target="_blank">Caicloud</a>.</p>
-<h2 id="status">Status</h2>
-<p>Currently the framework is &#x1F6A7; WIP &#x1F6A7;, any comments or contributions are welcome!</p>
-<h2 id="getting-started">Getting Started</h2>
+<p>Nirvana is a golang API framework designed for productivity and usability. It aims to be the building block for
+all golang services in Caicloud. The high-level goals and features include:</p>
+<ul>
+<li>consistent API behavior, structure and layout across all golang projects</li>
+<li>improve engineering productivity with openAPI and client generation, etc</li>
+<li>validation can be added by declaring validation method as part of API definition</li>
+<li>out-of-box instrumentation support, e.g. metrics, profiling, tracing, etc</li>
+<li>easy and standard configuration management, as well as standard cli interface</li>
+</ul>
+<p>Nirvana is also extensible and performant, with the goal to support fast developmenet velocity.</p>
+<h2 id="installation">Installation</h2>
+<pre><code>go get -u github.com/caicloud/nirvana
+
+# for openapi generation
+go get -u github.com/caicloud/nirvana/cmd/openapi-gen
+</code></pre><h2 id="getting-started">Getting Started</h2>
+<h3 id="api-quick-start">API quick start</h3>
 <p>In Nirvana, APIs are defined via <code>definition.Descriptor</code>. We will not introduce details of the concept <code>Descriptor</code>,
 instead, let&apos;s take a look at a contrived example:</p>
 <pre><code class="lang-go"><span class="hljs-comment">// API descriptor.</span>
@@ -337,9 +350,9 @@ Nirvana collects the results and sends back response.</p>
 )
 
 <span class="hljs-keyword">func</span> main() {
-    config := nirvana.NewDefaultConfig(<span class="hljs-string">&quot;&quot;</span>, <span class="hljs-number">8080</span>)
+    config := nirvana.NewDefaultConfig()
     config.Configure(nirvana.Descriptor(echo))
-    log.Infof(<span class="hljs-string">&quot;Listening on %s:%d&quot;</span>, config.IP, config.Port)
+    log.Infof(<span class="hljs-string">&quot;Listening on %s:%d&quot;</span>, config.IP(), config.Port())
     <span class="hljs-keyword">if</span> err := nirvana.NewServer(config).Serve(); err != <span class="hljs-literal">nil</span> {
         log.Fatal(err)
     }
@@ -351,10 +364,996 @@ INFO  0202-16:34:38.663+08 echo.go:65 | Listening on :8080
 INFO  0202-16:34:38.663+08 builder.go:163 | Definitions: 1 Middlewares: 0 Path: /echo
 INFO  0202-16:34:38.663+08 builder.go:178 |   Method: Get Consumes: [*/*] Produces: [text/plain]
 </code></pre><p>In another terminal:</p>
-<pre><code class="lang-sh">$ curl <span class="hljs-string">&quot;http://localhost:8080/echo?msg=test&quot;</span>
-<span class="hljs-built_in">test</span>
+<pre><code>$ curl &quot;http://localhost:8080/echo?msg=test&quot;
+test
+</code></pre><p>For full example code, see <a href="examples/getting-started/basics">basics</a>.</p>
+<h3 id="validate-it">Validate it!</h3>
+<p>Now you are tired of echoing non-sense testing message and want to only reply message longer than 10 characters, such
+validation can be easily added when defining your descriptor:</p>
+<pre><code class="lang-go">Parameters: []definition.Parameter{
+    {
+        Source:      definition.Query,
+        Name:        <span class="hljs-string">&quot;msg&quot;</span>,
+        Description: <span class="hljs-string">&quot;Corresponding to the second parameter&quot;</span>,
+        Operators:   []definition.Operator{validator.String(<span class="hljs-string">&quot;gt=10&quot;</span>)},
+    },
+},
 </code></pre>
-<p>For full example code, see <a href="https://github.com/caicloud/nirvana/tree/master/examples/getting-started/basics" target="_blank">basics</a>.</p>
+<p><code>Operator</code> is a concept in Nirvana to allow framework user to operate on input request; validation is one of several
+pre-defined operators. Another example of <code>operator</code> is <code>convertor</code>, which allows user to convert between different
+versions of an input.</p>
+<p>Under the hood, Nirvana uses <a href="https://github.com/go-playground/validator" target="_blank">go-playground/validator.v9</a> for validation,
+which defines a list of useful tags. It also supports custom validation. Nirvana integrates smoothly with the package,
+see user guide for more advanced usage.</p>
+<p>Now run our new echo server and verify validation works:</p>
+<pre><code>$ go run ./examples/getting-started/validator/echo.go
+INFO  0202-11:18:50.235+08 echo.go:67 | Listening on :8080
+INFO  0202-11:18:50.235+08 builder.go:163 | Definitions: 1 Middlewares: 0 Path: /echo
+INFO  0202-11:18:50.235+08 builder.go:178 |   Method: Get Consumes: [*/*] Produces: [text/plain]
+</code></pre><p>In another terminal:</p>
+<pre><code>$ curl &quot;http://localhost:8080/echo?msg=test&quot;
+Key: &apos;&apos; Error:Field validation for &apos;&apos; failed on the &apos;gt&apos; tag
+
+$ curl &quot;http://localhost:8080/echo?msg=testtesttest&quot;
+testtesttest
+</code></pre><p>It works! The above example teaches us two facts:</p>
+<ol>
+<li>Adding validation support with Nirvana is very simple</li>
+<li>10 characters validation is not enough to prevent spam :)</li>
+</ol>
+<p>For full example code, see <a href="examples/getting-started/validator">validator</a>. Checkout the source code to see
+how to add your own validation.</p>
+<h3 id="is-it-popular">Is it popular?</h3>
+<p>It&apos;s time to expose some metrics to help understand and diagnose our service! Nirvana has out-of-box support for
+instrumentation. To enable exposing request metrics, just add one more configuration:</p>
+<pre><code class="lang-go">config := nirvana.NewDefaultConfig().
+    Configure(
+        metrics.Path(<span class="hljs-string">&quot;/metrics&quot;</span>),
+    )
+</code></pre>
+<p>The actual configuration is done with <code>metrics</code> plugin. <code>plugin</code> is another concept in Nirvana - we can always
+add more functionalities to Nirvana via plugin, and each plugin can be individually enabled or disabled. How
+plugins are implemented depends on plugin author. For example, some plugins are simply static configuration,
+while some are more complex middlewares. All plugins are registered into config. The server will install them
+when the server starts.</p>
+<p>Now if we start our server, we&apos;ll see a wealth of information exposed as <a href="https://prometheus.io" target="_blank">prometheus</a> format.
+The metrics are exposed via <code>/metrics</code> endpoint.</p>
+<pre><code>$ go run ./examples/getting-started/metrics/echo.go
+</code></pre><p>Use ab (ApacheBench) to simulate some user load; in another terminal, run:</p>
+<pre><code>ab -n 1000 &apos;http://localhost:8080/echo?msg=testtesttest&apos;
+</code></pre><p>Once done, let&apos;s checkout some default metrics from metrics plugin. The metric <code>nirvana_request_count</code> tells
+us how many requests we&apos;ve seen in total. Since we use <code>-n 1000</code>, there will be 1000 requests to <code>/echo</code> endpoint.</p>
+<pre><code>$ curl http://localhost:8080/metrics 2&gt;&amp;1 | grep nirvana_request_count
+# HELP nirvana_request_count Counter of server requests broken out for each verb, API resource, client, and HTTP response contentType and code.
+# TYPE nirvana_request_count counter
+nirvana_request_count{client=&quot;ApacheBench/2.3&quot;,code=&quot;200&quot;,contentType=&quot;&quot;,method=&quot;GET&quot;,path=&quot;/echo&quot;} 1000
+</code></pre><p>The metric <code>nirvana_request_latencies</code> shows distribution of our service latencies. We&apos;ve added a random sleep
+between [0, 100) in our service; therefore, p90 is around 90m.</p>
+<pre><code>$ curl http://localhost:8080/metrics 2&gt;&amp;1 | grep &quot;nirvana_request_latencies&quot;
+# HELP nirvana_request_latencies Response latency distribution in milliseconds for each verb, resource and client.
+# TYPE nirvana_request_latencies histogram
+nirvana_request_latencies_bucket{method=&quot;GET&quot;,path=&quot;/echo&quot;,le=&quot;0.1&quot;} 11
+nirvana_request_latencies_bucket{method=&quot;GET&quot;,path=&quot;/echo&quot;,le=&quot;0.2&quot;} 11
+nirvana_request_latencies_bucket{method=&quot;GET&quot;,path=&quot;/echo&quot;,le=&quot;0.4&quot;} 11
+nirvana_request_latencies_bucket{method=&quot;GET&quot;,path=&quot;/echo&quot;,le=&quot;0.8&quot;} 11
+nirvana_request_latencies_bucket{method=&quot;GET&quot;,path=&quot;/echo&quot;,le=&quot;1.6&quot;} 28
+nirvana_request_latencies_bucket{method=&quot;GET&quot;,path=&quot;/echo&quot;,le=&quot;3.2&quot;} 41
+nirvana_request_latencies_bucket{method=&quot;GET&quot;,path=&quot;/echo&quot;,le=&quot;6.4&quot;} 73
+nirvana_request_latencies_bucket{method=&quot;GET&quot;,path=&quot;/echo&quot;,le=&quot;12.8&quot;} 126
+nirvana_request_latencies_bucket{method=&quot;GET&quot;,path=&quot;/echo&quot;,le=&quot;25.6&quot;} 260
+nirvana_request_latencies_bucket{method=&quot;GET&quot;,path=&quot;/echo&quot;,le=&quot;51.2&quot;} 507
+nirvana_request_latencies_bucket{method=&quot;GET&quot;,path=&quot;/echo&quot;,le=&quot;102.4&quot;} 995
+nirvana_request_latencies_bucket{method=&quot;GET&quot;,path=&quot;/echo&quot;,le=&quot;204.8&quot;} 1000
+nirvana_request_latencies_bucket{method=&quot;GET&quot;,path=&quot;/echo&quot;,le=&quot;409.6&quot;} 1000
+nirvana_request_latencies_bucket{method=&quot;GET&quot;,path=&quot;/echo&quot;,le=&quot;819.2&quot;} 1000
+nirvana_request_latencies_bucket{method=&quot;GET&quot;,path=&quot;/echo&quot;,le=&quot;1638.4&quot;} 1000
+nirvana_request_latencies_bucket{method=&quot;GET&quot;,path=&quot;/echo&quot;,le=&quot;3276.8&quot;} 1000
+nirvana_request_latencies_bucket{method=&quot;GET&quot;,path=&quot;/echo&quot;,le=&quot;6553.6&quot;} 1000
+nirvana_request_latencies_bucket{method=&quot;GET&quot;,path=&quot;/echo&quot;,le=&quot;13107.2&quot;} 1000
+nirvana_request_latencies_bucket{method=&quot;GET&quot;,path=&quot;/echo&quot;,le=&quot;26214.4&quot;} 1000
+nirvana_request_latencies_bucket{method=&quot;GET&quot;,path=&quot;/echo&quot;,le=&quot;52428.8&quot;} 1000
+nirvana_request_latencies_bucket{method=&quot;GET&quot;,path=&quot;/echo&quot;,le=&quot;+Inf&quot;} 1000
+nirvana_request_latencies_sum{method=&quot;GET&quot;,path=&quot;/echo&quot;} 50554
+nirvana_request_latencies_count{method=&quot;GET&quot;,path=&quot;/echo&quot;} 1000
+nirvana_request_latencies_bucket{method=&quot;GET&quot;,path=&quot;/metrics&quot;,le=&quot;0.1&quot;} 0
+nirvana_request_latencies_bucket{method=&quot;GET&quot;,path=&quot;/metrics&quot;,le=&quot;0.2&quot;} 0
+nirvana_request_latencies_bucket{method=&quot;GET&quot;,path=&quot;/metrics&quot;,le=&quot;0.4&quot;} 0
+nirvana_request_latencies_bucket{method=&quot;GET&quot;,path=&quot;/metrics&quot;,le=&quot;0.8&quot;} 0
+nirvana_request_latencies_bucket{method=&quot;GET&quot;,path=&quot;/metrics&quot;,le=&quot;1.6&quot;} 0
+nirvana_request_latencies_bucket{method=&quot;GET&quot;,path=&quot;/metrics&quot;,le=&quot;3.2&quot;} 1
+nirvana_request_latencies_bucket{method=&quot;GET&quot;,path=&quot;/metrics&quot;,le=&quot;6.4&quot;} 1
+nirvana_request_latencies_bucket{method=&quot;GET&quot;,path=&quot;/metrics&quot;,le=&quot;12.8&quot;} 1
+nirvana_request_latencies_bucket{method=&quot;GET&quot;,path=&quot;/metrics&quot;,le=&quot;25.6&quot;} 1
+nirvana_request_latencies_bucket{method=&quot;GET&quot;,path=&quot;/metrics&quot;,le=&quot;51.2&quot;} 1
+nirvana_request_latencies_bucket{method=&quot;GET&quot;,path=&quot;/metrics&quot;,le=&quot;102.4&quot;} 1
+nirvana_request_latencies_bucket{method=&quot;GET&quot;,path=&quot;/metrics&quot;,le=&quot;204.8&quot;} 1
+nirvana_request_latencies_bucket{method=&quot;GET&quot;,path=&quot;/metrics&quot;,le=&quot;409.6&quot;} 1
+nirvana_request_latencies_bucket{method=&quot;GET&quot;,path=&quot;/metrics&quot;,le=&quot;819.2&quot;} 1
+nirvana_request_latencies_bucket{method=&quot;GET&quot;,path=&quot;/metrics&quot;,le=&quot;1638.4&quot;} 1
+nirvana_request_latencies_bucket{method=&quot;GET&quot;,path=&quot;/metrics&quot;,le=&quot;3276.8&quot;} 1
+nirvana_request_latencies_bucket{method=&quot;GET&quot;,path=&quot;/metrics&quot;,le=&quot;6553.6&quot;} 1
+nirvana_request_latencies_bucket{method=&quot;GET&quot;,path=&quot;/metrics&quot;,le=&quot;13107.2&quot;} 1
+nirvana_request_latencies_bucket{method=&quot;GET&quot;,path=&quot;/metrics&quot;,le=&quot;26214.4&quot;} 1
+nirvana_request_latencies_bucket{method=&quot;GET&quot;,path=&quot;/metrics&quot;,le=&quot;52428.8&quot;} 1
+nirvana_request_latencies_bucket{method=&quot;GET&quot;,path=&quot;/metrics&quot;,le=&quot;+Inf&quot;} 1
+nirvana_request_latencies_sum{method=&quot;GET&quot;,path=&quot;/metrics&quot;} 3
+nirvana_request_latencies_count{method=&quot;GET&quot;,path=&quot;/metrics&quot;} 1
+# HELP nirvana_request_latencies_summary Response latency summary in microseconds for each verb and resource.
+# TYPE nirvana_request_latencies_summary summary
+nirvana_request_latencies_summary{method=&quot;GET&quot;,path=&quot;/echo&quot;,quantile=&quot;0.5&quot;} 55
+nirvana_request_latencies_summary{method=&quot;GET&quot;,path=&quot;/echo&quot;,quantile=&quot;0.9&quot;} 90
+nirvana_request_latencies_summary{method=&quot;GET&quot;,path=&quot;/echo&quot;,quantile=&quot;0.99&quot;} 101
+nirvana_request_latencies_summary_sum{method=&quot;GET&quot;,path=&quot;/echo&quot;} 50554
+nirvana_request_latencies_summary_count{method=&quot;GET&quot;,path=&quot;/echo&quot;} 1000
+nirvana_request_latencies_summary{method=&quot;GET&quot;,path=&quot;/metrics&quot;,quantile=&quot;0.5&quot;} 3
+nirvana_request_latencies_summary{method=&quot;GET&quot;,path=&quot;/metrics&quot;,quantile=&quot;0.9&quot;} 3
+nirvana_request_latencies_summary{method=&quot;GET&quot;,path=&quot;/metrics&quot;,quantile=&quot;0.99&quot;} 3
+nirvana_request_latencies_summary_sum{method=&quot;GET&quot;,path=&quot;/metrics&quot;} 3
+nirvana_request_latencies_summary_count{method=&quot;GET&quot;,path=&quot;/metrics&quot;} 1
+</code></pre><p>See user guide for more information about metrics plugin (and others). For full example code, see <a href="examples/getting-started/metrics">metrics</a>.</p>
+<h3 id="show-me-the-doc">Show me the doc</h3>
+<p>You&apos;ve upgraded your service to provide a new endpoint to create an echo message, i.e.</p>
+<pre><code>curl -H &quot;Content-Type: application/json&quot; -X POST -d &apos;{&quot;name&quot;: &quot;alice&quot;, &quot;message&quot;: &quot;echo to myself&quot;}&apos; http://localhost:8080/echo
+</code></pre><p>This is a complicated enpoint. To make it easy for your user, you decide to provide API documentation.
+Nirvana has built-in support to generate openapi documentation. To generate the docs, you need to first
+define where types come from. In our example, it&apos;s in the <code>api</code> package:</p>
+<pre><code class="lang-go"><span class="hljs-keyword">package</span> api
+
+<span class="hljs-comment">// Message defines the message to echo and to whom the message will be sent.</span>
+<span class="hljs-comment">// +nirvana:openapi=true</span>
+<span class="hljs-keyword">type</span> Message <span class="hljs-keyword">struct</span> {
+    Name    <span class="hljs-keyword">string</span> <span class="hljs-string">`json:&quot;name&quot; validate:&quot;required&quot;`</span>
+    Message <span class="hljs-keyword">string</span> <span class="hljs-string">`json:&quot;message&quot; validate:&quot;gt=10&quot;`</span>
+}
+</code></pre>
+<p>Next step is to generate openapi definitions:</p>
+<pre><code>openapi-gen \
+  -i github.com/caicloud/nirvana/examples/getting-started/openapi/pkg/api \
+  -p github.com/caicloud/nirvana/examples/getting-started/openapi/pkg/api
+</code></pre><p>Finally, we can build our openapi specification:</p>
+<pre><code class="lang-go">swagger, err := builder.BuildOpenAPISpec(&amp;echo, &amp;common.Config{
+    Info: &amp;spec.Info{
+        InfoProps: spec.InfoProps{
+            Title:       <span class="hljs-string">&quot;echo server openAPI&quot;</span>,
+            Description: <span class="hljs-string">&quot;This is open API documentation of echo server&quot;</span>,
+            Contact: &amp;spec.ContactInfo{
+                Name: <span class="hljs-string">&quot;nirvana&quot;</span>,
+                URL:  <span class="hljs-string">&quot;https://gonirvana.io&quot;</span>,
+            },
+            License: &amp;spec.License{
+                Name: <span class="hljs-string">&quot;Apache License, Version 2.0&quot;</span>,
+                URL:  <span class="hljs-string">&quot;http://www.apache.org/licenses/LICENSE-2.0&quot;</span>,
+            },
+            Version: <span class="hljs-string">&quot;v1.0.0&quot;</span>,
+        },
+    },
+    GetDefinitions: api.GetOpenAPIDefinitions,
+})
+<span class="hljs-keyword">if</span> err != <span class="hljs-literal">nil</span> {
+    <span class="hljs-built_in">panic</span>(err)
+}
+encoder := json.NewEncoder(os.Stdout)
+<span class="hljs-keyword">if</span> err := encoder.Encode(swagger); err != <span class="hljs-literal">nil</span> {
+    <span class="hljs-built_in">panic</span>(err)
+}
+</code></pre>
+<p>Now run the following command, we can generate our swagger.json file. Put it into <a href="https://editor.swagger.io/" target="_blank">https://editor.swagger.io/</a>,
+we&apos;ll be able to view our generated API docs.</p>
+<pre><code>go run ./examples/getting-started/openapi/echo.go &gt; /tmp/swagger.json
+</code></pre><p>For full example code, see <a href="examples/getting-started/openapi">openapi</a>.</p>
+<h2 id="user-guide">User Guide</h2>
+<h3 id="api-descriptor">API Descriptor</h3>
+<p>API Descriptor is the core data structure in Nirvana: it holds all API definitions, and is usually the starting
+point to write your services with Nirvana. Following is the golang type definition of <code>Descriptor</code>:</p>
+<pre><code class="lang-go"><span class="hljs-comment">// Descriptor describes a descriptor for API definitions.</span>
+<span class="hljs-keyword">type</span> Descriptor <span class="hljs-keyword">struct</span> {
+    <span class="hljs-comment">// Path is the url path. It will inherit parent&apos;s path.</span>
+    <span class="hljs-comment">//</span>
+    <span class="hljs-comment">// If parent path is &quot;/api/v1&quot;, current is &quot;/some&quot;,</span>
+    <span class="hljs-comment">// It means current definitions handles &quot;/api/v1/some&quot;.</span>
+    Path <span class="hljs-keyword">string</span>
+    <span class="hljs-comment">// Consumes indicates content types that current definitions</span>
+    <span class="hljs-comment">// and child definitions can consume.</span>
+    <span class="hljs-comment">// It will override parent descriptor&apos;s consumes.</span>
+    Consumes []<span class="hljs-keyword">string</span>
+    <span class="hljs-comment">// Produces indicates content types that current definitions</span>
+    <span class="hljs-comment">// and child definitions can produce.</span>
+    <span class="hljs-comment">// It will override parent descriptor&apos;s produces.</span>
+    Produces []<span class="hljs-keyword">string</span>
+    <span class="hljs-comment">// Middlewares contains path middlewares.</span>
+    Middlewares []Middleware
+    <span class="hljs-comment">// Definitions contains definitions for current path.</span>
+    Definitions []Definition
+    <span class="hljs-comment">// Children is used to place sub-descriptors.</span>
+    Children []Descriptor
+    <span class="hljs-comment">// Description describes the usage of the path.</span>
+    Description <span class="hljs-keyword">string</span>
+}
+</code></pre>
+<p><strong>A single descriptor contains API definitions for a single path.</strong> It sets <code>Content-Type</code> to be produced and
+consumed by the path handler. Each descriptor has an array of children; they will all inherit <code>Content-Type</code>
+from the parent descriptor, for example:</p>
+<pre><code class="lang-go">definition.Descriptor{
+    Path:        <span class="hljs-string">&quot;/path&quot;</span>,
+    Consumes:    []<span class="hljs-keyword">string</span>{definition.MIMEAll},
+    Produces:    []<span class="hljs-keyword">string</span>{definition.MIMEText},
+    Definitions: SomeDefinitions,
+    Children: []definition.Descriptor{
+        {
+            Path:        <span class="hljs-string">&quot;/child&quot;</span>,
+            Produces:    []<span class="hljs-keyword">string</span>{definition.MIMEJSON},
+            Definitions: SomeDefinitions,
+        },
+    },
+}
+</code></pre>
+<p>The child descriptor is identical to:</p>
+<pre><code class="lang-go">definition.Descriptor{
+    Path:        <span class="hljs-string">&quot;/path/child&quot;</span>,
+    Consumes:    []<span class="hljs-keyword">string</span>{definition.MIMEAll},
+    Produces:    []<span class="hljs-keyword">string</span>{definition.MIMEJSON},
+    Definitions: SomeDefinitions,
+}
+</code></pre>
+<h3 id="consumes-and-produces">Consumes and Produces</h3>
+<p>Consumes and Produces indicate content types that current definitions and child definitions support. Following
+is a table of all supported MIME types and their data types:</p>
+<table>
+<thead>
+<tr>
+<th>MIME</th>
+<th>Consume</th>
+<th>Produce</th>
+<th>Note</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>MIMENone</td>
+<td>nil</td>
+<td>nil</td>
+<td>Can be used into <code>Consumes</code> of Get/List and <code>Produces</code> of <code>Delete</code></td>
+</tr>
+<tr>
+<td>MIMEText</td>
+<td>string/[]byte/io.Reader</td>
+<td>string/[]byte/io.Reader</td>
+<td></td>
+</tr>
+<tr>
+<td>MIMEJSON</td>
+<td>string/[]byte/io.Reader/struct</td>
+<td>string/[]byte/io.Reader/struct</td>
+<td></td>
+</tr>
+<tr>
+<td>MIMEXML</td>
+<td>string/[]byte/io.Reader/struct</td>
+<td>string/[]byte/io.Reader/struct</td>
+<td></td>
+</tr>
+<tr>
+<td>MIMEOctetStream</td>
+<td>string/[]byte/io.Reader</td>
+<td>string/[]byte/io.Reader</td>
+<td></td>
+</tr>
+<tr>
+<td>MIMEURLEncoded</td>
+<td>nil</td>
+<td>nil</td>
+<td>Depends on <code>Source</code>. Only be used in <code>Consumes</code></td>
+</tr>
+<tr>
+<td>MIMEFormData</td>
+<td>nil</td>
+<td>nil</td>
+<td>Depends on <code>Source</code>. Only be used in <code>Consumes</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="middleware">Middleware</h3>
+<p>Middleware is a convenient mechanism to intercept HTTP requests entering your application. To use middleware
+in Nirvana, just add your middlewaare definition to API descriptor. For example, below is the code snippet for
+metrics plugin:</p>
+<pre><code>monitorMiddleware := definition.Descriptor{
+    Path:        &quot;/&quot;,
+    Middlewares: []definition.Middleware{newMetricsMiddleware(c.namespace)},
+}
+
+func newMetricsMiddleware(namespace string) definition.Middleware {
+    ...
+
+    // This is the middleware function to be called for each request.
+    return func(ctx context.Context, next definition.Chain) error {
+        startTime := time.Now()
+        err := next.Continue(ctx)
+
+        httpCtx := service.HTTPContextFrom(ctx)
+        req := httpCtx.Request()
+        resp := httpCtx.ResponseWriter()
+        path := req.URL.Path
+        elapsed := float64((time.Since(startTime)) / time.Millisecond)
+
+        requestCounter.WithLabelValues(req.Method, path, getHTTPClient(req), req.Header.Get(&quot;Content-Type&quot;), strconv.Itoa(resp.StatusCode())).Inc()
+        requestLatencies.WithLabelValues(req.Method, path).Observe(elapsed)
+        requestLatenciesSummary.WithLabelValues(req.Method, path).Observe(elapsed)
+
+        return err
+    }
+}
+</code></pre><p>Usually, Nirvana users do not care about how middlewares are implemented: they only need to find useful
+middlewares and add them to their descriptors. But if necessary, writing your own middleware is also quite
+straightforward, as shown above.</p>
+<p>Unlike <code>Consumes</code> or <code>Produces</code>, middlewares are not scoped within a single descriptor, which means a
+middleware for <code>/some/path</code> will impact all paths with prefix <code>/some/path</code>, even though they are in different
+descriptors. For example:</p>
+<pre><code class="lang-go">definition.Descriptor{
+    Path:        <span class="hljs-string">&quot;/path&quot;</span>,
+    Middlewares: SomeMiddlewares,
+}
+definition.Descriptor{
+    Path:        <span class="hljs-string">&quot;/path/child&quot;</span>,
+}
+</code></pre>
+<p>The two descriptors do not have any relationship but their path have common prefix, i.e. path of the first
+descriptor is a prefix of the second descriptor. In such case, <code>SomeMiddlewares</code> are also valid for the second
+descriptor. For more details, check the design doc of router.</p>
+<h3 id="api-definition">API Definition</h3>
+<p>API definition is another core data structure in Nirvana: it defines all handlers for your services. Following
+is the golang type definition of <code>Definition</code>:</p>
+<pre><code class="lang-go"><span class="hljs-comment">// Definition defines an API handler.</span>
+<span class="hljs-keyword">type</span> Definition <span class="hljs-keyword">struct</span> {
+    <span class="hljs-comment">// Method is definition method.</span>
+    Method Method
+    <span class="hljs-comment">// Consumes indicates how many content types the handler can consume.</span>
+    <span class="hljs-comment">// It will override parent descriptor&apos;s consumes.</span>
+    Consumes []<span class="hljs-keyword">string</span>
+    <span class="hljs-comment">// Produces indicates how many content types the handler can produce.</span>
+    <span class="hljs-comment">// It will override parent descriptor&apos;s produces.</span>
+    Produces []<span class="hljs-keyword">string</span>
+    <span class="hljs-comment">// Function is a function handler. It must be func type.</span>
+    Function <span class="hljs-keyword">interface</span>{}
+    <span class="hljs-comment">// Parameters describes function parameters.</span>
+    Parameters []Parameter
+    <span class="hljs-comment">// Results describes function retrun values.</span>
+    Results []Result
+    <span class="hljs-comment">// Description describes the API handler.</span>
+    Description <span class="hljs-keyword">string</span>
+    <span class="hljs-comment">// Examples contains many examples for the API handler.</span>
+    Examples []Example
+}
+</code></pre>
+<p>Each descriptor has multiple API definitions, and <strong>A single API definition contains handler for a single path
+and method combination.</strong> For example, here we define a descriptor to handle endpoint <code>/echo</code>, with two methods
+<code>Get</code> and <code>Create</code>:</p>
+<pre><code>var echo = definition.Descriptor{
+    Path:        &quot;/echo&quot;,
+    Description: &quot;Echo API&quot;,
+    Definitions: []definition.Definition{
+        {
+            Method:   definition.Get,
+            Function: EchoGet,
+            Consumes: []string{definition.MIMEAll},
+            Produces: []string{definition.MIMEJSON},
+        },
+        {
+            Method:   definition.Create,
+            Function: EchoCreate,
+            Consumes: []string{definition.MIMEAll},
+            Produces: []string{definition.MIMEJSON},
+        },
+    },
+}
+</code></pre><p>Below is a list of all supported methods, as well as its corresponding HTTP method and success status code. By
+convention, every API method corresponds to a HTTP method and <strong>ONE</strong> success status code. If an API function
+returns no error, Nirvana will return the success status code.</p>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>HTTP Method</th>
+<th>Success Status Code</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>List</td>
+<td>GET</td>
+<td>200</td>
+</tr>
+<tr>
+<td>Get</td>
+<td>GET</td>
+<td>200</td>
+</tr>
+<tr>
+<td>Create</td>
+<td>POST</td>
+<td>201</td>
+</tr>
+<tr>
+<td>Update</td>
+<td>PUT</td>
+<td>200</td>
+</tr>
+<tr>
+<td>Patch</td>
+<td>PATCH</td>
+<td>200</td>
+</tr>
+<tr>
+<td>Delete</td>
+<td>DELETE</td>
+<td>204</td>
+</tr>
+<tr>
+<td>AsyncCreate</td>
+<td>POST</td>
+<td>202</td>
+</tr>
+<tr>
+<td>AsyncUpdate</td>
+<td>PUT</td>
+<td>202</td>
+</tr>
+<tr>
+<td>AsyncPatch</td>
+<td>PATCH</td>
+<td>202</td>
+</tr>
+<tr>
+<td>AsyncDelete</td>
+<td>DELETE</td>
+<td>202</td>
+</tr>
+</tbody>
+</table>
+<h3 id="parameter">Parameter</h3>
+<p><code>Parameter</code> describes corresponding handler parameters of an API definition. Your request handler will receive
+the exact number of parameters, with the same index as defined in your API definition. Note most of the times,
+you will start your service using <code>nirvana.NewDefaultConfig()</code>, which adds request context as the first
+parameter. Therefore, parameters defined in descriptor appear in the second parameter of your request handler.
+For example, in the following example, our endpoint <code>/echo</code> has two query parameters, and our handler <code>Echo</code>
+receives three parameters: <code>context</code>, <code>msg1</code> and <code>msg2</code>.</p>
+<pre><code>var echo = definition.Descriptor{
+    Path:        &quot;/echo&quot;,
+    Description: &quot;Echo API&quot;,
+    Definitions: []definition.Definition{
+        {
+            Method:   definition.Get,
+            Function: Echo,
+            Consumes: []string{definition.MIMEAll},
+            Produces: []string{definition.MIMEJSON},
+            Parameters: []definition.Parameter{
+                {
+                    Source:      definition.Query,
+                    Name:        &quot;msg1&quot;,
+                    Description: &quot;First message to echo&quot;,
+                },
+                {
+                    Source:      definition.Query,
+                    Name:        &quot;msg2&quot;,
+                    Description: &quot;Second message to echo&quot;,
+                },
+            },
+            Results: []definition.Result{
+                {
+                     Destination: definition.Data,
+                    Description: &quot;Result to return if success&quot;,
+                },
+                {
+                    Destination: definition.Error,
+                    Description: &quot;Error to return if not success&quot;,
+                },
+            },
+        },
+    },
+}
+
+// API function.
+func Echo(ctx context.Context, msg1 string, msg2 string) (string, error) {
+    return msg, nil
+}
+</code></pre><p>Below is the golang type definition of <code>Parameter</code>:</p>
+<pre><code class="lang-go"><span class="hljs-comment">// Parameter describes a function parameter.</span>
+<span class="hljs-keyword">type</span> Parameter <span class="hljs-keyword">struct</span> {
+    <span class="hljs-comment">// Source is the parameter value generated from.</span>
+    Source Source
+    <span class="hljs-comment">// Name is the name to get value from a request.</span>
+    <span class="hljs-comment">// ex. a query name, a header key, etc.</span>
+    Name <span class="hljs-keyword">string</span>
+    <span class="hljs-comment">// Default value is used when a request does not provide a value</span>
+    <span class="hljs-comment">// for the parameter.</span>
+    Default <span class="hljs-keyword">interface</span>{}
+    <span class="hljs-comment">// Operators can modify and validate the target value.</span>
+    <span class="hljs-comment">// Parameter value is passed to the first operator, then</span>
+    <span class="hljs-comment">// previous operator&apos;s result is as next operator&apos;s parameter.</span>
+    <span class="hljs-comment">// The result of last operator will be passed to target function.</span>
+    Operators []Operator
+    <span class="hljs-comment">// Description describes the parameter.</span>
+    Description <span class="hljs-keyword">string</span>
+}
+</code></pre>
+<p><code>Source</code> is the source of a parameter, and <code>Name</code> is the key of <code>Source</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Source</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Path</td>
+<td>Value from URL path</td>
+</tr>
+<tr>
+<td>Query</td>
+<td>Value from URL query string</td>
+</tr>
+<tr>
+<td>Header</td>
+<td>Value from HTTP request header</td>
+</tr>
+<tr>
+<td>Form</td>
+<td>Value from HTTP body. <code>Content-Type</code> must be &quot;application/x-www-form-urlencoded&quot; or &quot;multipart/form-data&quot;</td>
+</tr>
+<tr>
+<td>File</td>
+<td>Value from HTTP body. <code>Content-Type</code> must be &quot;multipart/form-data&quot;</td>
+</tr>
+<tr>
+<td>Body</td>
+<td>Value from HTTP body. Parameters of this type don&apos;t need a name</td>
+</tr>
+<tr>
+<td>Auto</td>
+<td>Data receiver must be a struct. Parameters of the type don&apos;t need a name.</td>
+</tr>
+<tr>
+<td>Prefab</td>
+<td>Value from internal method. See <code>Advanced Usage</code></td>
+</tr>
+</tbody>
+</table>
+<p>The source <strong>Auto</strong> is for combining fields in a struct:</p>
+<pre><code class="lang-go"><span class="hljs-comment">// Here is an example for `Auto` struct.</span>
+<span class="hljs-comment">// The struct has some fields. Every field has a tag with name `source`.</span>
+<span class="hljs-comment">// The source should obey the format:</span>
+<span class="hljs-comment">//     Source,Name[,default=value]</span>
+<span class="hljs-comment">// `Source` and `Name` are the same as before.</span>
+<span class="hljs-comment">// `default` is optional. its value should be basic data type (bool, int*, uint*, float*, string).</span>
+<span class="hljs-keyword">type</span> Example <span class="hljs-keyword">struct</span> {
+    ID     <span class="hljs-keyword">int</span>    <span class="hljs-string">`source:&quot;Path,id&quot;`</span>
+    Start  <span class="hljs-keyword">int</span>    <span class="hljs-string">`source:&quot;Query,id,default=100&quot;`</span>
+    Tenant <span class="hljs-keyword">string</span> <span class="hljs-string">`source:&quot;Header,X-Tenant,default=test&quot;`</span>
+}
+</code></pre>
+<p>If you have lots of fields from a request, you can use <code>Auto</code> with a struct to get values from request.
+Don&apos;t use it when you only have a few parameters: separated parameters is more readable.</p>
+<p>All values from HTTP request are string. Nirvana has a mechanism to convert strings to specific types for
+API function. The behavior is customizable via <code>operator</code>, which allows you to modify input request. In case
+there is custom operator, input request will be converted to parameter type of the first operator. Here is
+the data flow for a parameter:</p>
+<p align="center"><img src="https://user-images.githubusercontent.com/13895988/34516454-7215cda8-f03c-11e7-8fcf-e06147c9d98d.png" height="350px" width="auto"></p>
+
+<p>If <code>Data</code> is empty and <code>Parameter.Default</code> is not nil, default value is used as <code>Typed Data</code> .</p>
+<h3 id="result">Result</h3>
+<p><code>Result</code> is similar but simpler than <code>Parameter</code>. Its <code>Destination</code> indicates the target to write data. Just
+like <code>Parameter</code>, we can modify output response via <code>operator</code>; the final returned type will be the return
+type of the last operator.</p>
+<pre><code class="lang-go"><span class="hljs-comment">// Result describes how to handle a result from function results.</span>
+<span class="hljs-keyword">type</span> Result <span class="hljs-keyword">struct</span> {
+    <span class="hljs-comment">// Destination is the target for the result. Different types make different behavior.</span>
+    Destination Destination
+    <span class="hljs-comment">// Operators can modify the result value.</span>
+    <span class="hljs-comment">// Result value is passed to the first operator, then</span>
+    <span class="hljs-comment">// previous operator&apos;s result is as next operator&apos;s parameter.</span>
+    <span class="hljs-comment">// The result of last operator will be passed to destination handler.</span>
+    Operators []Operator
+    <span class="hljs-comment">// Description describes the result.</span>
+    Description <span class="hljs-keyword">string</span>
+}
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Destination</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Meta</td>
+<td>Indicates the value should be written to HTTP response header. Its type must be <code>map[string]string</code></td>
+</tr>
+<tr>
+<td>Data</td>
+<td>Indicates the value should be written to HTTP response body. The format is decided by HTTP <code>Accept</code> and <code>Definition.Produces</code></td>
+</tr>
+<tr>
+<td>Error</td>
+<td>If an error occurs, <code>Meta</code> and <code>Data</code> is ignored. Error message will be written to HTTP response body</td>
+</tr>
+</tbody>
+</table>
+<h3 id="validation">Validation</h3>
+<p>Validation is used to validate request input, including request body, query parameter, etc. In Nirvana,
+validation is implemented as a parameter operator, so it naturally has access to all request attributes.
+There are three categories of validation: Var, Struct and Custom, where Var is used to validate basic
+built-in types like <code>string</code>, <code>int</code>, <code>bool</code>, etc; Struct is for struct validation and Custom is for writing
+custom validation.</p>
+<p>For Var validation, simply add the validation operator including the type to validate. For example, the
+following example shows a validation used to validate input string length is longer than 10 characters.</p>
+<pre><code class="lang-go"><span class="hljs-keyword">var</span> echo = definition.Descriptor{
+    Path:        <span class="hljs-string">&quot;/echo&quot;</span>,
+    Description: <span class="hljs-string">&quot;Echo API&quot;</span>,
+    Definitions: []definition.Definition{
+        {
+            Method:   definition.Get,
+            Function: Echo,
+            Consumes: []<span class="hljs-keyword">string</span>{definition.MIMEAll},
+            Produces: []<span class="hljs-keyword">string</span>{definition.MIMEJSON},
+            Parameters: []definition.Parameter{
+                {
+                    Source:      definition.Query,
+                    Name:        <span class="hljs-string">&quot;msg&quot;</span>,
+                    Description: <span class="hljs-string">&quot;Corresponding to the second parameter&quot;</span>,
+                    Operators:   []definition.Operator{validator.String(<span class="hljs-string">&quot;gt=10&quot;</span>)},
+                },
+            },
+            ...
+        },
+    },
+}
+
+<span class="hljs-comment">// API function.</span>
+<span class="hljs-keyword">func</span> Echo(ctx context.Context, msg <span class="hljs-keyword">string</span>) (<span class="hljs-keyword">string</span>, error) {
+    <span class="hljs-keyword">return</span> msg, <span class="hljs-literal">nil</span>
+}
+</code></pre>
+<p>Note we are using <code>Validator.String</code> here since our API handler takes string as input. As an other example,
+if we want to validate input parameter is a number larger than 10, we should use:</p>
+<pre><code class="lang-go"><span class="hljs-keyword">var</span> echo = definition.Descriptor{
+    Path:        <span class="hljs-string">&quot;/echo&quot;</span>,
+    Description: <span class="hljs-string">&quot;Echo API&quot;</span>,
+    Definitions: []definition.Definition{
+        {
+            Method:   definition.Get,
+            Function: Echo,
+            Consumes: []<span class="hljs-keyword">string</span>{definition.MIMEAll},
+            Produces: []<span class="hljs-keyword">string</span>{definition.MIMEJSON},
+            Parameters: []definition.Parameter{
+                {
+                    Source:      definition.Query,
+                    Name:        <span class="hljs-string">&quot;msg&quot;</span>,
+                    Description: <span class="hljs-string">&quot;Message to echo&quot;</span>,
+                    Operators:   []definition.Operator{validator.Int(<span class="hljs-string">&quot;gt=10&quot;</span>)},
+                },
+            },
+            ...
+        },
+    },
+}
+
+<span class="hljs-comment">// API function.</span>
+<span class="hljs-keyword">func</span> Echo(ctx context.Context, msg <span class="hljs-keyword">int</span>) (<span class="hljs-keyword">string</span>, error) {
+    <span class="hljs-keyword">return</span> strconv.Itoa(msg), <span class="hljs-literal">nil</span>
+}
+</code></pre>
+<p>Here we&apos;ve changed validator to <code>validator.Int</code>, and API handler has input parameter <code>int</code>.</p>
+<p>For Struct validation, the first step is to add a <code>validate</code> tag to our struct, e.g.</p>
+<pre><code class="lang-go"><span class="hljs-comment">// Message defines the message to echo and to whom the message will be sent.</span>
+<span class="hljs-keyword">type</span> Message <span class="hljs-keyword">struct</span> {
+    Name    <span class="hljs-keyword">string</span> <span class="hljs-string">`json:&quot;name&quot; validate:&quot;required&quot;`</span>
+    Message <span class="hljs-keyword">string</span> <span class="hljs-string">`json:&quot;message&quot; validate:&quot;gt=10&quot;`</span>
+}
+</code></pre>
+<p>Then, similar to Var validation, we need to add an operator to our API descriptor. A struct instance is
+required for Nirvana to make sure the type to validate actually matches handler parameter type.</p>
+<pre><code class="lang-go"><span class="hljs-keyword">var</span> echo = definition.Descriptor{
+    Path:        <span class="hljs-string">&quot;/echo&quot;</span>,
+    Description: <span class="hljs-string">&quot;Echo API&quot;</span>,
+    Definitions: []definition.Definition{
+        {
+            Method:   definition.Create,
+            Function: EchoV2,
+            Consumes: []<span class="hljs-keyword">string</span>{definition.MIMEAll},
+            Produces: []<span class="hljs-keyword">string</span>{definition.MIMEJSON},
+            Parameters: []definition.Parameter{
+                {
+                    Source:      definition.Body,
+                    Name:        <span class="hljs-string">&quot;msg&quot;</span>,
+                    Description: <span class="hljs-string">&quot;Message to echo&quot;</span>,
+                    Operators:   []definition.Operator{validator.Struct(&amp;api.Message{})},
+                },
+            },
+            ...
+        },
+    },
+}
+
+<span class="hljs-comment">// API function.</span>
+<span class="hljs-keyword">func</span> EchoV2(ctx context.Context, msg *api.Message) (<span class="hljs-keyword">string</span>, error) {
+    <span class="hljs-keyword">return</span> msg.Message, <span class="hljs-literal">nil</span>
+}
+</code></pre>
+<p>For Custom validation, you&apos;ll write your own operator and use it in API descriptor. The <code>operators/validator</code>
+package contains helper funtions to create custom validator. For example, the following example uses custom
+validation to validate the input request body. Nirvana will convert input request to validator&apos;s parameter
+type.</p>
+<pre><code class="lang-go">Operators: []definition.Operator{
+    validator.NewCustom(
+        <span class="hljs-keyword">func</span>(ctx context.Context, body *Body) error {
+            <span class="hljs-keyword">if</span> body.Name == <span class="hljs-string">&quot;&quot;</span> {
+                <span class="hljs-keyword">return</span> errors.BadRequest.Error(<span class="hljs-string">&quot;you should have a name!&quot;</span>)
+            }
+            <span class="hljs-keyword">if</span> body.Name != <span class="hljs-string">&quot;nirvana&quot;</span> {
+                <span class="hljs-keyword">return</span> errors.BadRequest.Error(<span class="hljs-string">&quot;name ${name} must be nirvana!&quot;</span>, body.Name)
+            }
+            <span class="hljs-keyword">return</span> <span class="hljs-literal">nil</span>
+        },
+        <span class="hljs-string">&quot;validate your name&quot;</span>),
+},
+</code></pre>
+<h3 id="openapi">OpenAPI</h3>
+<p>Nirvana can generate OpenAPI 2.0 document from code simply.</p>
+<p>In the example, swagger will be generated by builder of OpenAPI spec. 
+There are two parts of the code, one is meta info and the other is the generated function <code>GetOpenAPIDefinitions</code></p>
+<pre><code class="lang-go"><span class="hljs-comment">// swagger is the struct which can be encoded into whole OpenAPI document</span>
+swagger, err := builder.BuildOpenAPISpec(&amp;yourDescriptor, &amp;common.Config{
+    Info: &amp;spec.Info{
+        InfoProps: spec.InfoProps{
+            Title:       <span class="hljs-string">&quot;echo server openAPI&quot;</span>,
+            Description: <span class="hljs-string">&quot;This is open API documentation of echo server&quot;</span>,
+            Contact: &amp;spec.ContactInfo{
+                Name: <span class="hljs-string">&quot;nirvana&quot;</span>,
+                URL:  <span class="hljs-string">&quot;https://gonirvana.io&quot;</span>,
+            },
+            License: &amp;spec.License{
+                Name: <span class="hljs-string">&quot;Apache License, Version 2.0&quot;</span>,
+                URL:  <span class="hljs-string">&quot;http://www.apache.org/licenses/LICENSE-2.0&quot;</span>,
+            },
+            Version: <span class="hljs-string">&quot;v1.0.0&quot;</span>,
+        },
+    },
+    GetDefinitions: api.GetOpenAPIDefinitions,
+})
+</code></pre>
+<p><code>GetOpenAPIDeinitions</code> is generated from Go types you defined. 
+Add tag <code>+nirvana:openapi=true</code> to the <code>doc.go</code> file in package of api types just like the follow code</p>
+<pre><code>// +nirvana:openapi=true
+package api
+</code></pre><p>And run cmd to generate the function <code>GetOpenAPIDefinitions</code>.
+If input(-i) packages are more than one, comma-separated list can be used.</p>
+<pre><code>openapi-gen \
+  -i /go/package/to/your/types \
+  -p /go/package/to/your/generated/function
+</code></pre><p>You can output the documents in json format by json encoder(or yaml format by yaml encoder)</p>
+<pre><code>encoder := json.NewEncoder(os.Stdout)
+if err := encoder.Encode(swagger); err != nil {
+    panic(err)
+}
+</code></pre><p>You can also serve the documents in an OpenAPI endpoint, e.g. /v2/openapi.
+<code>NOTICE: Don&apos;t add openapi descriptor into the descriptor passed to the builder.</code></p>
+<pre><code>var openapi = definition.Descriptor{
+    Path:        &quot;/v2/openapi&quot;,
+    Description: &quot;OpenAPI endpoints&quot;,
+    Definitions: []definition.Definition{
+        {
+            Method:   definition.Get,
+            Function: OpenAPI,
+            Consumes: []string{definition.MIMEAll},
+            Produces: []string{definition.MIMEJSON},
+            Results: []definition.Result{
+                {
+                     Destination: definition.Data,
+                    Description: &quot;OpenAPI documents struct&quot;,
+                },
+                {
+                    Destination: definition.Error,
+                    Description: &quot;Error to return if not success&quot;,
+                },
+            },
+        },
+    },
+}
+
+func OpenAPI() (*spec.Swagger, error) {
+    swagger, err := builder.BuildOpenAPISpec(&amp;yourDescriptor, &amp;common.Config{
+            ...
+        },
+        GetDefinitions: api.GetOpenAPIDefinitions,
+    }
+    return swagger, err
+}
+</code></pre><h3 id="configurer">Configurer</h3>
+<p>Nirvana has a mechanism to set partial options into config. Here is an example mentioned above:</p>
+<pre><code class="lang-go">config.Configure(nirvana.Descriptor(echo))
+</code></pre>
+<p>In the example, <code>nirvana.Descriptor</code> returns a configurer and the configurer will install descriptors into nirvana config.</p>
+<p>There are some inside configurers in the table:</p>
+<table>
+<thead>
+<tr>
+<th>Configurer</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>IP</td>
+<td>Set listening ip. Defaults to &quot;0.0.0.0&quot;</td>
+</tr>
+<tr>
+<td>Port</td>
+<td>Set listening port. Defaults to 8080</td>
+</tr>
+<tr>
+<td>Logger</td>
+<td>Set custom logger</td>
+</tr>
+<tr>
+<td>Descriptor</td>
+<td>Add API descriptors</td>
+</tr>
+<tr>
+<td>Filter</td>
+<td>Add request filters</td>
+</tr>
+<tr>
+<td>Modifier</td>
+<td>Add definition modifiers</td>
+</tr>
+</tbody>
+</table>
+<p>Plugins should also use configurers to configure plugins. For more details, see also <a href="#plugins">Plugins</a></p>
+<h3 id="error">Error</h3>
+<p>In Nirvana core, error always means HTTP status code 500 - we try to avoid adding busniess logic into Nirvana.
+That is, for error code other than 500, you are responsible to write your own error implementation, which only
+needs to satisfy the following interface:</p>
+<pre><code class="lang-go"><span class="hljs-comment">// Error is a common interface for error.</span>
+<span class="hljs-comment">// If an error implements the interface, type handlers can</span>
+<span class="hljs-comment">// use Code() to get a specified HTTP status code.</span>
+<span class="hljs-keyword">type</span> Error <span class="hljs-keyword">interface</span> {
+    <span class="hljs-comment">// Code is a HTTP status code.</span>
+    Code() <span class="hljs-keyword">int</span>
+    <span class="hljs-comment">// Message is an object which contains information of the error.</span>
+    Message() <span class="hljs-keyword">interface</span>{}
+}
+</code></pre>
+<p>An error contains status code and error message. Package <code>github.com/caicloud/nirvana/errors</code> provides standard
+errors implementation and many helper functions. For example:</p>
+<pre><code class="lang-go"><span class="hljs-comment">// Example 1:</span>
+<span class="hljs-comment">// Directly create an error.</span>
+<span class="hljs-comment">// Fields (e.g. ${customer}) in format correspond to args (e.g. customer.Name) in order.</span>
+errors.NotFound.Error(<span class="hljs-string">&quot;${customer} not found&quot;</span>, customer.Name)
+
+<span class="hljs-comment">// Example 2:</span>
+<span class="hljs-comment">// Create an error factory at first.</span>
+<span class="hljs-keyword">var</span> CustomerNotFount = errors.NotFound.Build(<span class="hljs-string">&quot;Project:Customer:CustomerNotFount&quot;</span>, <span class="hljs-string">&quot;${customer} not found&quot;</span>)
+<span class="hljs-comment">// Then create error by factory.</span>
+CustomerNotFount.Error(customer.Name)
+<span class="hljs-comment">// You can check if an error is derived by specified factory.</span>
+<span class="hljs-keyword">if</span> CustomerNotFount.Derived(err) {
+    <span class="hljs-comment">// Do something.</span>
+}
+</code></pre>
+<p>Use interface <code>errors.Error</code> in function signature is strongly discouraged. You should always use standard
+<code>error</code> interface and create errors by the methods referred above.</p>
+<h3 id="logging">Logging</h3>
+<p>Nirvana provides a default logging implementation, the API mirrors <a href="https://github.com/golang/glog" target="_blank">glog</a>.
+Following logging methods are provided with increasing severity.</p>
+<pre><code>Info
+Warning
+Error
+Fatal
+</code></pre><p>Keep in mind that:</p>
+<ul>
+<li>Each level comes with formatter and newliner method, i.e. <code>Infof</code> and <code>Infoln</code></li>
+<li><code>Info</code> has verbosity level, for example, you can use <code>log.V(4).Info</code> for unimportant logs</li>
+<li><code>Fatal</code> error will terminate program execution</li>
+</ul>
+<p>For more details, see <code>github.com/caicloud/nirvana/log</code> package.</p>
+<h3 id="plugins">Plugins</h3>
+<h4 id="metrics">Metrics</h4>
+<p>This plugin provides a lot of metrics with standard <a href="https://prometheus.io/" target="_blank">prometheus</a> format. You can simply
+enable it via:</p>
+<pre><code class="lang-go">config.Configure(metrics.Default())
+</code></pre>
+<p>The plugin will register a middleware and a descriptor into your nirvana server, installing metrics at endpoint
+<code>http://host:port/metrics</code>.</p>
+<p>There are two config knobs in the plugin:</p>
+<ul>
+<li>Namespace: Metrics namespace is the prefix of all metric names. Defaults to <code>nirvana</code>.</li>
+<li>Path: Path is the descriptor path. Users can get metrics by the path. Defaults to <code>/metrics</code></li>
+</ul>
+<p>You can use following two configurers to change the settings:</p>
+<ul>
+<li><code>metrics.Namespace(ns string)</code>: The function can modify metrics namespace.</li>
+<li><code>metrics.Path(path string)</code>: The function can modity metrics descriptor path.</li>
+</ul>
+<p>For more information about installed metrics, please check <a href="https://prometheus.io/docs/introduction/overview/" target="_blank">Prometheus Doc</a>.</p>
+<h4 id="profiling">Profiling</h4>
+<p>This plugin provides capability to install <code>pprof</code> into nirvana server, which is a direct reflection of golang
+standard library <code>net/http/pprof</code>.</p>
+<p>You can install the plugin via:</p>
+<pre><code class="lang-go">config.Configure(profiling.Path(<span class="hljs-string">&quot;myprof&quot;</span>))
+</code></pre>
+<p>Then the plugin handles requests for the following paths:</p>
+<ul>
+<li>&quot;/myprof&quot;: Show profiling index page.</li>
+<li>&quot;/myprof/profile&quot;: Show cpu profile page.</li>
+<li>&quot;/myprof/symbol&quot;: Show symbol page.</li>
+<li>&quot;/myprof/trace&quot;: Show trace page.</li>
+</ul>
+<p>The plugin has two configurers:</p>
+<ul>
+<li><code>Path(path string)</code>: The function can change profiling descriptor path. Defaults to <code>/debug/pprof</code></li>
+<li><code>Contention(enable bool)</code>: Use to enable contention profiling. Defauts to <code>false</code>.</li>
+</ul>
+<p>For more information about <code>pprof</code>, please check <a href="https://golang.org/pkg/net/http/pprof/" target="_blank">PProf Doc</a>.</p>
+<h4 id="tracing">Tracing</h4>
+<p>TBD</p>
+<h2 id="developer-guide-and-proposals">Developer Guide and Proposals</h2>
+<h3 id="proposals">Proposals</h3>
+<ul>
+<li><a href="docs/proposals/kickoff.md">kickoff</a></li>
+<li><a href="docs/proposals/framework.md">framework</a></li>
+</ul>
+<h3 id="plugin-framework">Plugin framework</h3>
+<p>Following is a framework for writing nirvana plugin. All aforementioned built-in plugins are written with the
+framework: they are the best reference implementations if you ever want to draft a new plugin.</p>
+<pre><code class="lang-go"><span class="hljs-keyword">func</span> init() {
+    <span class="hljs-comment">// Register your config installer into nirvana.</span>
+    nirvana.RegisterConfigInstaller(&amp;pluginInstaller{})
+}
+
+<span class="hljs-comment">// ExternalConfigName is the external config name for your plugin. Please ensure that the</span>
+<span class="hljs-comment">// name is unique and won&apos;t conflict with other plugins.</span>
+<span class="hljs-keyword">const</span> ExternalConfigName = <span class="hljs-string">&quot;pluginName&quot;</span>
+
+<span class="hljs-keyword">type</span> pluginInstaller <span class="hljs-keyword">struct</span>{}
+
+<span class="hljs-comment">// Name is the external config name.</span>
+<span class="hljs-keyword">func</span> (i *pluginInstaller) Name() <span class="hljs-keyword">string</span> {
+    <span class="hljs-keyword">return</span> ExternalConfigName
+}
+
+<span class="hljs-comment">// Install installs config to builder. You can get plugin config from nirvana config. Then</span>
+<span class="hljs-comment">// install/initialize what you need.</span>
+<span class="hljs-keyword">func</span> (i *pluginInstaller) Install(builder service.Builder, cfg *nirvana.Config) error {...}
+
+<span class="hljs-comment">// Uninstall uninstalls stuffs after server terminating.</span>
+<span class="hljs-keyword">func</span> (i *pluginInstaller) Uninstall(builder service.Builder, cfg *nirvana.Config) error {...)
+
+<span class="hljs-comment">// ConfigA configures fieldA. Be careful, you should get/save plugin config into nirvana config</span>
+<span class="hljs-comment">// by `c.Config(ExternalConfigName)`/`c.Set(ExternalConfigName, cfg)` rather than a global</span>
+<span class="hljs-comment">// plugin config.</span>
+<span class="hljs-keyword">func</span> ConfigA(fieldA FieldType) nirvana.Configurer {...}
+
+<span class="hljs-comment">// ConfigB configures fieldB.</span>
+<span class="hljs-keyword">func</span> ConfigB() nirvana.Configurer {...}
+
+<span class="hljs-comment">// Disable returns a configurer to disable current plugin for a certain nirvana server.</span>
+<span class="hljs-keyword">func</span> Disable() nirvana.Configurer {
+    <span class="hljs-keyword">return</span> <span class="hljs-keyword">func</span>(c *nirvana.Config) error {
+        <span class="hljs-comment">// Set to nil will delete plugin config from nirvana config.</span>
+        c.Set(ExternalConfigName, <span class="hljs-literal">nil</span>)
+        <span class="hljs-keyword">return</span> <span class="hljs-literal">nil</span>
+    }
+}
+</code></pre>
+<p>Then user can use the plugin by:</p>
+<pre><code class="lang-go"><span class="hljs-keyword">import</span> <span class="hljs-string">&quot;/path/to/plugin&quot;</span>
+
+<span class="hljs-keyword">func</span> main() {
+    config := nirvana.NewDefaultConfig()
+    config.Configure(plugin.ConfigA(fieldValue))
+}
+</code></pre>
 
                                 
                                 </section>
@@ -390,7 +1389,7 @@ INFO  0202-16:34:38.663+08 builder.go:178 |   Method: Get Consumes: [*/*] Produc
     <script>
         var gitbook = gitbook || [];
         gitbook.push(function() {
-            gitbook.page.hasChanged({"page":{"title":"Introduction","level":"1.1","depth":1,"next":{"title":"Topics","level":"1.2","depth":1,"ref":"","articles":[{"title":"Routes","level":"1.2.1","depth":2,"path":"topics/routes.md","ref":"topics/routes.md","articles":[]},{"title":"CLI","level":"1.2.2","depth":2,"path":"topics/cli.md","ref":"topics/cli.md","articles":[]},{"title":"Error","level":"1.2.3","depth":2,"path":"topics/error.md","ref":"topics/error.md","articles":[]},{"title":"Validation","level":"1.2.4","depth":2,"path":"topics/validation.md","ref":"topics/validation.md","articles":[]},{"title":"Open API","level":"1.2.5","depth":2,"path":"topics/openapi.md","ref":"topics/openapi.md","articles":[]},{"title":"Metrics","level":"1.2.6","depth":2,"path":"topics/metrics.md","ref":"topics/metrics.md","articles":[]},{"title":"Tracing","level":"1.2.7","depth":2,"path":"topics/tracing.md","ref":"topics/tracing.md","articles":[]},{"title":"Testing","level":"1.2.8","depth":2,"path":"topics/testing.md","ref":"topics/testing.md","articles":[]}]},"dir":"ltr"},"config":{"plugins":[],"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"pluginsConfig":{"highlight":{},"search":{},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"fontsettings":{"theme":"white","family":"sans","size":2},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"theme":"default","pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"variables":{},"language":"en","gitbook":"*"},"file":{"path":"README.md","mtime":"2018-06-28T02:53:30.801Z","type":"markdown"},"gitbook":{"version":"3.2.3","time":"2018-08-01T08:21:08.987Z"},"basePath":".","book":{"language":"en"}});
+            gitbook.page.hasChanged({"page":{"title":"Introduction","level":"1.1","depth":1,"next":{"title":"Topics","level":"1.2","depth":1,"ref":"","articles":[{"title":"Routes","level":"1.2.1","depth":2,"path":"topics/routes.md","ref":"topics/routes.md","articles":[]},{"title":"CLI","level":"1.2.2","depth":2,"path":"topics/cli.md","ref":"topics/cli.md","articles":[]},{"title":"Validation","level":"1.2.3","depth":2,"path":"topics/validation.md","ref":"topics/validation.md","articles":[]},{"title":"Open API","level":"1.2.4","depth":2,"path":"topics/openapi.md","ref":"topics/openapi.md","articles":[]},{"title":"Metrics","level":"1.2.5","depth":2,"path":"topics/metrics.md","ref":"topics/metrics.md","articles":[]}]},"dir":"ltr"},"config":{"plugins":[],"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"pluginsConfig":{"highlight":{},"search":{},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"fontsettings":{"theme":"white","family":"sans","size":2},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"theme":"default","pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"variables":{},"language":"en","gitbook":"*"},"file":{"path":"README.md","mtime":"2018-09-09T05:00:42.712Z","type":"markdown"},"gitbook":{"version":"3.2.3","time":"2018-09-10T02:40:26.637Z"},"basePath":".","book":{"language":"en"}});
         });
     </script>
 </div>
