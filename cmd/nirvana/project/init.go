@@ -83,14 +83,14 @@ func (t *templateData) SlashBoilerplate() string {
 }
 
 type initOptions struct {
-	Boilerplate  string
-	Version      string
-	Registries   []string
-	ImagePrefix  string
-	ImageSuffix  string
-	BuildImage   string
-	RuntimeImage string
-	Pkgmgr       string
+	Boilerplate    string
+	Version        string
+	Registries     []string
+	ImagePrefix    string
+	ImageSuffix    string
+	BuildImage     string
+	RuntimeImage   string
+	PackageManager string
 }
 
 func (o *initOptions) Install(flags *pflag.FlagSet) {
@@ -101,7 +101,7 @@ func (o *initOptions) Install(flags *pflag.FlagSet) {
 	flags.StringVar(&o.ImageSuffix, "image-suffix", "", "Docker image suffix")
 	flags.StringVar(&o.BuildImage, "build-image", "golang:latest", "Golang image for building the project")
 	flags.StringVar(&o.RuntimeImage, "runtime-image", "debian:jessie", "Docker base image for running the project")
-	flags.StringVar(&o.Pkgmgr, "pkgmgr", "dep", "Package manager of project, dep or mod")
+	flags.StringVar(&o.PackageManager, "package-manager", "dep", "Package manager of project, dep or mod")
 
 }
 
@@ -242,7 +242,7 @@ func (o *initOptions) templates(proj string) map[string]string {
 }
 
 func (o *initOptions) exTemplateGopkg() (string, func() string) {
-	switch o.Pkgmgr {
+	switch o.PackageManager {
 	case "mod":
 		return "go.mod", func() string {
 			return o.templateGomod()
@@ -252,7 +252,7 @@ func (o *initOptions) exTemplateGopkg() (string, func() string) {
 			return o.templateGopkg()
 		}
 	default:
-		log.Warningf("Unrecognizable value of pkgmgr : \"%s\", switch to \"dep\"", o.Pkgmgr)
+		log.Warningf("Unrecognizable value of package-manager : \"%s\", switch to \"dep\"", o.PackageManager)
 		return "Gopkg.toml", func() string {
 			return o.templateGopkg()
 		}
