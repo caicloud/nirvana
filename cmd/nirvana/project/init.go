@@ -234,7 +234,7 @@ func (o *initOptions) templates(proj string) map[string]string {
 		"pkg/apis/api.go":                        o.templateAPI(),
 		"pkg/message/message.go":                 o.templateMessage(),
 		"pkg/version/version.go":                 o.templateVersion(),
-		string(pkgConfPath):                      templateGopkg(),
+		pkgConfPath:                              templateGopkg(),
 		"Makefile":                               o.templateMakefile(),
 		project.DefaultProjectFileName:           o.templateProject(),
 		"README.md":                              o.templateReadme(),
