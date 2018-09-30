@@ -221,7 +221,7 @@ func (o *initOptions) directories(project string) []string {
 }
 
 func (o *initOptions) templates(proj string) map[string]string {
-	pkgConfPath, templateGopkg := o.templatePackageManager()
+	pkgConfPath, templatePkgmgr := o.templatePackageManager()
 	return map[string]string{
 		fmt.Sprintf("cmd/%s/main.go", proj):      o.templateMain(),
 		fmt.Sprintf("build/%s/Dockerfile", proj): o.templateDockerfile(),
@@ -234,7 +234,7 @@ func (o *initOptions) templates(proj string) map[string]string {
 		"pkg/apis/api.go":                        o.templateAPI(),
 		"pkg/message/message.go":                 o.templateMessage(),
 		"pkg/version/version.go":                 o.templateVersion(),
-		pkgConfPath:                              templateGopkg(),
+		pkgConfPath:                              templatePkgmgr(),
 		"Makefile":                               o.templateMakefile(),
 		project.DefaultProjectFileName:           o.templateProject(),
 		"README.md":                              o.templateReadme(),
