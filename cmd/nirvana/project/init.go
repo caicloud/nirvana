@@ -683,7 +683,7 @@ func (o *initOptions) templateGomod() string {
 //     github.com/additional/dependency/v4 v4.0.0
 // )
 
-module {{ .ProjectName }}
+module {{ .ProjectPackage }}
 
 require (
 	github.com/caicloud/nirvana master
