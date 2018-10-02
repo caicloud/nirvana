@@ -56,6 +56,19 @@ $ dep ensure -v
 ```
 到这里就完成了整个项目的创建和依赖安装工作，默认的项目结构中自带了一个 API 范例，因此可以直接运行查看效果。
 
+### 使用 go module 进行包管理
+
+Nirvana 也提供对 [go module](https://golang.org/doc/go1.11#modules) 的支持。
+
+首先将 Go 语言版本升级到最新版本 ，然后在创建项目时添加 `--package-manager` 参数：
+```
+$ nirvana init --package-manager mod ./myproject
+```
+
+在当前 GO 语言版本(Version 1.11)中，若项目处于 `$GOPATH/src` 目录下，则还需要运行一下命令开启 module 功能：
+```
+$ export GO111MODULE=on
+```
 
 ## 编译运行
 
