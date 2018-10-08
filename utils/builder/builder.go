@@ -49,7 +49,7 @@ func NewAPIBuilder(root string, paths ...string) *APIBuilder {
 	}
 }
 
-// Build build api definitions.
+// Build builds api definitions.
 func (b *APIBuilder) Build() (*api.Definitions, error) {
 	analyzer := api.NewAnalyzer(b.root)
 	parents := []string{}

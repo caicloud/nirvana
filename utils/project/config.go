@@ -184,13 +184,13 @@ func LoadDefaultProjectFile(directory string) (*Config, error) {
 	return LoadConfig(path)
 }
 
-// FindDefaultProjectFile find the path of nirvana.yaml.
+// FindDefaultProjectFile finds the path of nirvana.yaml.
 // It will find the path itself and its parents recursively.
 func FindDefaultProjectFile(directory string) (string, error) {
 	return FindProjectFile(directory, DefaultProjectFileName)
 }
 
-// FindProjectFile find the path of project file.
+// FindProjectFile finds the path of project file.
 // It will find the path itself and its parents recursively.
 func FindProjectFile(directory string, fileName string) (string, error) {
 	goPath, absPath, err := GoPath(directory)

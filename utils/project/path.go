@@ -57,7 +57,7 @@ func GoPaths() []string {
 	return result
 }
 
-// GoPath finds the go path for specified path.
+// GoPath finds the go path and absolute path for specified directory.
 func GoPath(directory string) (goPath string, absPath string, err error) {
 	absPath, err = filepath.Abs(directory)
 	if err != nil {
