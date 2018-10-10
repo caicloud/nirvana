@@ -28,7 +28,7 @@ import (
 	"github.com/caicloud/nirvana/utils/project"
 )
 
-// Build finds project config and generate definitions by paths. If there is
+// Build finds project config and generates definitions by paths. If there is
 // no project config, default config is used (default root path is current path).
 // All paths should be under root path.
 func Build(paths ...string) (*project.Config, *api.Definitions, error) {
