@@ -126,7 +126,7 @@ func (c *Comments) LineComments() string {
 	return buf.String()
 }
 
-// Rename replace the first word of this comments. If its first word is
+// Rename replaces the first word of this comments. If its first word is
 // not the same as origin, the method returns false.
 func (c *Comments) Rename(origin, target string) bool {
 	if len(c.lines) > 0 {
