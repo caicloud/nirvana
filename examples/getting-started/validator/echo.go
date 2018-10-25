@@ -35,7 +35,7 @@ var echo = definition.Descriptor{
 	Description: "Echo API",
 	Definitions: []definition.Definition{
 		{
-			Method:   definition.Get,
+			Method:   definition.Create,
 			Function: Echo,
 			Consumes: []string{definition.MIMEJSON},
 			Produces: []string{definition.MIMEJSON},
