@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 
 	"github.com/caicloud/nirvana/definition"
@@ -55,7 +54,7 @@ func (r *responseWriter) Bytes() []byte {
 	return r.buf.Bytes()
 }
 
-// NewTestService creates a service.Service for testing
+// NewTestService creates a service.Service for testing.
 func NewTestService(desc ...definition.Descriptor) (service.Service, error) {
 	builder := service.NewBuilder()
 	builder.SetModifier(service.FirstContextParameter())
@@ -66,24 +65,40 @@ func NewTestService(desc ...definition.Descriptor) (service.Service, error) {
 	return builder.Build()
 }
 
-// NewJSONRequest creates a http.Request with json Content-Type. The data parameter can be io.Reader,
-// []bytes or a struct.
+// NewTestServiceWithConfig creates a service.Service for testing with user specified modifier and
+// filters. If modifier or filters is nil, default option will be used.
+func NewTestServiceWithConfig(desc []definition.Descriptor, modifier service.DefinitionModifier,
+	filters []service.Filter) (service.Service, error) {
+	builder := service.NewBuilder()
+	if modifier == nil {
+		modifier = service.FirstContextParameter()
+	}
+	builder.SetModifier(modifier)
+	if filters == nil {
+		filters = []service.Filter{service.RedirectTrailingSlash(), service.FillLeadingSlash(), service.ParseRequestForm()}
+	}
+	builder.AddFilter(filters...)
+	if err := builder.AddDescriptor(desc...); err != nil {
+		return nil, err
+	}
+	return builder.Build()
+}
+
+// NewJSONRequest creates a http.Request with json Content-Type. The data parameter can be io.Reader, []byte or a struct.
 func NewJSONRequest(ctx context.Context, method, url string, data interface{}) (*http.Request, error) {
-	var r io.ReadCloser
+	var r io.Reader
 	if data != nil {
 		switch t := data.(type) {
-		case io.ReadCloser:
-			r = t
 		case io.Reader:
-			r = ioutil.NopCloser(t)
+			r = t
 		case []byte:
-			r = ioutil.NopCloser(bytes.NewBuffer(t))
+			r = bytes.NewBuffer(t)
 		default:
 			jsonBytes, err := json.Marshal(data)
 			if err != nil {
 				return nil, fmt.Errorf("error encode data: %v", err)
 			}
-			ioutil.NopCloser(bytes.NewBuffer(jsonBytes))
+			r = bytes.NewBuffer(jsonBytes)
 		}
 	}
 	req, err := http.NewRequest(method, url, r)
