@@ -549,7 +549,7 @@ func ListMessages(ctx context.Context, count int) ([]Message, error) {
 	return messages, nil
 }
 
-// GetMessage return a message by id.
+// GetMessage returns a message by id.
 func GetMessage(ctx context.Context, id int) (*Message, error) {
 	return &Message{
 		ID:      id,
