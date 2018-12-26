@@ -744,7 +744,7 @@ BUILD_DIR := ./build
 
 # Git commit sha.
 COMMIT := $(strip $(shell git rev-parse --short HEAD 2>/dev/null))
-COMMIT := $(COMMIT)$(shell [[ -z $$(git status -s) ]] || echo '-dirty')
+COMMIT := $(COMMIT)$(shell git diff-files --quiet || echo '-dirty')
 COMMIT := $(if $(COMMIT),$(COMMIT),"Unknown")
 
 #
