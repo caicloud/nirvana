@@ -9,7 +9,7 @@
 [![OpenTracing Badge](https://img.shields.io/badge/OpenTracing-enabled-blue.svg)](http://opentracing.io)
 
 Nirvana is a golang API framework designed for productivity and usability. It aims to be the building block for
-all golang services in Caicloud. The high-level goals and features include:
+all golang services at Caicloud. The high-level goals and features include:
 
 * consistent API behavior, structure and layout across all golang projects
 * improve engineering productivity with openAPI and client generation, etc
@@ -21,31 +21,27 @@ Nirvana is also extensible and performant, with the goal to support fast develop
 
 ## Getting Started
 
-Nirvana provides two languages of documentations to help you to dig into this framework. But only chinese docs are fresh. If you can help to update these docs, we are very appreciate it. 
+Nirvana provides documentations in two languages to help you expore this framework. Note right now, only Chinese
+docs are kept up-to-date.
 
 - [中文](https://caicloud.github.io/nirvana/zh-hans)
 - [English (Expired)](https://caicloud.github.io/nirvana/en)
 
 ## Features
 
-- API Framework based on Descriptors.
+- API Framework based on Descriptors
 - Request Filter
 - Middleware
 - Validator
 - Plugins
-  - Metrics
-  - Tracing
 - API Doc Generation
 - Client Generation
 
 ## Contributing
 
-If you are intrested in this framework and want to contribute to it, you can get more deatils from [CONTRIBUTING.md](./CONTRIBUTING.md)
+If you are interested in contributing to Nirvana, please checkout [CONTRIBUTING.md](./CONTRIBUTING.md).
+We welcome any code or non-code contribution!
 
 ## Licensing
 
 Nirvana is licensed under the Apache License, Version 2.0. See [LICENSE](./LICENSE) for the full license text.
-
- 
-
-
