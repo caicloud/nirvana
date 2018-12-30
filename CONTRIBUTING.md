@@ -9,14 +9,17 @@ First, you can fork this repository via the `Fork` button on the top of this pag
 Then you can clone Nirvana to your local path:
 
 ```
-$ mkdir -p $GOPATH/src/github.com/nirvana
+$ mkdir -p $GOPATH/src/github.com/caicloud
 $ go get github.com/caicloud/nirvana
 
 # Avoid push to caicloud/nirvana
 $ git config push.default nothing
 
-$ git remove add $USER git@github.com:$USER/nirvana.git
-$ git fetch $USER
+# Set user to match your github profile name:
+$ user={your github profile name}
+
+$ git remove add $user git@github.com:$user/nirvana.git
+$ git fetch $user
 ```
 
 There are some environment requirements:
