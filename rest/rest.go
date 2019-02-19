@@ -405,8 +405,9 @@ func (r *Request) finish(ctx context.Context, req *http.Request, resp *http.Resp
 					if err := xml.NewDecoder(reader).Decode(r.data); err != nil {
 						return unreadableBody.Error(r.path.String(), err.Error())
 					}
+				default:
+					return unrecognizedBody.Error(r.path.String(), "no appropriate receiver")
 				}
-				return unrecognizedBody.Error(r.path.String(), "no appropriate receiver")
 			}
 		}
 	} else {
