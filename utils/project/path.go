@@ -77,7 +77,7 @@ func PackageForPath(directory string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return strings.Trim(absPath[len(srcPath(goPath)):], "/"), nil
+	return filepath.ToSlash(strings.Trim(absPath[len(srcPath(goPath)):], string(os.PathSeparator))), nil
 }
 
 // Subdirectories walkthroughs all subdirectories. The results contains itself.
