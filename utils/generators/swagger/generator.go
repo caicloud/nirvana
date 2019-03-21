@@ -466,7 +466,13 @@ func (g *Generator) generateParameter(param *api.Parameter) []spec.Parameter {
 
 func (g *Generator) generateAutoParameter(typ api.TypeName) []spec.Parameter {
 	structType, ok := g.apis.Types[typ]
-	if !ok || structType.Kind != reflect.Struct {
+	if !ok {
+		return nil
+	}
+	if structType.Kind == reflect.Ptr {
+		return g.generateAutoParameter(structType.Elem)
+	}
+	if structType.Kind != reflect.Struct {
 		return nil
 	}
 	return g.enum(structType)
