@@ -102,7 +102,7 @@ func (o *apiOptions) Run(cmd *cobra.Command, args []string) error {
 
 	files := map[string][]byte{}
 	for _, s := range swaggers {
-		data, err := json.Marshal(s)
+		data, err := json.MarshalIndent(s, "", "  ")
 		if err != nil {
 			return err
 		}
