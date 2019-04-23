@@ -212,6 +212,8 @@ func (c *response) CloseNotify() <-chan bool {
 // Hijack is a disguise of http.response.Hijack().
 func (c *response) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 	if h, ok := c.writer.(http.Hijacker); ok {
+		// Prevent WriteHeader from automatically calling.
+		c.statusCode = 200
 		return h.Hijack()
 	}
 	return nil, nil, noConnectionHijacker.Error()
