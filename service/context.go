@@ -176,6 +176,7 @@ type response struct {
 	writer        http.ResponseWriter
 	statusCode    int
 	contentLength int
+	hijacked      bool
 }
 
 // For http.HTTPResponseWriter and HTTPResponseInfo
@@ -212,8 +213,7 @@ func (c *response) CloseNotify() <-chan bool {
 // Hijack is a disguise of http.response.Hijack().
 func (c *response) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 	if h, ok := c.writer.(http.Hijacker); ok {
-		// Prevent WriteHeader from automatically calling.
-		c.statusCode = 200
+		c.hijacked = true
 		return h.Hijack()
 	}
 	return nil, nil, noConnectionHijacker.Error()
@@ -236,7 +236,7 @@ func (c *response) ContentLength() int {
 // been called. If the method returns false, you should
 // not recall WriteHeader().
 func (c *response) HeaderWritable() bool {
-	return c.statusCode <= 0
+	return !c.hijacked && c.statusCode <= 0
 }
 
 // HTTPContext describes an http context.
