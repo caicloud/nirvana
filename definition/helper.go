@@ -226,7 +226,14 @@ func (o *operatorRef) Out() reflect.Type {
 
 // Operate operates an object and return one.
 func (o *operatorRef) Operate(ctx context.Context, field string, object interface{}) (interface{}, error) {
-	results := o.value.Call([]reflect.Value{reflect.ValueOf(ctx), reflect.ValueOf(field), reflect.ValueOf(object)})
+	var objectValue reflect.Value
+	if object == nil {
+		objectValue = reflect.Zero(o.in)
+	} else {
+		objectValue = reflect.ValueOf(object)
+	}
+
+	results := o.value.Call([]reflect.Value{reflect.ValueOf(ctx), reflect.ValueOf(field), objectValue})
 	v := results[1]
 	if v.IsNil() {
 		return results[0].Interface(), nil
