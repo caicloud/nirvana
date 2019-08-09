@@ -30,7 +30,7 @@ import (
 )
 
 // Server is a complete API server.
-// The server contains a router to handle all requests form clients.
+// The server contains a router to handle all requests from clients.
 type Server interface {
 	// Serve starts to listen and serve requests.
 	// The method won't return except an error occurs.
@@ -68,7 +68,7 @@ type Config struct {
 	configSet map[string]interface{}
 	// locked is for locking current config. If the field
 	// is not 0, any modification causes panic.
-	locked int32
+	locked int32 // TODO: why not use bool?
 }
 
 // lock locks config. If succeed, it will return ture.
@@ -129,7 +129,7 @@ func (c *Config) Set(name string, config interface{}) {
 	}
 }
 
-// forEach traverse all plugin configs.
+// forEach traverses all plugin configs.
 func (c *Config) forEach(f func(name string, config interface{}) error) error {
 	for name, cfg := range c.configSet {
 		if err := f(name, cfg); err != nil {
@@ -169,13 +169,9 @@ func NewDefaultConfig() *Config {
 // modifiers for specific scenario, please use NewDefaultConfig().
 func NewConfig() *Config {
 	return &Config{
-		ip:          "",
-		port:        8080,
-		logger:      &log.SilentLogger{},
-		filters:     []service.Filter{},
-		descriptors: []definition.Descriptor{},
-		modifiers:   []service.DefinitionModifier{},
-		configSet:   make(map[string]interface{}),
+		port:      8080,
+		logger:    &log.SilentLogger{},
+		configSet: make(map[string]interface{}),
 	}
 }
 
