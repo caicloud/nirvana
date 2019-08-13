@@ -17,6 +17,7 @@ limitations under the License.
 package config
 
 import (
+	"flag"
 	"os"
 	"reflect"
 	"sort"
@@ -273,6 +274,12 @@ func (s *command) Execute(descriptors ...definition.Descriptor) error {
 
 // ExecuteWithConfig runs nirvana server from a custom config.
 func (s *command) ExecuteWithConfig(cfg *nirvana.Config) error {
+	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
+	// https://github.com/kubernetes/kubernetes/issues/17162#issuecomment-225596212
+	if err := flag.CommandLine.Parse([]string{}); err != nil {
+		panic(err)
+	}
+
 	return s.Command(cfg).Execute()
 }
 
