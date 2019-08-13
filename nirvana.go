@@ -68,7 +68,7 @@ type Config struct {
 	configSet map[string]interface{}
 	// locked is for locking current config. If the field
 	// is not 0, any modification causes panic.
-	locked int32 // TODO: why not use bool?
+	locked int32
 }
 
 // lock locks config. If succeed, it will return ture.
