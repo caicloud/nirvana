@@ -29,9 +29,10 @@ func init() {
 }
 
 // HealthChecker checks if current server is healthy.
-type HealthChecker func(ctx context.Context) error
+// The `checkType` parameter indicates the type of health check, such as liveness or readiness.
+type HealthChecker func(ctx context.Context, checkType string) error
 
-func defaultHealthChecker(ctx context.Context) error {
+func defaultHealthChecker(ctx context.Context, checkType string) error {
 	return nil
 }
 
@@ -60,8 +61,11 @@ func (i *healthcheckInstaller) Install(builder service.Builder, cfg *nirvana.Con
 			Consumes: []string{definition.MIMEAll},
 			Produces: []string{definition.MIMEAll},
 			Definitions: []definition.Definition{{
-				Method:   definition.Get,
-				Results:  []definition.Result{definition.ErrorResult()},
+				Method:  definition.Get,
+				Results: []definition.Result{definition.ErrorResult()},
+				Parameters: []definition.Parameter{
+					definition.QueryParameterFor("type", "the type of health check"),
+				},
 				Function: c.checker,
 			}},
 		})
