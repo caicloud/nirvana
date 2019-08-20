@@ -15,10 +15,7 @@
 .PHONY: test
 test:
 	hack/verify_boilerplate.py
-	hack/verify-govet.sh
-	hack/verify-gofmt.sh
 	@go test -race -cover ./...
-
 
 .PHONY: license
 license:

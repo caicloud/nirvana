@@ -28,29 +28,31 @@ import (
 
 type vc struct{}
 
+const testKey = "test"
+
 func (v *vc) Path(key string) (string, bool) {
-	if key == "test" {
+	if key == testKey {
 		return "path", true
 	}
 	return "", false
 }
 
 func (v *vc) Query(key string) ([]string, bool) {
-	if key == "test" {
+	if key == testKey {
 		return []string{"query"}, true
 	}
 	return nil, false
 }
 
 func (v *vc) Header(key string) ([]string, bool) {
-	if key == "test" {
+	if key == testKey {
 		return []string{"header"}, true
 	}
 	return nil, true
 }
 
 func (v *vc) Form(key string) ([]string, bool) {
-	if key == "test" {
+	if key == testKey {
 		return []string{"form"}, true
 	}
 	return nil, true
@@ -83,7 +85,7 @@ func (f *file) Close() error {
 }
 
 func (v *vc) File(key string) (multipart.File, bool) {
-	if key == "test" {
+	if key == testKey {
 		return &file{[]byte("test file"), 0}, true
 	}
 	return nil, false
