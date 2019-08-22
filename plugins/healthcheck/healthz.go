@@ -20,7 +20,6 @@ import (
 	"context"
 
 	"github.com/caicloud/nirvana"
-	nirvanaconfig "github.com/caicloud/nirvana/config"
 	"github.com/caicloud/nirvana/definition"
 	"github.com/caicloud/nirvana/service"
 )
@@ -188,33 +187,6 @@ func (p *Option) Configure(cfg *nirvana.Config) error {
 	cfg.Configure(
 		Path(p.Path),
 		Checker(p.checker),
-	)
-	return nil
-}
-
-type checkerWithType struct {
-	path    string
-	checker HealthCheckerWithType
-}
-
-// NewCheckerWithType returns a health check plugin with a type parameter.
-func NewCheckerWithType(path string, checker HealthCheckerWithType) nirvanaconfig.Plugin {
-	return &checkerWithType{
-		path:    path,
-		checker: checker,
-	}
-}
-
-// Name returns plugin name.
-func (p *checkerWithType) Name() string {
-	return ExternalConfigName
-}
-
-// Configure configures nirvana config via current options.
-func (p *checkerWithType) Configure(cfg *nirvana.Config) error {
-	cfg.Configure(
-		Path(p.path),
-		CheckerWithType(p.checker),
 	)
 	return nil
 }

@@ -19,6 +19,7 @@ package main
 import (
 	"context"
 
+	"github.com/caicloud/nirvana"
 	"github.com/caicloud/nirvana/config"
 	"github.com/caicloud/nirvana/definition"
 	"github.com/caicloud/nirvana/errors"
@@ -63,35 +64,26 @@ func Echo(ctx context.Context, msg string) (string, error) {
 
 func main() {
 	cmd := config.NewDefaultNirvanaCommand()
-	checkFunc := func(ctx context.Context, checkType string) error {
-		switch checkType {
-		case healthcheck.LivenessCheck:
-			// do something
-			return nil
-		case healthcheck.ReadinessCheck:
-			// do something
-			return nil
-		default:
-			return errors.BadRequest.Build("error", "unknown type ${type}").Error(checkType)
-		}
-	}
-
-	// cfg := nirvana.NewDefaultConfig()
-	// cfg.Configure(
-	// 	nirvana.Descriptor(echo),
-	// 	healthcheck.CheckerWithType(checkFunc),
-	// 	// healthcheck.Checker(func(ctx context.Context) error {
-	// 	// 	return nil
-	// 	// }),
-	// )
-	// if err := cmd.ExecuteWithConfig(cfg); err != nil {
-	// 	log.Fatal(err)
-	// }
-
-	cmd.EnablePlugin(
-		healthcheck.NewCheckerWithType("", checkFunc),
+	cfg := nirvana.NewDefaultConfig()
+	cfg.Configure(
+		nirvana.Descriptor(echo),
+		healthcheck.CheckerWithType(func(ctx context.Context, checkType string) error {
+			switch checkType {
+			case healthcheck.LivenessCheck:
+				// do something
+				return nil
+			case healthcheck.ReadinessCheck:
+				// do something
+				return nil
+			default:
+				return errors.BadRequest.Build("error", "unknown type ${type}").Error(checkType)
+			}
+		}),
+		// healthcheck.Checker(func(ctx context.Context) error {
+		// 	return nil
+		// }),
 	)
-	if err := cmd.Execute(echo); err != nil {
+	if err := cmd.ExecuteWithConfig(cfg); err != nil {
 		log.Fatal(err)
 	}
 }
