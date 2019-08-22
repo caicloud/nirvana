@@ -1,5 +1,5 @@
 /*
-Copyright 2018 Caicloud Authors
+Copyright 2019 Caicloud Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -63,19 +63,33 @@ func Echo(ctx context.Context, msg string) (string, error) {
 
 func main() {
 	cmd := config.NewDefaultNirvanaCommand()
+	checkFunc := func(ctx context.Context, checkType string) error {
+		switch checkType {
+		case healthcheck.LivenessCheck:
+			// do something
+			return nil
+		case healthcheck.ReadinessCheck:
+			// do something
+			return nil
+		default:
+			return errors.BadRequest.Build("error", "unknown type ${type}").Error(checkType)
+		}
+	}
+
+	// cfg := nirvana.NewDefaultConfig()
+	// cfg.Configure(
+	// 	nirvana.Descriptor(echo),
+	// 	healthcheck.CheckerWithType(checkFunc),
+	// 	// healthcheck.Checker(func(ctx context.Context) error {
+	// 	// 	return nil
+	// 	// }),
+	// )
+	// if err := cmd.ExecuteWithConfig(cfg); err != nil {
+	// 	log.Fatal(err)
+	// }
+
 	cmd.EnablePlugin(
-		healthcheck.NewOption(func(ctx context.Context, checkType string) error {
-			switch checkType {
-			case "liveness":
-				// do something
-				return nil
-			case "readiness":
-				// do something
-				return nil
-			default:
-				return errors.BadRequest.Build("error", "unknown type ${type}").Error(checkType)
-			}
-		}),
+		healthcheck.NewCheckerWithType("", checkFunc),
 	)
 	if err := cmd.Execute(echo); err != nil {
 		log.Fatal(err)
