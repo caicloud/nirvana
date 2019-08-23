@@ -35,13 +35,29 @@ func defaultHealthChecker(ctx context.Context) error {
 	return nil
 }
 
+// HealthCheckerWithType checks if current server is healthy.
+// The `checkType` parameter indicates the type of health check, such as liveness or readiness.
+type HealthCheckerWithType func(ctx context.Context, checkType string) error
+
+func defaultHealthCheckerWithType(ctx context.Context, checkType string) error {
+	return nil
+}
+
+const (
+	// LivenessCheck represents liveness check.
+	LivenessCheck = "liveness"
+	// ReadinessCheck represents readiness check.
+	ReadinessCheck = "readiness"
+)
+
 // ExternalConfigName is the external config name of health check.
 const ExternalConfigName = "healthcheck"
 
 // config is healthcheck config.
 type config struct {
-	path    string
-	checker HealthChecker
+	path            string
+	checker         HealthChecker
+	checkerWithType HealthCheckerWithType
 }
 
 type healthcheckInstaller struct{}
@@ -55,14 +71,24 @@ func (i *healthcheckInstaller) Name() string {
 func (i *healthcheckInstaller) Install(builder service.Builder, cfg *nirvana.Config) error {
 	var err error
 	wrapper(cfg, func(c *config) {
+		var parameters []definition.Parameter
+		var function interface{} = c.checker
+		if c.checkerWithType != nil {
+			parameters = []definition.Parameter{
+				definition.QueryParameterFor("type", "the type of health check"),
+			}
+			function = c.checkerWithType
+		}
+
 		err = builder.AddDescriptor(definition.Descriptor{
 			Path:     c.path,
 			Consumes: []string{definition.MIMEAll},
 			Produces: []string{definition.MIMEAll},
 			Definitions: []definition.Definition{{
-				Method:   definition.Get,
-				Results:  []definition.Result{definition.ErrorResult()},
-				Function: c.checker,
+				Method:     definition.Get,
+				Results:    []definition.Result{definition.ErrorResult()},
+				Parameters: parameters,
+				Function:   function,
 			}},
 		})
 	})
@@ -103,6 +129,19 @@ func Checker(checker HealthChecker) nirvana.Configurer {
 	return func(c *nirvana.Config) error {
 		wrapper(c, func(c *config) {
 			c.checker = checker
+		})
+		return nil
+	}
+}
+
+// CheckerWithType returns a configurer to set health checker with a type parameter.
+func CheckerWithType(checker HealthCheckerWithType) nirvana.Configurer {
+	if checker == nil {
+		checker = defaultHealthCheckerWithType
+	}
+	return func(c *nirvana.Config) error {
+		wrapper(c, func(c *config) {
+			c.checkerWithType = checker
 		})
 		return nil
 	}
