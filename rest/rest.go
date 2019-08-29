@@ -348,7 +348,7 @@ func (r *Request) request(ctx context.Context) (*http.Request, error) {
 	return req, nil
 }
 
-func (r *Request) finish(ctx context.Context, req *http.Request, resp *http.Response) (err error) {
+func (r *Request) finish(_ context.Context, _ *http.Request, resp *http.Response) (err error) {
 	reader := &autocloser{resp.Body}
 	defer func() {
 		if err != nil {

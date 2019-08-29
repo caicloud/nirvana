@@ -206,6 +206,8 @@ func (c *response) Flush() {
 }
 
 // CloseNotify is a disguise of http.response.CloseNotify().
+//
+// Deprecated: use `http.Request.Context.Done()` as instead.
 func (c *response) CloseNotify() <-chan bool {
 	return c.writer.(http.CloseNotifier).CloseNotify()
 }
