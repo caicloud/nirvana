@@ -17,14 +17,7 @@ limitations under the License.
 package api
 
 import (
-	"bytes"
-	"context"
 	"encoding/json"
-	"fmt"
-	"html/template"
-	"io/ioutil"
-	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -33,12 +26,12 @@ import (
 	"github.com/caicloud/nirvana/definition"
 	"github.com/caicloud/nirvana/log"
 	"github.com/caicloud/nirvana/service"
+	"github.com/caicloud/nirvana/utils/api"
 	"github.com/caicloud/nirvana/utils/generators/swagger"
+
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
-
-const mimeHTML = "text/html"
 
 func init() {
 	err := service.RegisterProducer(service.NewSimpleSerializer("text/html"))
@@ -111,7 +104,7 @@ func (o *apiOptions) Run(cmd *cobra.Command, args []string) error {
 	}
 
 	if o.Output != "" {
-		if err = o.write(files); err != nil {
+		if err = api.WriteFiles(o.Output, files); err != nil {
 			return err
 		}
 	}
@@ -120,25 +113,6 @@ func (o *apiOptions) Run(cmd *cobra.Command, args []string) error {
 		err = o.serve(files)
 	}
 	return err
-}
-
-func (o *apiOptions) write(apis map[string][]byte) error {
-	dir := o.Output
-	dir, err := filepath.Abs(dir)
-	if err != nil {
-		return err
-	}
-	if err := os.MkdirAll(dir, 0775); err != nil {
-		return err
-	}
-	for version, data := range apis {
-		file := filepath.Join(dir, o.pathForVersion(version))
-		if err := ioutil.WriteFile(file, data, 0664); err != nil {
-			return err
-		}
-	}
-	log.Infof("Generated openapi schemes to %s", dir)
-	return nil
 }
 
 func (o *apiOptions) serve(apis map[string][]byte) error {
@@ -160,172 +134,24 @@ func (o *apiOptions) serve(apis map[string][]byte) error {
 	}
 	log.SetDefaultLogger(log.NewStdLogger(0))
 	cfg := nirvana.NewDefaultConfig()
-	versions := []string{}
+	versions := make([]string, 0, len(apis))
 	for v, data := range apis {
 		versions = append(versions, v)
 		cfg.Configure(nirvana.Descriptor(
-			o.descriptorForData(o.pathForVersion(v), data, definition.MIMEJSON),
+			api.DescriptorForData(api.PathForVersion("/", v), data, definition.MIMEJSON),
 		))
 	}
-	data, err := o.indexData(versions)
+	data, err := api.GenSwaggerPageData("/", versions)
 	if err != nil {
 		return err
 	}
 	cfg.Configure(
-		nirvana.Descriptor(o.descriptorForData("/", data, mimeHTML)),
+		nirvana.Descriptor(api.DescriptorForData("/", data, definition.MIMEHTML)),
 		nirvana.IP(ip),
 		nirvana.Port(port),
 	)
 	log.Infof("Listening on %s:%d. Please open your browser to view api docs", cfg.IP(), cfg.Port())
 	return nirvana.NewServer(cfg).Serve()
-}
-
-func (o *apiOptions) descriptorForData(path string, data []byte, ct string) definition.Descriptor {
-	return definition.Descriptor{
-		Path: path,
-		Definitions: []definition.Definition{
-			{
-				Method:   definition.Get,
-				Consumes: []string{definition.MIMENone},
-				Produces: []string{ct},
-				Function: func(context.Context) ([]byte, error) {
-					return data, nil
-				},
-				Parameters: []definition.Parameter{},
-				Results:    definition.DataErrorResults(""),
-			},
-		},
-	}
-}
-
-func (o *apiOptions) pathForVersion(version string) string {
-	return fmt.Sprintf("/api.%s.json", version)
-}
-
-func (o *apiOptions) indexData(versions []string) ([]byte, error) {
-	index := `
-{{ $total := len .}}
-{{ $multipleVersions := gt $total 1 }}
-<!DOCTYPE html>
-<html>
-  <head>
-    <title>ReDoc Demo: Multiple apis</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <style>
-      body {
-        margin: 0;
-        {{ if $multipleVersions -}}
-        padding: 50px 0 0 0;
-        {{ end -}}
-      }
-      {{ if $multipleVersions -}}
-      .topnav {
-        position: fixed;
-        top: 0px;
-        width: 100%;
-        height: 50px;
-        box-sizing: border-box;
-        z-index: 10;
-        display: flex;
-        -webkit-box-align: center;
-        align-items: center;
-        font-family: Lato;
-        background: white;
-        border-bottom: 1px solid rgb(204, 204, 204);
-        padding: 5px;
-      }
-      .topnav-item {
-        float: left;
-        display: block;
-        font-size: 15px;
-        line-height: 1.5;
-        height: 34px;
-        text-align: center;
-        padding-top: 15px;
-        padding-left: 25px;
-        padding-right: 25px;
-        margin-right: 1px;
-        color: #555555;
-        background-color: #fafafa;
-        cursor: pointer;
-      }
-      .topnav-img {
-        height: 40px;
-        width: 124px;
-        display: inline-block;
-        margin-right: 90px;
-      }
-      {{ end -}}
-    </style>
-  </head>
-  <body>
-    {{ if $multipleVersions -}}
-    <!-- Top navigation placeholder -->
-    <nav class="topnav">
-      <img class="topnav-img" src="https://github.com/Rebilly/ReDoc/raw/master/docs/images/redoc-logo.png">
-      <ul id="links_container">
-      </ul>
-    </nav>
-	{{ end }}
-    <redoc scroll-y-offset="body > nav"></redoc>
-
-    <script src="https://rebilly.github.io/ReDoc/releases/v1.x.x/redoc.min.js"> </script>
-    <script>
-      // list of APIS
-      var apis = [
-        {{ range $i, $v := . }}
-        {
-            name: '{{ $v.Name }}',
-            url: '{{ $v.Path }}'
-        },
-		{{ end }}
-      ];
-      // initially render first API
-      Redoc.init(apis[0].url, {
-          suppressWarnings: true
-      });
-      {{ if $multipleVersions -}}
-      function onClick() {
-        var url = this.getAttribute('data-link');
-        Redoc.init(url, {
-          suppressWarnings: true
-        });
-      }
-      // dynamically building navigation items
-      var $list = document.getElementById('links_container');
-      apis.forEach(function(api) {
-        var $listitem = document.createElement('li');
-        $listitem.setAttribute('data-link', api.url);
-        $listitem.setAttribute('class', "topnav-item");
-        $listitem.innerText = api.name;
-        $listitem.addEventListener('click', onClick);
-        $list.appendChild($listitem);
-      });
-	  {{ end }}
-    </script>
-  </body>
-</html>
-`
-	tmpl, err := template.New("index.html").Parse(index)
-	if err != nil {
-		return nil, err
-	}
-	data := []struct {
-		Name string
-		Path string
-	}{}
-	for _, v := range versions {
-		path := o.pathForVersion(v)
-		data = append(data, struct {
-			Name string
-			Path string
-		}{v, path})
-	}
-	buf := bytes.NewBuffer(nil)
-	if err := tmpl.Execute(buf, data); err != nil {
-		return nil, err
-	}
-	return buf.Bytes(), nil
 }
 
 func (o *apiOptions) Manuals() string {

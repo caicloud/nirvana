@@ -454,6 +454,10 @@ func (g *Generator) generateParameter(param *api.Parameter) []spec.Parameter {
 			parameter.Items.Format = schema.Items.Schema.Format
 		}
 		parameter.Schema = nil
+	} else {
+		// add parameter name for body, it required by swagger ui,
+		// cause api.Parameter.Name is always nil when In is body
+		parameter.Name = "body"
 	}
 
 	if len(param.Default) > 0 {

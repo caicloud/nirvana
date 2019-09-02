@@ -61,6 +61,7 @@ var producers = map[string]Producer{
 	definition.MIMEJSON:        &JSONSerializer{},
 	definition.MIMEXML:         &XMLSerializer{},
 	definition.MIMEOctetStream: NewSimpleSerializer(definition.MIMEOctetStream),
+	definition.MIMEHTML:        NewSimpleSerializer(definition.MIMEHTML),
 }
 
 // AllConsumers returns all consumers.

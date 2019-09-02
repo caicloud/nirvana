@@ -17,6 +17,7 @@ limitations under the License.
 package main
 
 import (
+	"github.com/caicloud/nirvana"
 	"github.com/caicloud/nirvana/config"
 	"github.com/caicloud/nirvana/examples/api-basic/api/v1"
 	"github.com/caicloud/nirvana/examples/api-basic/api/v2"
@@ -25,7 +26,12 @@ import (
 
 func main() {
 	cmd := config.NewDefaultNirvanaCommand()
-	if err := cmd.Execute(v1.Descriptor(), v2.Descriptor()); err != nil {
+	cfg := nirvana.NewDefaultConfig()
+	cfg.Configure(
+		nirvana.Descriptor(v1.Descriptor(), v2.Descriptor()),
+		nirvana.APIDocs("github.com/caicloud/nirvana/examples/api-basic", "/docs"),
+	)
+	if err := cmd.ExecuteWithConfig(cfg); err != nil {
 		log.Fatal(err)
 	}
 }

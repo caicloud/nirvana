@@ -77,7 +77,7 @@ func (b *builder) Filters() []Filter {
 	return result
 }
 
-// AddFilters add filters to filter requests.
+// AddFilter add filters to filter requests.
 func (b *builder) AddFilter(filters ...Filter) {
 	b.filters = append(b.filters, filters...)
 }

@@ -18,8 +18,11 @@ package nirvana
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
+	"path"
 	"sync"
 	"sync/atomic"
 
@@ -27,6 +30,9 @@ import (
 	"github.com/caicloud/nirvana/errors"
 	"github.com/caicloud/nirvana/log"
 	"github.com/caicloud/nirvana/service"
+	"github.com/caicloud/nirvana/utils/api"
+	"github.com/caicloud/nirvana/utils/generators/swagger"
+	"github.com/caicloud/nirvana/utils/project"
 )
 
 // Server is a complete API server.
@@ -69,6 +75,13 @@ type Config struct {
 	// locked is for locking current config. If the field
 	// is not 0, any modification causes panic.
 	locked int32
+
+	// options for generating API docs
+
+	// root is the absolute path of the current project.
+	root string
+	// apiDocsPath is the path to the API documentation page, empty means do not serve the documentation page.
+	apiDocsPath string
 }
 
 // lock locks config. If succeed, it will return ture.
@@ -197,6 +210,51 @@ func NewServer(c *Config) Server {
 
 var noConfigInstaller = errors.InternalServerError.Build("Nirvana:NoConfigInstaller", "no config installer for external config name ${name}")
 
+func (s *server) buildAPIDocs(definitions *api.Definitions) (map[string][]byte, error) {
+	var (
+		config *project.Config
+		err    error
+	)
+	config, _ = project.LoadDefaultProjectFile(s.config.root)
+	if config == nil {
+		config = &project.Config{
+			Root:        s.config.root,
+			Project:     "Unknown Project",
+			Description: "This project does not have a project config.",
+			Schemes:     []string{"http"},
+			Hosts:       []string{"localhost"},
+			Versions: []project.Version{
+				{
+					Name: "unversioned",
+					PathRules: []project.PathRule{
+						{
+							Prefix: "/",
+						},
+					},
+				},
+			},
+		}
+		log.Warning("can't find project file, instead by default config")
+	}
+
+	generator := swagger.NewDefaultGenerator(config, definitions)
+	swaggers, err := generator.Generate()
+	if err != nil {
+		return nil, err
+	}
+
+	files := make(map[string][]byte, len(swaggers))
+	for _, sw := range swaggers {
+		data, err := json.MarshalIndent(sw, "", "  ")
+		if err != nil {
+			return nil, err
+		}
+
+		files[sw.Info.Version] = data
+	}
+	return files, nil
+}
+
 // Builder create a service builder for current server. Don't use this method directly except
 // there is a special server to hold http services. After server shutdown, clean resources via
 // returned cleaner.
@@ -215,6 +273,53 @@ func (s *server) Builder() (builder service.Builder, cleaner func() error, err e
 	if err := builder.AddDescriptor(s.config.descriptors...); err != nil {
 		return nil, nil, err
 	}
+
+	if s.config.root != "" {
+		typeContainer := api.NewTypeContainer()
+		analyzer := api.NewAnalyzer(s.config.root)
+		result, err := api.NewPathDefinitions(typeContainer, builder.Definitions())
+		if err != nil {
+			return nil, nil, err
+		}
+		if err = typeContainer.Complete(analyzer); err != nil && err.Error() != "[]" {
+			return nil, nil, err
+		}
+		definitions := &api.Definitions{
+			Definitions: result,
+			Types:       typeContainer.Types(),
+		}
+		files, err := s.buildAPIDocs(definitions)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		// write API json files
+		if err = api.WriteFiles(s.config.root, files); err != nil {
+			return nil, nil, err
+		}
+
+		// serve the API docs page
+		if s.config.apiDocsPath != "" {
+			apiDescriptor := make([]definition.Descriptor, 0, len(files)+1)
+			versions := make([]string, 0, len(files))
+			for v, data := range files {
+				versions = append(versions, v)
+				apiDescriptor = append(apiDescriptor, api.DescriptorForData(api.PathForVersion(s.config.apiDocsPath, v), data, definition.MIMEJSON))
+			}
+			data, err := api.GenSwaggerPageData(s.config.apiDocsPath, versions)
+			if err != nil {
+				return nil, nil, err
+			}
+			apiDescriptor = append(
+				apiDescriptor,
+				api.DescriptorForData(s.config.apiDocsPath, data, definition.MIMEHTML),
+			)
+			if err = builder.AddDescriptor(apiDescriptor...); err != nil {
+				return nil, nil, err
+			}
+		}
+	}
+
 	if err := s.config.forEach(func(name string, config interface{}) error {
 		installer := ConfigInstallerFor(name)
 		if installer == nil {
@@ -379,6 +484,27 @@ func Filter(filters ...service.Filter) Configurer {
 func Modifier(modifiers ...service.DefinitionModifier) Configurer {
 	return func(c *Config) error {
 		c.modifiers = append(c.modifiers, modifiers...)
+		return nil
+	}
+}
+
+// APIDocs returns a configurer to set API docs generation related options.
+func APIDocs(modulePath, apiDocsPath string) Configurer {
+	return func(c *Config) error {
+		if modulePath == "" {
+			return fmt.Errorf("the module path can't be empty")
+		}
+		var err error
+		root := path.Join(os.Getenv("GOPATH"), "src", modulePath)
+		s, _ := os.Stat(root)
+		if s == nil || !s.IsDir() {
+			root, err = os.Getwd()
+			if err != nil {
+				return err
+			}
+		}
+		c.root = root
+		c.apiDocsPath = apiDocsPath
 		return nil
 	}
 }

@@ -33,6 +33,7 @@ const (
 	MIMEAll         = "*/*"
 	MIMENone        = ""
 	MIMEText        = "text/plain"
+	MIMEHTML        = "text/html"
 	MIMEJSON        = "application/json"
 	MIMEXML         = "application/xml"
 	MIMEOctetStream = "application/octet-stream"
