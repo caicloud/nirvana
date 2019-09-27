@@ -21,13 +21,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"go/types"
-	"html/template"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"reflect"
 	"regexp"
+	"strconv"
+	"text/template"
 
 	"github.com/caicloud/nirvana/utils/api"
 	"github.com/caicloud/nirvana/utils/project"
@@ -202,7 +203,7 @@ import (
 )
 
 func main() {
-	container := api.NewContainer("{{ .root }}")
+	container := api.NewContainer({{ .root }})
 	{{ range $i,$m := .modifiers }}
 	container.AddModifier(m{{ $i }}.{{ $m.Name }}(){{ if $m.Array }}...{{ end }})
 	{{ end }}
@@ -228,7 +229,7 @@ func main() {
 	if err := tmpl.Execute(buf, map[string]interface{}{
 		"modifiers":   modifiers,
 		"descriptors": descriptors,
-		"root":        root,
+		"root":        strconv.Quote(root),
 	}); err != nil {
 		return nil, err
 	}
