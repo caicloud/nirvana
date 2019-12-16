@@ -132,17 +132,23 @@ func (l *goLogger) Clone(wrapper int) Logger {
 }
 
 func (l *goLogger) output(severity Severity, a ...interface{}) {
-	l.l.Output(l.calldepth, prefix(severity, 2)+fmt.Sprint(a...))
+	// Set nolint, the potential error is not handled in go
+	// standard log package, too.
+	l.l.Output(l.calldepth, prefix(severity, 2)+fmt.Sprint(a...)) //nolint
 	l.exitIfFatal(severity)
 }
 
 func (l *goLogger) outputf(severity Severity, format string, a ...interface{}) {
-	l.l.Output(l.calldepth, prefix(severity, 2)+fmt.Sprintf(format, a...))
+	// Set nolint, the potential error is not handled in go
+	// standard log package, too.
+	l.l.Output(l.calldepth, prefix(severity, 2)+fmt.Sprintf(format, a...)) //nolint
 	l.exitIfFatal(severity)
 }
 
 func (l *goLogger) outputln(severity Severity, a ...interface{}) {
-	l.l.Output(l.calldepth, prefix(severity, 2)+fmt.Sprintln(a...))
+	// Set nolint, the potential error is not handled in go
+	// standard log package, too.
+	l.l.Output(l.calldepth, prefix(severity, 2)+fmt.Sprintln(a...)) //nolint
 	l.exitIfFatal(severity)
 }
 
