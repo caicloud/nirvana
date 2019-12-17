@@ -30,10 +30,10 @@ type goLogger struct {
 	calldepth int
 }
 
-// NewGoStandardLogger creates a zap logger.
-func NewGoStandardLogger(level Level, out io.Writer, prefix string, flag int) Logger {
+// NewGoStandardLogger creates a go logger.
+func NewGoStandardLogger(level Level, out io.Writer) Logger {
 	return &goLogger{
-		l:         log.New(out, prefix, flag),
+		l:         log.New(out, "", 0),
 		level:     level,
 		calldepth: 2,
 	}
