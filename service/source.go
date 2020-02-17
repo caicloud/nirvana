@@ -257,7 +257,7 @@ func (g *FileParameterGenerator) Generate(ctx context.Context, vc ValueContainer
 	if !ok {
 		return nil, nil
 	}
-	return repeatableCloserForFile{file, false}, nil
+	return &repeatableCloserForFile{file, false}, nil
 }
 
 // BodyParameterGenerator is used to generate object or body reader by value from request body.
