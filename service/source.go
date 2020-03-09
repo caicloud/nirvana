@@ -212,6 +212,7 @@ func (g *FormParameterGenerator) Generate(ctx context.Context, vc ValueContainer
 
 type repeatableCloserForFile struct {
 	multipart.File
+	*multipart.FileHeader
 	closed bool
 }
 
@@ -253,11 +254,11 @@ func (g *FileParameterGenerator) Validate(name string, defaultValue interface{},
 // Generate generates an object by data from value container.
 func (g *FileParameterGenerator) Generate(ctx context.Context, vc ValueContainer, consumers []Consumer,
 	name string, target reflect.Type) (interface{}, error) {
-	file, ok := vc.File(name)
+	file, header, ok := vc.File(name)
 	if !ok {
 		return nil, nil
 	}
-	return &repeatableCloserForFile{file, false}, nil
+	return &repeatableCloserForFile{file, header, false}, nil
 }
 
 // BodyParameterGenerator is used to generate object or body reader by value from request body.
