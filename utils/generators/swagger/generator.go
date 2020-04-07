@@ -377,6 +377,13 @@ func (g *Generator) operationFor(def *api.Definition) *spec.Operation {
 			operation.Produces = append(operation.Produces, p)
 		}
 	}
+	tags := map[string]bool{}
+	for _, t := range def.Tags {
+		if !tags[t] {
+			tags[t] = true
+			operation.Tags = append(operation.Tags, t)
+		}
+	}
 	for _, p := range def.ErrorProduces {
 		if !produces[p] {
 			produces[p] = true
