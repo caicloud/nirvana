@@ -69,6 +69,9 @@ type Definition struct {
 	Summary string
 	// Description describes the API handler.
 	Description string
+	// Tags indicates tags of the API handler.
+	// It will override parent descriptor's tags.
+	Tags []string
 	// Consumes indicates how many content types the handler can consume.
 	// It will override parent descriptor's consumes.
 	Consumes []string
@@ -98,6 +101,7 @@ func NewDefinition(tc *TypeContainer, d *definition.Definition) (*Definition, er
 		HTTPCode:      service.HTTPCodeFor(d.Method),
 		Summary:       d.Summary,
 		Description:   d.Description,
+		Tags:          d.Tags,
 		Consumes:      d.Consumes,
 		Produces:      d.Produces,
 		ErrorProduces: d.ErrorProduces,
