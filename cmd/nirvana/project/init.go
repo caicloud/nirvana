@@ -65,6 +65,7 @@ type templateData struct {
 	ImageSuffix    string
 	BuildImage     string
 	RuntimeImage   string
+	GoMod          bool
 }
 
 // GoBoilerplate returns boilerplate in go style.
@@ -136,6 +137,7 @@ func (o *initOptions) Run(cmd *cobra.Command, args []string) error {
 		ImageSuffix:   o.ImageSuffix,
 		BuildImage:    o.BuildImage,
 		RuntimeImage:  o.RuntimeImage,
+		GoMod:         o.PackageManager == "mod",
 	}
 	td.ProjectPackage, err = project.PackageForPath(pathToProject)
 	if err != nil {
@@ -746,7 +748,11 @@ BUILD_DIR := ./build
 COMMIT := $(strip $(shell git rev-parse --short HEAD 2>/dev/null))
 COMMIT := $(COMMIT)$(shell git diff-files --quiet || echo '-dirty')
 COMMIT := $(if $(COMMIT),$(COMMIT),"Unknown")
-
+{{ if .GoMod }}
+# This will force go to use the vendor files instead of using the $GOPATH/pkg/mod. (vendor mode)
+# more info: https://github.com/golang/go/wiki/Modules#how-do-i-use-vendoring-with-modules-is-vendoring-going-away
+export GOFLAGS := -mod=vendor
+{{ end }}
 #
 # Define all targets. At least the following commands are required:
 #
@@ -762,10 +768,12 @@ build:
 	    $(CMD_DIR)/$${target};                                                         \
 	done
 
+{{ if .GoMod -}}
 mod-reset-vendor:
-	@$(shell [ -f go.mod ] && go mod vendor)
+	@go mod vendor
 
-container: mod-reset-vendor
+container: mod-reset-vendor{{ else -}}
+container:{{ end }}
 	@for target in $(TARGETS); do                                                      \
 	  for registry in $(REGISTRIES); do                                                \
 	    image=$(IMAGE_PREFIX)$${target}$(IMAGE_SUFFIX);                                \
@@ -888,7 +896,7 @@ This command generates standard nirvana project structure.
 │   └── version
 │       └── version.go
 ├── vendor
-├── Gopkg.toml
+├── go.mod / Gopkg.toml
 ├── nirvana.yaml
 ├── Makefile
 └── README.md
