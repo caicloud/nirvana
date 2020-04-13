@@ -27,6 +27,7 @@ import (
 	"github.com/caicloud/nirvana/errors"
 	"github.com/caicloud/nirvana/log"
 	"github.com/caicloud/nirvana/service"
+	_ "github.com/caicloud/nirvana/utils/api"
 )
 
 // Server is a complete API server.
