@@ -27,6 +27,9 @@ import (
 	"github.com/caicloud/nirvana/errors"
 	"github.com/caicloud/nirvana/log"
 	"github.com/caicloud/nirvana/service"
+
+	// This blank import will make it in the dependencies of projects using Nirvana
+	// for API docs generation.
 	_ "github.com/caicloud/nirvana/utils/api"
 )
 
