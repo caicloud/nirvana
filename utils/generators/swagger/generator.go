@@ -26,6 +26,7 @@ import (
 	"github.com/caicloud/nirvana/service"
 	"github.com/caicloud/nirvana/utils/api"
 	"github.com/caicloud/nirvana/utils/project"
+
 	"github.com/go-openapi/spec"
 )
 
@@ -91,7 +92,8 @@ func NewGenerator(
 func (g *Generator) Generate() ([]spec.Swagger, error) {
 	g.parseSchemas()
 	g.parsePaths()
-	swaggers := []spec.Swagger{}
+
+	swaggers := make([]spec.Swagger, 0, len(g.config.Versions))
 	for _, version := range g.config.Versions {
 		title := fmt.Sprintln(g.config.Project, "APIs")
 		description := g.config.Description
@@ -117,8 +119,8 @@ func (g *Generator) Generate() ([]spec.Swagger, error) {
 			version.PathRules,
 		)
 		swaggers = append(swaggers, *swagger)
-
 	}
+
 	if len(swaggers) <= 0 {
 		swagger := g.buildSwaggerInfo(
 			g.config.Project, "unknown", g.config.Description,
@@ -149,8 +151,10 @@ func (g *Generator) buildSwaggerInfo(
 	swagger.Info.Description = g.escapeNewline(description)
 	if len(contacts) > 0 {
 		swagger.Info.Contact = &spec.ContactInfo{
-			Name:  contacts[0].Name,
-			Email: contacts[0].Email,
+			ContactInfoProps: spec.ContactInfoProps{
+				Name:  contacts[0].Name,
+				Email: contacts[0].Email,
+			},
 		}
 	}
 	swagger.Definitions = spec.Definitions{}
@@ -487,7 +491,7 @@ func (g *Generator) generateAutoParameter(typ api.TypeName) []spec.Parameter {
 }
 
 func (g *Generator) enum(typ *api.Type) []spec.Parameter {
-	results := []spec.Parameter{}
+	results := make([]spec.Parameter, 0, len(typ.Fields))
 	for _, field := range typ.Fields {
 		tag := field.Tag.Get("source")
 		parameters := []spec.Parameter(nil)
