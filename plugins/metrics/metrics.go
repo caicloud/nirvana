@@ -62,19 +62,9 @@ func newMetricsMiddleware(namespace string) definition.Middleware {
 		},
 		[]string{"method", "path"},
 	)
-	requestLatenciesSummary := prometheus.NewSummaryVec(
-		prometheus.SummaryOpts{
-			Namespace: namespace,
-			Name:      "request_latencies_summary",
-			Help:      "Response latency summary in milliseconds for each verb and resource.",
-			MaxAge:    time.Hour,
-		},
-		[]string{"method", "path"},
-	)
 
 	prometheus.MustRegister(requestCounter)
 	prometheus.MustRegister(requestLatencies)
-	prometheus.MustRegister(requestLatenciesSummary)
 
 	return func(ctx context.Context, next definition.Chain) error {
 		startTime := time.Now()
@@ -88,7 +78,6 @@ func newMetricsMiddleware(namespace string) definition.Middleware {
 
 		requestCounter.WithLabelValues(req.Method, path, getHTTPClient(req), req.Header.Get("Content-Type"), strconv.Itoa(resp.StatusCode())).Inc()
 		requestLatencies.WithLabelValues(req.Method, path).Observe(elapsed)
-		requestLatenciesSummary.WithLabelValues(req.Method, path).Observe(elapsed)
 
 		return err
 	}
