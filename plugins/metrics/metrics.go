@@ -44,20 +44,23 @@ type config struct {
 type metricsInstaller struct{}
 
 func newMetricsMiddleware(namespace string) definition.Middleware {
+	constLabel := prometheus.Labels{"component": namespace}
 	requestCounter := prometheus.NewCounterVec(
 		prometheus.CounterOpts{
-			Namespace: namespace,
-			Name:      "request_total",
-			Help:      "Counter of server requests broken out for each verb, API resource, and HTTP response code.",
+			Namespace:   namespace,
+			Name:        "request_total",
+			Help:        "Counter of server requests broken out for each verb, API resource, and HTTP response code.",
+			ConstLabels: constLabel,
 		},
 		[]string{"method", "path", "code"},
 	)
 	requestLatencies := prometheus.NewHistogramVec(
 		prometheus.HistogramOpts{
-			Namespace: namespace,
-			Name:      "request_duration_seconds",
-			Help:      "Response latency distribution in seconds for each verb, resource and client.",
-			Buckets:   prometheus.DefBuckets,
+			Namespace:   namespace,
+			Name:        "request_duration_seconds",
+			Help:        "Response latency distribution in seconds for each verb, resource and client.",
+			ConstLabels: constLabel,
+			Buckets:     prometheus.DefBuckets,
 		},
 		[]string{"method", "path"},
 	)
