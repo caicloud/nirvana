@@ -204,74 +204,41 @@ func (o *apiOptions) pathForVersion(version string) string {
 
 func (o *apiOptions) indexData(versions []string) ([]byte, error) {
 	index := `
-{{ $total := len .}}
-{{ $multipleVersions := gt $total 1 }}
+<!-- HTML for static distribution bundle build -->
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
-    <title>ReDoc Demo: Multiple apis</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="UTF-8">
+    <title>Swagger UI</title>
+    <link rel="stylesheet" type="text/css" href="https://unpkg.com/swagger-ui-dist@3.25.0/swagger-ui.css" >
+    <link rel="icon" type="image/png" href="https://unpkg.com/swagger-ui-dist@3.25.0/favicon-32x32.png" sizes="32x32" />
+    <link rel="icon" type="image/png" href="https://unpkg.com/swagger-ui-dist@3.25.0/favicon-16x16.png" sizes="16x16" />
     <style>
-      body {
-        margin: 0;
-        {{ if $multipleVersions -}}
-        padding: 50px 0 0 0;
-        {{ end -}}
-      }
-      {{ if $multipleVersions -}}
-      .topnav {
-        position: fixed;
-        top: 0px;
-        width: 100%;
-        height: 50px;
+      html
+      {
         box-sizing: border-box;
-        z-index: 10;
-        display: flex;
-        -webkit-box-align: center;
-        align-items: center;
-        font-family: Lato;
-        background: white;
-        border-bottom: 1px solid rgb(204, 204, 204);
-        padding: 5px;
+        overflow: -moz-scrollbars-vertical;
+        overflow-y: scroll;
       }
-      .topnav-item {
-        float: left;
-        display: block;
-        font-size: 15px;
-        line-height: 1.5;
-        height: 34px;
-        text-align: center;
-        padding-top: 15px;
-        padding-left: 25px;
-        padding-right: 25px;
-        margin-right: 1px;
-        color: #555555;
-        background-color: #fafafa;
-        cursor: pointer;
+      *,
+      *:before,
+      *:after
+      {
+        box-sizing: inherit;
       }
-      .topnav-img {
-        height: 40px;
-        width: 124px;
-        display: inline-block;
-        margin-right: 90px;
+      body
+      {
+        margin:0;
+        background: #fafafa;
       }
-      {{ end -}}
     </style>
   </head>
   <body>
-    {{ if $multipleVersions -}}
-    <!-- Top navigation placeholder -->
-    <nav class="topnav">
-      <img class="topnav-img" src="https://github.com/Rebilly/ReDoc/raw/master/docs/images/redoc-logo.png">
-      <ul id="links_container">
-      </ul>
-    </nav>
-	{{ end }}
-    <redoc scroll-y-offset="body > nav"></redoc>
-
-    <script src="https://rebilly.github.io/ReDoc/releases/v1.x.x/redoc.min.js"> </script>
+    <div id="swagger-ui"></div>
+    <script src="https://unpkg.com/swagger-ui-dist@3.25.0/swagger-ui-bundle.js"> </script>
+    <script src="https://unpkg.com/swagger-ui-dist@3.25.0/swagger-ui-standalone-preset.js"> </script>
     <script>
-      // list of APIS
+	  // list of APIS
       var apis = [
         {{ range $i, $v := . }}
         {
@@ -280,29 +247,25 @@ func (o *apiOptions) indexData(versions []string) ([]byte, error) {
         },
 		{{ end }}
       ];
-      // initially render first API
-      Redoc.init(apis[0].url, {
-          suppressWarnings: true
-      });
-      {{ if $multipleVersions -}}
-      function onClick() {
-        var url = this.getAttribute('data-link');
-        Redoc.init(url, {
-          suppressWarnings: true
-        });
-      }
-      // dynamically building navigation items
-      var $list = document.getElementById('links_container');
-      apis.forEach(function(api) {
-        var $listitem = document.createElement('li');
-        $listitem.setAttribute('data-link', api.url);
-        $listitem.setAttribute('class', "topnav-item");
-        $listitem.innerText = api.name;
-        $listitem.addEventListener('click', onClick);
-        $list.appendChild($listitem);
-      });
-	  {{ end }}
-    </script>
+    window.onload = function() {
+      // Begin Swagger UI call region
+      const ui = SwaggerUIBundle({
+        urls: apis,
+        dom_id: '#swagger-ui',
+        deepLinking: true,
+        presets: [
+          SwaggerUIBundle.presets.apis,
+          SwaggerUIStandalonePreset
+        ],
+        plugins: [
+          SwaggerUIBundle.plugins.DownloadUrl
+        ],
+        layout: "StandaloneLayout"
+      })
+      // End Swagger UI call region
+      window.ui = ui
+    }
+  </script>
   </body>
 </html>
 `
@@ -310,16 +273,13 @@ func (o *apiOptions) indexData(versions []string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	data := []struct {
+	data := make([]struct {
 		Name string
 		Path string
-	}{}
-	for _, v := range versions {
-		path := o.pathForVersion(v)
-		data = append(data, struct {
-			Name string
-			Path string
-		}{v, path})
+	}, len(versions))
+	for i, v := range versions {
+		data[i].Name = v
+		data[i].Path = o.pathForVersion(v)
 	}
 	buf := bytes.NewBuffer(nil)
 	if err := tmpl.Execute(buf, data); err != nil {
