@@ -90,8 +90,10 @@ func FileParameterFor(name string, description string) Parameter {
 }
 
 // BodyParameterFor creates a body parameter
-func BodyParameterFor(description string) Parameter {
-	return ParameterFor(Body, "", description)
+func BodyParameterFor(description string, operators ...Operator) Parameter {
+	p := ParameterFor(Body, "", description)
+	p.Operators = operators
+	return p
 }
 
 // PrefabParameterFor creates a prefab parameter
@@ -100,8 +102,10 @@ func PrefabParameterFor(name string, description string) Parameter {
 }
 
 // AutoParameterFor creates an auto parameter
-func AutoParameterFor(description string) Parameter {
-	return ParameterFor(Auto, "", description)
+func AutoParameterFor(description string, operators ...Operator) Parameter {
+	p := ParameterFor(Auto, "", description)
+	p.Operators = operators
+	return p
 }
 
 // ResultFor creates a simple result.
