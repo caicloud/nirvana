@@ -148,7 +148,7 @@ func buildTestCases() []testCase {
 					"X-Tenant": []string{"system-tenant"},
 				},
 			},
-			wantRegex: `^INFO\s(.+) | GET 201 43 [-+]?([0-9]*(\.[0-9]*)?[a-z]+)+ /api/v1/foo?query=bar$`,
+			wantRegex: `^INFO\s(.+) | GET 200 43 [-+]?([0-9]*(\.[0-9]*)?[a-z]+)+ /api/v1/foo?query=bar$`,
 			respStr:   `GET /api/v1/foo?query=bar system-tenant bar`,
 			respCode:  200,
 		},
@@ -181,7 +181,7 @@ func TestDefault(t *testing.T) {
 			os.Stderr = old
 
 			if rw.buf.String() != tc.respStr {
-				t.Fatal(rw.buf.String(), tc.respStr)
+				t.Fatalf("%s != %s", rw.buf.String(), tc.respStr)
 			}
 			if rw.code != tc.respCode {
 				t.Fatal("unexpected response code, the middleware might have altered the request/response")
@@ -218,7 +218,7 @@ func TestCustom(t *testing.T) {
 			os.Stderr = old
 
 			if rw.buf.String() != tc.respStr {
-				t.Fatal(rw.buf.String(), tc.respStr)
+				t.Fatalf("%s != %s", rw.buf.String(), tc.respStr)
 			}
 			if rw.code != tc.respCode {
 				t.Fatal("unexpected response code, the middleware might have altered the request/response")
