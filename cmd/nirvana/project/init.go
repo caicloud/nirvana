@@ -31,6 +31,7 @@ import (
 
 	"github.com/caicloud/nirvana/log"
 	"github.com/caicloud/nirvana/utils/project"
+
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -59,13 +60,10 @@ type templateData struct {
 	ProjectAbsDir  string
 	ProjectPackage string
 	ProjectName    string
-	Version        string
-	Registries     string
 	ImagePrefix    string
 	ImageSuffix    string
-	BuildImage     string
-	RuntimeImage   string
-	GoMod          bool
+	Registry       string
+	BaseRegistry   string
 }
 
 // GoBoilerplate returns boilerplate in go style.
@@ -84,26 +82,19 @@ func (t *templateData) SlashBoilerplate() string {
 }
 
 type initOptions struct {
-	Boilerplate    string
-	Version        string
-	Registries     []string
-	ImagePrefix    string
-	ImageSuffix    string
-	BuildImage     string
-	RuntimeImage   string
-	PackageManager string
+	Boilerplate  string
+	ImagePrefix  string
+	ImageSuffix  string
+	Registry     string
+	BaseRegistry string
 }
 
 func (o *initOptions) Install(flags *pflag.FlagSet) {
 	flags.StringVar(&o.Boilerplate, "boilerplate", "", "Path to boilerplate")
-	flags.StringVar(&o.Version, "version", "v0.1.0", "First version of the project")
-	flags.StringSliceVar(&o.Registries, "registries", []string{}, "Docker image registries")
 	flags.StringVar(&o.ImagePrefix, "image-prefix", "", "Docker image prefix")
 	flags.StringVar(&o.ImageSuffix, "image-suffix", "", "Docker image suffix")
-	flags.StringVar(&o.BuildImage, "build-image", "golang:latest", "Golang image for building the project")
-	flags.StringVar(&o.RuntimeImage, "runtime-image", "debian:jessie", "Docker base image for running the project")
-	flags.StringVar(&o.PackageManager, "package-manager", "dep", "Package manager of project, dep or mod")
-
+	flags.StringVar(&o.Registry, "registry", "", "Container registry")
+	flags.StringVar(&o.BaseRegistry, "base-registry", "", "Container registry for base images")
 }
 
 func (o *initOptions) Validate(cmd *cobra.Command, args []string) error {
@@ -123,21 +114,13 @@ func (o *initOptions) Run(cmd *cobra.Command, args []string) error {
 	}
 	projectName := filepath.Base(pathToProject)
 
-	registries := strings.Join(o.Registries, " ")
-	if registries == "" {
-		registries = `""`
-	}
-
 	td := &templateData{
 		ProjectAbsDir: filepath.Dir(pathToProject),
 		ProjectName:   projectName,
-		Version:       o.Version,
-		Registries:    registries,
 		ImagePrefix:   o.ImagePrefix,
 		ImageSuffix:   o.ImageSuffix,
-		BuildImage:    o.BuildImage,
-		RuntimeImage:  o.RuntimeImage,
-		GoMod:         o.PackageManager == "mod",
+		Registry:      o.Registry,
+		BaseRegistry:  o.BaseRegistry,
 	}
 	td.ProjectPackage, err = project.PackageForPath(pathToProject)
 	if err != nil {
@@ -161,8 +144,7 @@ func (o *initOptions) Run(cmd *cobra.Command, args []string) error {
 	directories := o.directories(projectName)
 	for i, dir := range directories {
 		dir = filepath.Join(pathToProject, dir)
-		_, err := os.Stat(dir)
-		if !os.IsNotExist(err) {
+		if _, err = os.Stat(dir); !os.IsNotExist(err) {
 			if err != nil {
 				return fmt.Errorf("can't get stat for %s: %v", dir, err)
 			}
@@ -171,7 +153,7 @@ func (o *initOptions) Run(cmd *cobra.Command, args []string) error {
 		directories[i] = dir
 	}
 	for _, dir := range directories {
-		if err := os.MkdirAll(dir, 0775); err != nil {
+		if err = os.MkdirAll(dir, 0775); err != nil {
 			return fmt.Errorf("can't create directory %s: %v", dir, err)
 		}
 	}
@@ -183,7 +165,7 @@ func (o *initOptions) Run(cmd *cobra.Command, args []string) error {
 			return fmt.Errorf("can't create template %s: %v", file, err)
 		}
 		buf := bytes.NewBuffer(nil)
-		if err := tmpl.Execute(buf, td); err != nil {
+		if err = tmpl.Execute(buf, td); err != nil {
 			return fmt.Errorf("can't execute template %s: %v", file, err)
 		}
 		if strings.HasSuffix(file, ".go") {
@@ -197,7 +179,7 @@ func (o *initOptions) Run(cmd *cobra.Command, args []string) error {
 	}
 	for file, data := range files {
 		file = filepath.Join(pathToProject, file)
-		if err := ioutil.WriteFile(file, data, 0664); err != nil {
+		if err = ioutil.WriteFile(file, data, 0664); err != nil {
 			return fmt.Errorf("can't write file %s: %v", file, err)
 		}
 	}
@@ -207,57 +189,49 @@ func (o *initOptions) Run(cmd *cobra.Command, args []string) error {
 
 func (o *initOptions) directories(project string) []string {
 	return []string{
+		"apis",
 		"bin",
 		fmt.Sprintf("cmd/%s", project),
 		fmt.Sprintf("build/%s", project),
-		"pkg/apis/filters",
-		"pkg/apis/middlewares",
-		"pkg/apis/modifiers",
-		"pkg/apis/v1/descriptors",
+		"docs",
+		"hack",
 		"pkg/apis/v1/converters",
-		"pkg/apis/v1/middlewares",
-		"pkg/message",
+		"pkg/descriptors/v1",
+		"pkg/filters",
+		"pkg/handler",
+		"pkg/middlewares",
+		"pkg/modifiers",
 		"pkg/version",
+		"test",
 		"vendor",
 	}
 }
 
 func (o *initOptions) templates(proj string) map[string]string {
-	pkgConfPath, templatePkgmgr := o.templatePackageManager()
 	return map[string]string{
 		fmt.Sprintf("cmd/%s/main.go", proj):      o.templateMain(),
 		fmt.Sprintf("build/%s/Dockerfile", proj): o.templateDockerfile(),
-		"pkg/apis/filters/filters.go":            o.templateFilters(),
-		"pkg/apis/middlewares/middlewares.go":    o.templateMiddlewares(),
-		"pkg/apis/modifiers/modifiers.go":        o.templateModifiers(),
-		"pkg/apis/v1/descriptors/descriptors.go": o.templateDescriptors(),
-		"pkg/apis/v1/descriptors/message.go":     o.templateMessageAPI(),
-		"pkg/apis/v1/middlewares/middlewares.go": o.templateMiddlewares(),
-		"pkg/apis/api.go":                        o.templateAPI(),
-		"pkg/message/message.go":                 o.templateMessage(),
+		"docs/README.md":                         o.templateDocsREADME(),
+		"hack/README.md":                         o.templateHackREADME(),
+		"hack/read_cpus_available.sh":            o.templateHackCPUScript(),
+		"hack/script.sh":                         o.templateHackScript(),
+		"hack/tools.go":                          o.templateHackTools(),
+		"pkg/apis/v1/types.go":                   o.templateAPITypes(),
+		"pkg/apis/v1/converters/converters.go":   o.templateConverters(),
+		"pkg/descriptors/descriptors.go":         o.templateDescriptors(),
+		"pkg/descriptors/v1/descriptors.go":      o.templateDescriptorsV1(),
+		"pkg/descriptors/v1/message.go":          o.templateMessageDescriptors(),
+		"pkg/filters/filters.go":                 o.templateFilters(),
+		"pkg/handler/message.go":                 o.templateMessageHandler(),
+		"pkg/middlewares/middlewares.go":         o.templateMiddlewares(),
+		"pkg/modifiers/modifiers.go":             o.templateModifiers(),
 		"pkg/version/version.go":                 o.templateVersion(),
-		pkgConfPath:                              templatePkgmgr(),
+		"test/test_make.sh":                      o.templateTestScript(),
+		".golangci.yml":                          o.templateGolangCI(),
+		"go.mod":                                 o.templateGomod(),
 		"Makefile":                               o.templateMakefile(),
 		project.DefaultProjectFileName:           o.templateProject(),
 		"README.md":                              o.templateReadme(),
-	}
-}
-
-func (o *initOptions) templatePackageManager() (string, func() string) {
-	switch o.PackageManager {
-	case "mod":
-		return "go.mod", func() string {
-			return o.templateGomod()
-		}
-	case "dep":
-		return "Gopkg.toml", func() string {
-			return o.templateGopkg()
-		}
-	default:
-		log.Warningf("Unrecognizable value of package-manager : \"%s\", switch to \"dep\"", o.PackageManager)
-		return "Gopkg.toml", func() string {
-			return o.templateGopkg()
-		}
 	}
 }
 
@@ -272,9 +246,9 @@ package main
 import (
 	"fmt"
 
-	"{{ .ProjectPackage }}/pkg/apis"
-	"{{ .ProjectPackage }}/pkg/apis/filters"
-	"{{ .ProjectPackage }}/pkg/apis/modifiers"
+	"{{ .ProjectPackage }}/pkg/descriptors"
+	"{{ .ProjectPackage }}/pkg/filters"
+	"{{ .ProjectPackage }}/pkg/modifiers"
 	"{{ .ProjectPackage }}/pkg/version"
 
 	"github.com/caicloud/nirvana"
@@ -315,7 +289,7 @@ func main() {
 		nirvana.Logger(log.DefaultLogger()), // Will be changed by logger plugin.
 		nirvana.Filter(filters.Filters()...),
 		nirvana.Modifier(modifiers.Modifiers()...),
-		nirvana.Descriptor(apis.Descriptor()),
+		nirvana.Descriptor(descriptors.Descriptor()),
 	)
 
 	// Set nirvana command hooks.
@@ -335,7 +309,145 @@ func main() {
 `
 }
 
+func (o *initOptions) templateDockerfile() string {
+	return `
+{{- if .Boilerplate -}}
+{{ .SharpBoilerplate }}
+
+{{ end -}}
+FROM {{ if .BaseRegistry }}{{ .BaseRegistry }}/debian:stretch{{ else }}debian:stretch{{ end }}
+
+ADD bin/{{ .ProjectName }} /usr/local/bin
+
+ENTRYPOINT ["{{ .ProjectName }}"]
+`
+}
+
+func (o *initOptions) templateDocsREADME() string {
+	return `<!-- DOCTOC SKIP -->
+
+# docs
+`
+}
+
+func (o *initOptions) templateHackREADME() string {
+	return `<!-- DOCTOC SKIP -->
+
+Scripts used to manage this repository.
+`
+}
+
+func (o *initOptions) templateHackCPUScript() string {
+	return `#!/bin/bash
+
+set -e
+
+CPUS_AVAILABLE=1
+
+case "$(uname -s)" in
+Darwin)
+    CPUS_AVAILABLE=$(sysctl -n machdep.cpu.core_count)
+    ;;
+Linux)
+    CFS_QUOTA=$(cat /sys/fs/cgroup/cpu/cpu.cfs_quota_us)
+    if [ $CFS_QUOTA -ge 100000 ]; then
+    CPUS_AVAILABLE=$(expr ${CFS_QUOTA} / 100 / 1000)
+    fi
+    ;;
+*)
+    # Unsupported host OS. Must be Linux or Mac OS X.
+    ;;
+esac
+
+echo ${CPUS_AVAILABLE}
+`
+}
+
+func (o *initOptions) templateHackScript() string {
+	return `#!/bin/bash
+
+set -e
+
+echo "Hello world"
+`
+}
+
+func (o *initOptions) templateHackTools() string {
+	return `
+{{- if .Boilerplate -}}
+{{ .GoBoilerplate }}
+{{- end }}
+
+// +build tools
+
+// This package imports things required by build scripts, to force` + " `go mod` " + `to see them as dependencies
+package tools
+
+import _ "github.com/caicloud/nirvana/utils/api"
+`
+}
+
+func (o *initOptions) templateAPITypes() string {
+	return `
+{{- if .Boilerplate -}}
+{{ .GoBoilerplate }}
+{{- end }}
+
+package v1
+
+// Message describes a message entry.
+type Message struct {
+	ID      int    ` + "`json:\"id\"`" + `
+	Title   string ` + "`json:\"title\"`" + `
+	Content string ` + "`json:\"content\"`" + `
+}
+`
+}
+
+func (o *initOptions) templateConverters() string {
+	return `
+{{- if .Boilerplate -}}
+{{ .GoBoilerplate }}
+{{- end }}
+
+package converters
+`
+}
+
 func (o *initOptions) templateDescriptors() string {
+	return `
+{{- if .Boilerplate -}}
+{{ .GoBoilerplate }}
+{{- end }}
+
+// +nirvana:api=descriptors:"Descriptor"
+
+package descriptors
+
+import (
+	"{{ .ProjectPackage }}/pkg/middlewares"
+	v1 "{{ .ProjectPackage }}/pkg/descriptors/v1"
+
+	def "github.com/caicloud/nirvana/definition"
+)
+
+// Descriptor returns a combined descriptor for APIs of all versions.
+func Descriptor() def.Descriptor {
+	return def.Descriptor{
+		Description: "APIs",
+		Path:        "/apis",
+		Middlewares: middlewares.Middlewares(),
+		Consumes:    []string{def.MIMEJSON},
+		Produces:    []string{def.MIMEJSON},
+		Children: []def.Descriptor{
+			v1.Descriptor(),
+		},
+	}
+}
+`
+}
+
+func (o *initOptions) templateDescriptorsV1() string {
 	return `
 {{- if .Boilerplate -}}
 {{ .GoBoilerplate }}
@@ -344,8 +456,6 @@ func (o *initOptions) templateDescriptors() string {
 package descriptors
 
 import (
-	"{{ .ProjectPackage }}/pkg/apis/v1/middlewares"
-
 	def "github.com/caicloud/nirvana/definition"
 )
 
@@ -362,9 +472,62 @@ func Descriptor() def.Descriptor {
 	return def.Descriptor{
 		Description: "v1 APIs",
 		Path:        "/v1",
-		Middlewares: middlewares.Middlewares(),
 		Children:    descriptors,
 	}
+}
+`
+}
+
+func (o *initOptions) templateMessageDescriptors() string {
+	return `
+{{- if .Boilerplate -}}
+{{ .GoBoilerplate }}
+{{- end }}
+
+package descriptors
+
+import (
+	"{{ .ProjectPackage }}/pkg/handler"
+
+	def "github.com/caicloud/nirvana/definition"
+)
+
+func init() {
+	register([]def.Descriptor{{ print "{{" }}
+		Path:        "/messages",
+		Definitions: []def.Definition{listMessages},
+	}, {
+		Path:        "/messages/{message}",
+		Definitions: []def.Definition{getMessage},
+	},
+	}...)
+}
+
+var listMessages = def.Definition{
+	Method:   def.List,
+	Summary: "List Messages",
+	Description: "Query a specified number of messages and returns an array",
+	Function: handler.ListMessages,
+	Parameters: []def.Parameter{
+		{
+			Source:      def.Query,
+			Name:        "count",
+			Default:     10,
+			Description: "Number of messages",
+		},
+	},
+	Results: def.DataErrorResults("A list of messages"),
+}
+
+var getMessage = def.Definition{
+	Method:   def.Get,
+	Summary: "Get Message",
+	Description: "Get a message by id",
+	Function: handler.GetMessage,
+	Parameters: []def.Parameter{
+		def.PathParameterFor("message", "Message id"),
+	},
+	Results: def.DataErrorResults("A message"),
 }
 `
 }
@@ -386,6 +549,43 @@ func Filters() []service.Filter {
 		service.FillLeadingSlash(),
 		service.ParseRequestForm(),
 	}
+}
+`
+}
+
+func (o *initOptions) templateMessageHandler() string {
+	return `
+{{- if .Boilerplate -}}
+{{ .GoBoilerplate }}
+{{- end }}
+
+package handler
+
+import (
+	"context"
+	"fmt"
+
+	v1 "{{ .ProjectPackage }}/pkg/apis/v1"
+)
+
+// ListMessages returns all messages.
+func ListMessages(ctx context.Context, count int) ([]v1.Message, error) {
+	messages := make([]v1.Message, count)
+	for i := 0; i < count; i++ {
+		messages[i].ID = i
+		messages[i].Title = fmt.Sprintf("Example %d", i)
+		messages[i].Content = fmt.Sprintf("Content of example %d", i)
+	}
+	return messages, nil
+}
+
+// GetMessage return a message by id.
+func GetMessage(ctx context.Context, id int) (*v1.Message, error) {
+	return &v1.Message{
+		ID:      id,
+		Title:   "This is an example",
+		Content: "Example content",
+	}, nil
 }
 `
 }
@@ -433,135 +633,6 @@ func Modifiers() []service.DefinitionModifier {
 `
 }
 
-func (o *initOptions) templateAPI() string {
-	return `
-{{- if .Boilerplate -}}
-{{ .GoBoilerplate }}
-{{- end }}
-
-// +nirvana:api=descriptors:"Descriptor"
-
-package apis
-
-import (
-	"{{ .ProjectPackage }}/pkg/apis/middlewares"
-	v1 "{{ .ProjectPackage }}/pkg/apis/v1/descriptors"
-
-	def "github.com/caicloud/nirvana/definition"
-)
-
-// Descriptor returns a combined descriptor for APIs of all versions.
-func Descriptor() def.Descriptor {
-	return def.Descriptor{
-		Description: "APIs",
-		Path:        "/apis",
-		Middlewares: middlewares.Middlewares(),
-		Consumes:    []string{def.MIMEJSON},
-		Produces:    []string{def.MIMEJSON},
-		Children: []def.Descriptor{
-			v1.Descriptor(),
-		},
-	}
-}
-`
-}
-
-func (o *initOptions) templateMessageAPI() string {
-	return `
-{{- if .Boilerplate -}}
-{{ .GoBoilerplate }}
-{{- end }}
-
-package descriptors
-
-import (
-	"{{ .ProjectPackage }}/pkg/message"
-
-	def "github.com/caicloud/nirvana/definition"
-)
-
-func init() {
-	register([]def.Descriptor{{ print "{{" }}
-		Path:        "/messages",
-		Definitions: []def.Definition{listMessages},
-	}, {
-		Path:        "/messages/{message}",
-		Definitions: []def.Definition{getMessage},
-	},
-	}...)
-}
-
-var listMessages = def.Definition{
-	Method:   def.List,
-	Summary: "List Messages",
-	Description: "Query a specified number of messages and returns an array",
-	Function: message.ListMessages,
-	Parameters: []def.Parameter{
-		{
-			Source:      def.Query,
-			Name:        "count",
-			Default:     10,
-			Description: "Number of messages",
-		},
-	},
-	Results: def.DataErrorResults("A list of messages"),
-}
-
-var getMessage = def.Definition{
-	Method:   def.Get,
-	Summary: "Get Message",
-	Description: "Get a message by id",
-	Function: message.GetMessage,
-	Parameters: []def.Parameter{
-		def.PathParameterFor("message", "Message id"),
-	},
-	Results: def.DataErrorResults("A message"),
-}
-`
-}
-
-func (o *initOptions) templateMessage() string {
-	return `
-{{- if .Boilerplate -}}
-{{ .GoBoilerplate }}
-{{- end }}
-
-package message
-
-import (
-	"context"
-	"fmt"
-)
-
-// Message describes a message entry.
-type Message struct {
-	ID      int    ` + "`json:\"id\"`" + `
-	Title   string ` + "`json:\"title\"`" + `
-	Content string ` + "`json:\"content\"`" + `
-}
-
-// ListMessages returns all messages.
-func ListMessages(ctx context.Context, count int) ([]Message, error) {
-	messages := make([]Message, count)
-	for i := 0; i < count; i++ {
-		messages[i].ID = i
-		messages[i].Title = fmt.Sprintf("Example %d", i)
-		messages[i].Content = fmt.Sprintf("Content of example %d", i)
-	}
-	return messages, nil
-}
-
-// GetMessage returns a message by id.
-func GetMessage(ctx context.Context, id int) (*Message, error) {
-	return &Message{
-		ID:      id,
-		Title:   "This is an example",
-		Content: "Example content",
-	}, nil
-}
-`
-}
-
 func (o *initOptions) templateVersion() string {
 	return `
 {{- if .Boilerplate -}}
@@ -579,90 +650,55 @@ var (
 `
 }
 
-func (o *initOptions) templateDockerfile() string {
-	return `
-{{- if .Boilerplate -}}
-{{ .SharpBoilerplate }}
+func (o *initOptions) templateTestScript() string {
+	return `#!/bin/bash
 
-{{ end -}}
-FROM {{ .BuildImage }}
+set -e
 
-WORKDIR /go/src/{{ .ProjectPackage }}
+ROOT=$(dirname "${BASH_SOURCE}")/..
 
-COPY . .
+function test_make() {
+  cd $ROOT
+  make lint
+  make test
+  make build
+  make build-linux
+  make container
+  make clean
+  cd ..
+}
 
-ENV GOPATH /go
-
-ARG CMD_DIR=./cmd
-
-ARG ROOT={{ .ProjectPackage }}
-
-ARG VERSION=
-
-ARG COMMIT=
-
-ARG TARGET={{ .ProjectName }}
-
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64                      \
-	go build -i -v -o /tmp/${TARGET}                  \
-	-ldflags "-s -w -X ${ROOT}/pkg/version.Version=${VERSION}  \
-	-X ${ROOT}/pkg/version.Commit=${COMMIT}                    \
-	-X ${ROOT}/pkg/version.Package=${ROOT}"                    \
-	${CMD_DIR}/${TARGET};
-
-FROM {{ .RuntimeImage }}
-
-ARG TARGET={{ .ProjectName }}
-
-COPY --from=0 /tmp/${TARGET} /${TARGET}
-
-RUN ln -s /${TARGET} /entrypoint
-
-ENTRYPOINT ["/entrypoint"]
+test_make
 `
 }
 
-func (o *initOptions) templateGopkg() string {
-	return `
-{{- if .Boilerplate -}}
-{{ .SharpBoilerplate }}
-#
-{{ end -}}
-# Gopkg.toml example
-#
-# Refer to https://github.com/golang/dep/blob/master/docs/Gopkg.toml.md
-# for detailed Gopkg.toml documentation.
-#
-# required = ["github.com/user/thing/cmd/thing"]
-# ignored = ["github.com/user/project/pkgX", "bitbucket.org/user/project/pkgA/pkgY"]
-#
-# [[constraint]]
-#   name = "github.com/user/project"
-#   version = "1.0.0"
-#
-# [[constraint]]
-#   name = "github.com/user/project2"
-#   branch = "dev"
-#   source = "github.com/myfork/project2"
-#
-# [[override]]
-#   name = "github.com/x/y"
-#   version = "2.4.0"
-#
-# [prune]
-#   non-go = false
-#   go-tests = true
-#   unused-packages = true
+func (o *initOptions) templateGolangCI() string {
+	return `run:
+  # concurrency: 2
+  deadline: 5m
 
-required = ["github.com/caicloud/nirvana/utils/api"]
+linter-settings:
+  goconst:
+    min-len: 2
+    min-occurrences: 2
 
-[prune]
-  go-tests = true
-  unused-packages = true
+linters:
+  enable:
+    - golint
+    - goconst
+    - gofmt
+    - goimports
+    - misspell
+    - unparam
 
-[[override]]
-  name = "github.com/caicloud/nirvana"
-  branch = "master"
+issues:
+  exclude-use-default: false
+  exclude-rules:
+    - path: _test.go
+      linters:
+        - errcheck
+  exclude:
+    - (comment on exported (method|function|type|const)|should have( a package)? comment|comment should be of the form)
 `
 }
 
@@ -704,36 +740,54 @@ func (o *initOptions) templateMakefile() string {
 # existing implementations, as long as the semantics are preserved.
 #
 #   make              - default to 'build' target
-#   make test         - run unit test
-#   make build        - build local binary targets
+#   make lint         - code analysis
+#   make test         - run unit test (or plus integration test)
+#   make build        - alias to build-local target
+#   make build-local  - build local binary targets
+#   make build-linux  - build linux binary targets
 #   make container    - build containers
+#   $ docker login registry -u username -p xxxxx
 #   make push         - push containers
 #   make clean        - clean up targets
 #
+# Not included but recommended targets:
+#   make e2e-test
+#
 # The makefile is also responsible to populate project version information.
+#
 
 #
 # Tweak the variables based on your project.
 #
 
-# Current version of the project.
-VERSION ?= {{ .Version }}
+# This repo's root import path (under GOPATH).
+ROOT := {{ .ProjectPackage }}
 
 # Target binaries. You can build multiple binaries for a single project.
 TARGETS := {{ .ProjectName }}
 
-# Container registries.
-REGISTRIES ?= {{ .Registries }}
-
 # Container image prefix and suffix added to targets.
 # The final built images are:
-#   $[REGISTRY]$[IMAGE_PREFIX]$[TARGET]$[IMAGE_SUFFIX]:$[VERSION]
+#   $[REGISTRY]/$[IMAGE_PREFIX]$[TARGET]$[IMAGE_SUFFIX]:$[VERSION]
 # $[REGISTRY] is an item from $[REGISTRIES], $[TARGET] is an item from $[TARGETS].
 IMAGE_PREFIX ?= $(strip {{ .ImagePrefix }})
 IMAGE_SUFFIX ?= $(strip {{ .ImageSuffix }})
 
-# This repo's root import path (under GOPATH).
-ROOT := {{ .ProjectPackage }}
+# Container registries.
+REGISTRY ?= {{ .Registry }}
+
+# Container registry for base images.
+BASE_REGISTRY ?= {{ .BaseRegistry }}
+
+#
+# These variables should not need tweaking.
+#
+
+# It's necessary to set this because some environments don't link sh -> bash.
+export SHELL := /bin/bash
+
+# It's necessary to set the errexit flags for the bash shell.
+export SHELLOPTS := errexit
 
 # Project main package location (can be multiple ones).
 CMD_DIR := ./cmd
@@ -744,61 +798,101 @@ OUTPUT_DIR := ./bin
 # Build direcotory.
 BUILD_DIR := ./build
 
-# Git commit sha.
-COMMIT := $(strip $(shell git rev-parse --short HEAD 2>/dev/null))
-COMMIT := $(COMMIT)$(shell git diff-files --quiet || echo '-dirty')
-COMMIT := $(if $(COMMIT),$(COMMIT),"Unknown")
-{{ if .GoMod }}
-# This will force go to use the vendor files instead of using the $GOPATH/pkg/mod. (vendor mode)
-# more info: https://github.com/golang/go/wiki/Modules#how-do-i-use-vendoring-with-modules-is-vendoring-going-away
-export GOFLAGS := -mod=vendor
-{{ end }}
+# Current version of the project.
+VERSION ?= $(shell git describe --tags --always --dirty)
+
+# Available cpus for compiling, please refer to https://github.com/caicloud/engineering/issues/8186#issuecomment-518656946 for more information.
+CPUS ?= $(shell /bin/bash hack/read_cpus_available.sh)
+
+# Track code version with Docker Label.
+DOCKER_LABELS ?= git-describe="$(shell date -u +v%Y%m%d)-$(shell git describe --tags --always --dirty)"
+
+# Default golang flags used in build and test
+# -mod=vendor: force go to use the vendor files instead of using the` + " `$GOPATH/pkg/mod` " + `
+# -p: the number of programs that can be run in parallel
+# -race: enable data race detection
+# -count: run each test and benchmark 1 times. Set this flag to disable test cache
+export GOFLAGS ?= -mod=vendor -p=$(CPUS) -race -count=1
+
+# Golang standard bin directory.
+GOPATH ?= $(shell go env GOPATH)
+BIN_DIR := $(GOPATH)/bin
+GOLANGCI_LINT := $(BIN_DIR)/golangci-lint
+
 #
 # Define all targets. At least the following commands are required:
 #
 
-.PHONY: build container push test clean
+# All targets.
+.PHONY: lint test build container push
 
-build:
+build: build-local
+
+# more info about` + " `GOGC` " + `env: https://github.com/golangci/golangci-lint#memory-usage-of-golangci-lint
+lint: $(GOLANGCI_LINT)
+	@$(GOLANGCI_LINT) run
+
+$(GOLANGCI_LINT):
+	curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $(BIN_DIR) v1.23.6
+
+test:
+	@go test -coverprofile=coverage.out ./...
+	@go tool cover -func coverage.out | tail -n 1 | awk '{ print "Total coverage: " $$3 }'
+
+build-local:
 	@for target in $(TARGETS); do                                                      \
-	  go build -i -v -o $(OUTPUT_DIR)/$${target}                                       \
-	    -ldflags "-s -w -X $(ROOT)/pkg/version.Version=$(VERSION)                      \
-	    -X $(ROOT)/pkg/version.Commit=$(COMMIT)                                        \
-	    -X $(ROOT)/pkg/version.Package=$(ROOT)"                                        \
+	  go build -v -o $(OUTPUT_DIR)/$${target}                                          \
+	    -ldflags "-s -w -X $(ROOT)/pkg/version.VERSION=$(VERSION)                      \
+	      -X $(ROOT)/pkg/version.REPOROOT=$(ROOT)"                                     \
 	    $(CMD_DIR)/$${target};                                                         \
 	done
 
-{{ if .GoMod -}}
-mod-reset-vendor:
-	@go mod vendor
+build-linux:
+	@docker run --rm                                                                   \
+	  -v $(PWD):/go/src/$(ROOT)                                                        \
+	  -w /go/src/$(ROOT)                                                               \
+	  -e GOOS=linux                                                                    \
+	  -e GOARCH=amd64                                                                  \
+	  -e GOPATH=/go                                                                    \
+	  -e GOFLAGS="$(GOFLAGS)"                                                          \
+	  -e SHELLOPTS="$(SHELLOPTS)"                                                      \
+{{- if .BaseRegistry }}
+	  $(BASE_REGISTRY)/golang:1.13.9-stretch                                           \
+{{- else }}
+	  golang:1.13.9-stretch                                                            \
+{{- end }}
+	    /bin/bash -c 'for target in $(TARGETS); do                                     \
+	      go build -v -o $(OUTPUT_DIR)/$${target}                                      \
+	        -ldflags "-s -w -X $(ROOT)/pkg/version.VERSION=$(VERSION)                  \
+	          -X $(ROOT)/pkg/version.REPOROOT=$(ROOT)"                                 \
+	        $(CMD_DIR)/$${target};                                                     \
+	    done'
 
-container: mod-reset-vendor{{ else -}}
-container:{{ end }}
+container: build-linux
 	@for target in $(TARGETS); do                                                      \
-	  for registry in $(REGISTRIES); do                                                \
-	    image=$(IMAGE_PREFIX)$${target}$(IMAGE_SUFFIX);                                \
-	    docker build -t $${registry}$${image}:$(VERSION)                               \
-	      --build-arg ROOT=$(ROOT) --build-arg TARGET=$${target}                       \
-	      --build-arg CMD_DIR=$(CMD_DIR)                                               \
-	      --build-arg VERSION=$(VERSION)                                               \
-	      --build-arg COMMIT=$(COMMIT)                                                 \
-	      -f $(BUILD_DIR)/$${target}/Dockerfile .;                                     \
-	  done                                                                             \
+	  image=$(IMAGE_PREFIX)$${target}$(IMAGE_SUFFIX);                                  \
+{{- if .Registry }}
+	  docker build -t $(REGISTRY)/$${image}:$(VERSION)                                 \
+{{- else }}
+	  docker build -t $${image}:$(VERSION)                                             \
+{{- end }}
+	    --label $(DOCKER_LABELS)                                                       \
+	    -f $(BUILD_DIR)/$${target}/Dockerfile .;                                       \
 	done
 
 push: container
 	@for target in $(TARGETS); do                                                      \
-	  for registry in $(REGISTRIES); do                                                \
-	    image=$(IMAGE_PREFIX)$${target}$(IMAGE_SUFFIX);                                \
-	    docker push $${registry}$${image}:$(VERSION);                                  \
-	  done                                                                             \
+	  image=$(IMAGE_PREFIX)$${target}$(IMAGE_SUFFIX);                                  \
+{{- if .Registry }}
+	  docker push $(REGISTRY)/$${image}:$(VERSION);                                    \
+{{- else }}
+	  docker push $${image}:$(VERSION);                                                \
+{{- end }}
 	done
 
-test:
-	@go test ./...
-
+.PHONY: clean
 clean:
-	@rm -vrf ${OUTPUT_DIR}/*
+	@-rm -vrf ${OUTPUT_DIR}
 `
 }
 
@@ -830,8 +924,7 @@ versions:
 }
 
 func (o *initOptions) templateReadme() string {
-	return `
-# Project {{ .ProjectName }}
+	return `# Project {{ .ProjectName }}
 
 <!-- Write one paragraph of this project description here -->
 
@@ -871,34 +964,49 @@ func (o *initOptions) templateReadme() string {
 func (o *initOptions) Manuals() string {
 	return `
 This command generates standard nirvana project structure.
-.
-├── bin
-├── build
-│   └── <project-name>
-│       └── Dockerfile
-├── cmd
-│   └── <project-name>
-│       └── main.go
-├── pkg
-│   ├── api
-│   │   ├── api.go
-│   │   ├── middlewares
-│   │   │   └── middlewares.go
-│   │   └── v1
-│   │       ├── converters
-│   │       ├── descriptors
-│   │       │   ├── descriptors.go
-│   │       │   └── message.go
-│   │       └── middlewares
-│   │           └── middlewares.go
-│   ├── message
-│   │   └── message.go
-│   └── version
-│       └── version.go
-├── vendor
-├── go.mod / Gopkg.toml
-├── nirvana.yaml
-├── Makefile
-└── README.md
+.                                   #
+├── .golangci.yml                   #
+├── go.mod                          #
+├── Makefile                        #
+├── OWNERS                          #
+├── README.md                       #
+├── apis                            # Store apidocs (swagger json)
+├── bin                             # Store the compiled binary
+├── build                           # Store Dockerfile
+│   └── demo-admin                  #
+│       └── Dockerfile              #
+├── cmd                             # Store startup commands for project
+│   └── demo-admin                  #
+│       └── main.go                 #
+├── docs                            # Store docs
+│   └── README.md                   #
+├── hack                            # Store scripts
+│   ├── README.md                   #
+│   ├── read_cpus_available.sh      # Script to read available cpus
+│   └── script.sh                   #
+├── nirvana.yaml                    # File to describes your project
+├── pkg                             # Store structures and converters required by API, distinguish by version
+│   ├── apis                        #
+│   │   └── v1                      #
+│   │       ├── converters          #
+│   │       │   └── converters.go   #
+│   │       └── types.go            #
+│   ├── descriptors                 # Store API descriptions (routing and others), distinguish by version
+│   │   └── v1                      #
+│   │       ├── descriptors.go      #
+│   │       └── message.go          # Store API definition of message
+│   ├── filters                     # Store HTTP Request filter
+│   │   └── filter.go               #
+│   ├── handler                     # Store the logical processing required by APIs
+│   │   └── message.go              #
+│   ├── middlewares                 # Store middlewares
+│   │   └── middlewares.go          #
+│   ├── modifiers                   # Store definition modifiers
+│   │   └── modifiers.go            #
+│   └── version                     # Store version information of project
+│       └── version.go              #
+├── test                            # Store all tests (except unit tests), e.g. integration, e2e tests.
+│   └── test_make.sh                #
+└── vendor                          #
 `
 }
