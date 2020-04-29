@@ -19,6 +19,8 @@ var (
 	startTime       prometheus.Gauge
 )
 
+// Install registers the metrics under the given namespace. This take effect only once; subsequent calls
+// has no effect.
 func Install(namespace string) {
 	once.Do(func() {
 		if namespace == "" {
@@ -71,6 +73,7 @@ func Install(namespace string) {
 	})
 }
 
+// RecordRequest can be used at the end of each request to record its metric values.
 func RecordRequest(start time.Time, ctx service.HTTPContext) {
 	req := ctx.Request()
 	resp := ctx.ResponseWriter()
