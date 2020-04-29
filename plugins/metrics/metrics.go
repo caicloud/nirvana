@@ -18,7 +18,6 @@ package metrics
 
 import (
 	"context"
-	"net/http"
 	"strconv"
 	"time"
 
@@ -45,36 +44,29 @@ type config struct {
 type metricsInstaller struct{}
 
 func newMetricsMiddleware(namespace string) definition.Middleware {
+	constLabel := prometheus.Labels{"component": namespace}
 	requestCounter := prometheus.NewCounterVec(
 		prometheus.CounterOpts{
-			Namespace: namespace,
-			Name:      "request_count",
-			Help:      "Counter of server requests broken out for each verb, API resource, client, and HTTP response contentType and code.",
+			Namespace:   namespace,
+			Name:        "request_total",
+			Help:        "Counter of server requests broken out for each verb, API resource, and HTTP response code.",
+			ConstLabels: constLabel,
 		},
-		[]string{"method", "path", "client", "contentType", "code"},
+		[]string{"method", "path", "code"},
 	)
 	requestLatencies := prometheus.NewHistogramVec(
 		prometheus.HistogramOpts{
-			Namespace: namespace,
-			Name:      "request_latencies",
-			Help:      "Response latency distribution in milliseconds for each verb, resource and client.",
-			Buckets:   prometheus.ExponentialBuckets(0.1, 2.0, 20),
-		},
-		[]string{"method", "path"},
-	)
-	requestLatenciesSummary := prometheus.NewSummaryVec(
-		prometheus.SummaryOpts{
-			Namespace: namespace,
-			Name:      "request_latencies_summary",
-			Help:      "Response latency summary in milliseconds for each verb and resource.",
-			MaxAge:    time.Hour,
+			Namespace:   namespace,
+			Name:        "request_duration_seconds",
+			Help:        "Response latency distribution in seconds for each verb, resource and client.",
+			ConstLabels: constLabel,
+			Buckets:     prometheus.DefBuckets,
 		},
 		[]string{"method", "path"},
 	)
 
 	prometheus.MustRegister(requestCounter)
 	prometheus.MustRegister(requestLatencies)
-	prometheus.MustRegister(requestLatenciesSummary)
 
 	return func(ctx context.Context, next definition.Chain) error {
 		startTime := time.Now()
@@ -84,23 +76,12 @@ func newMetricsMiddleware(namespace string) definition.Middleware {
 		req := httpCtx.Request()
 		resp := httpCtx.ResponseWriter()
 		path := httpCtx.RoutePath()
-		elapsed := float64((time.Since(startTime)) / time.Millisecond)
 
-		requestCounter.WithLabelValues(req.Method, path, getHTTPClient(req), req.Header.Get("Content-Type"), strconv.Itoa(resp.StatusCode())).Inc()
-		requestLatencies.WithLabelValues(req.Method, path).Observe(elapsed)
-		requestLatenciesSummary.WithLabelValues(req.Method, path).Observe(elapsed)
+		requestCounter.WithLabelValues(req.Method, path, strconv.Itoa(resp.StatusCode())).Inc()
+		requestLatencies.WithLabelValues(req.Method, path).Observe(float64((time.Since(startTime)) / time.Second))
 
 		return err
 	}
-}
-
-func getHTTPClient(req *http.Request) string {
-	if userAgent, ok := req.Header["User-Agent"]; ok {
-		if len(userAgent) > 0 {
-			return userAgent[0]
-		}
-	}
-	return "unknown"
 }
 
 // Name is the external config name.
