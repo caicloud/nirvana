@@ -17,15 +17,10 @@ limitations under the License.
 package metrics
 
 import (
-	"context"
-	"strconv"
-	"time"
-
 	"github.com/caicloud/nirvana"
 	"github.com/caicloud/nirvana/definition"
+	"github.com/caicloud/nirvana/middlewares/metrics"
 	"github.com/caicloud/nirvana/service"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 func init() {
@@ -43,47 +38,6 @@ type config struct {
 
 type metricsInstaller struct{}
 
-func newMetricsMiddleware(namespace string) definition.Middleware {
-	constLabel := prometheus.Labels{"component": namespace}
-	requestCounter := prometheus.NewCounterVec(
-		prometheus.CounterOpts{
-			Namespace:   namespace,
-			Name:        "request_total",
-			Help:        "Counter of server requests broken out for each verb, API resource, and HTTP response code.",
-			ConstLabels: constLabel,
-		},
-		[]string{"method", "path", "code"},
-	)
-	requestLatencies := prometheus.NewHistogramVec(
-		prometheus.HistogramOpts{
-			Namespace:   namespace,
-			Name:        "request_duration_seconds",
-			Help:        "Response latency distribution in seconds for each verb, resource and client.",
-			ConstLabels: constLabel,
-			Buckets:     prometheus.DefBuckets,
-		},
-		[]string{"method", "path"},
-	)
-
-	prometheus.MustRegister(requestCounter)
-	prometheus.MustRegister(requestLatencies)
-
-	return func(ctx context.Context, next definition.Chain) error {
-		startTime := time.Now()
-		err := next.Continue(ctx)
-
-		httpCtx := service.HTTPContextFrom(ctx)
-		req := httpCtx.Request()
-		resp := httpCtx.ResponseWriter()
-		path := httpCtx.RoutePath()
-
-		requestCounter.WithLabelValues(req.Method, path, strconv.Itoa(resp.StatusCode())).Inc()
-		requestLatencies.WithLabelValues(req.Method, path).Observe(float64((time.Since(startTime)) / time.Second))
-
-		return err
-	}
-}
-
 // Name is the external config name.
 func (i *metricsInstaller) Name() string {
 	return ExternalConfigName
@@ -96,10 +50,9 @@ func (i *metricsInstaller) Install(builder service.Builder, cfg *nirvana.Config)
 
 		monitorMiddleware := definition.Descriptor{
 			Path:        "/",
-			Middlewares: []definition.Middleware{newMetricsMiddleware(c.namespace)},
+			Middlewares: []definition.Middleware{metrics.Namespace(c.namespace)},
 		}
-		metricsEndpoint := definition.SimpleDescriptor(definition.Get, c.path, service.WrapHTTPHandler(promhttp.Handler()))
-		err = builder.AddDescriptor(monitorMiddleware, metricsEndpoint)
+		err = builder.AddDescriptor(monitorMiddleware, metrics.Descriptor(c.path))
 	})
 	return err
 }
