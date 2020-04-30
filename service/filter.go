@@ -64,10 +64,10 @@ func FillLeadingSlash() Filter {
 	}
 }
 
-// ParseRequestForm returns a filter to parse request form when content
+// ParseRequestFormWithMaxMemory returns a filter to parse request form when content
 // type is "application/x-www-form-urlencoded" or "multipart/form-data".
 // The filter won't filter anything unless some error occurs in parsing.
-func ParseRequestForm() Filter {
+func ParseRequestFormWithMaxMemory(maxMemory int64) Filter {
 	return func(resp http.ResponseWriter, req *http.Request) bool {
 		ct, err := ContentType(req)
 		if err == nil {
@@ -75,7 +75,7 @@ func ParseRequestForm() Filter {
 			case definition.MIMEURLEncoded:
 				err = req.ParseForm()
 			case definition.MIMEFormData:
-				err = req.ParseMultipartForm(32 << 20)
+				err = req.ParseMultipartForm(maxMemory)
 			default:
 				req.Form = req.URL.Query()
 			}
@@ -86,6 +86,12 @@ func ParseRequestForm() Filter {
 		}
 		return true
 	}
+}
+
+// ParseRequestForm returns a filter to parse request form.
+// Same as ParseRequestFormWithMaxMemory, except that maxMemory is set to 32MB by default.
+func ParseRequestForm() Filter {
+	return ParseRequestFormWithMaxMemory(32 << 20)
 }
 
 // isGTZero returns a boolean result indicating if the content length is greater than 0.
