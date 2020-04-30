@@ -43,7 +43,7 @@ func Install(namespace string) {
 			namespace = "nirvana"
 		}
 		constLabel := prometheus.Labels{"component": namespace}
-		httpLabels := []string{"method", "path"}
+		httpLabels := []string{"verb", "path"}
 
 		startTime = promauto.NewGauge(
 			prometheus.GaugeOpts{
