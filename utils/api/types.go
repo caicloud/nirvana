@@ -144,9 +144,9 @@ func (tc *TypeContainer) setType(t *Type, typ reflect.Type) {
 	}
 	tc.lock.Lock()
 	defer tc.lock.Unlock()
-	types := tc.real[tn]
-	index := len(types)
-	for i, originalType := range types {
+	typs := tc.real[tn]
+	index := len(typs)
+	for i, originalType := range typs {
 		if originalType == typ {
 			index = i
 		}
@@ -154,7 +154,46 @@ func (tc *TypeContainer) setType(t *Type, typ reflect.Type) {
 	t.Conflict = index
 	tn = t.TypeName()
 	tc.types[tn] = t
-	tc.real[tn] = append(types, typ)
+	tc.real[tn] = append(typs, typ)
+}
+
+func (tc *TypeContainer) getStructFieldType(typ, field reflect.Type) TypeName {
+	// handle the nested element that may cause infinite recursion when nirvana trying to fetch the struct info which is
+	// used to generate API docs. eg:
+	// type Message struct {
+	//     Msg []Message
+	// }
+	// typ.String(): message.Message
+	// field.String(): []message.Message
+
+	if !strings.Contains(field.String(), typ.String()) {
+		return tc.NameOf(field)
+	}
+	if field.String() == typ.String() {
+		return TypeName(typ.PkgPath() + "." + typ.Name())
+	}
+
+	t := &Type{
+		PkgPath: field.PkgPath(),
+		Kind:    field.Kind(),
+	}
+	switch t.Kind {
+	case reflect.Array, reflect.Slice:
+		t.Elem = tc.getStructFieldType(typ, field.Elem())
+		t.Name = fmt.Sprint("[]", t.Elem)
+	case reflect.Ptr:
+		t.Elem = tc.getStructFieldType(typ, field.Elem())
+		t.Name = fmt.Sprint("*", t.Elem)
+	case reflect.Map:
+		t.Key = tc.getStructFieldType(typ, field.Key())
+		t.Elem = tc.getStructFieldType(typ, field.Elem())
+		t.Name = fmt.Sprintf("map[%s]%s", t.Key, t.Elem)
+	case reflect.Chan:
+		t.Elem = tc.getStructFieldType(typ, field.Elem())
+		t.Name = fmt.Sprint("chan ", t.Elem)
+	}
+	tc.setType(t, field)
+	return t.TypeName()
 }
 
 // NameOf gets an unique name of a type.
@@ -204,7 +243,7 @@ func (tc *TypeContainer) NameOf(typ reflect.Type) TypeName {
 				Offset:    f.Offset,
 				Index:     f.Index,
 				Anonymous: f.Anonymous,
-				Type:      tc.NameOf(f.Type),
+				Type:      tc.getStructFieldType(typ, f.Type),
 			}
 			t.Fields = append(t.Fields, field)
 		}
@@ -256,7 +295,7 @@ func (tc *TypeContainer) NameOfInstance(ins interface{}) TypeName {
 func (tc *TypeContainer) Complete(analyzer *Analyzer) error {
 	tc.lock.Lock()
 	defer tc.lock.Unlock()
-	errors := []error{}
+	errors := make([]error, 0)
 	for _, typ := range tc.types {
 		if typ.PkgPath == "" {
 			continue
