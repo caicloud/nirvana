@@ -166,7 +166,7 @@ func (tc *TypeContainer) getStructFieldType(typ, field reflect.Type) TypeName {
 	// typ.String(): message.Message
 	// field.String(): []message.Message
 
-	if !strings.Contains(field.String(), typ.String()) {
+	if !strings.HasSuffix(field.String(), typ.String()) {
 		return tc.NameOf(field)
 	}
 	if field.String() == typ.String() {
