@@ -271,7 +271,8 @@ func (g *Generator) schemaForStruct(typ *api.Type) *spec.Schema {
 		schema.SetProperty(name, *fieldSchema)
 	}
 	g.schemas[key] = schema
-	ref.ExtraProps = map[string]interface{}{rawSchemaKey: schema}
+	// This will cause big-size of api-doc-file
+	// ref.ExtraProps = map[string]interface{}{rawSchemaKey: schema}
 	return ref
 }
 
