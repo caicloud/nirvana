@@ -236,7 +236,6 @@ func (g *Generator) schemaForType(typ *api.Type) *spec.Schema {
 }
 
 func (g *Generator) schemaForStruct(typ *api.Type) *spec.Schema {
-	// const rawSchemaKey = "raw"
 	typeName := typ.TypeName()
 	schema, ok := g.schemaMappings[typeName]
 	if ok {
@@ -271,8 +270,6 @@ func (g *Generator) schemaForStruct(typ *api.Type) *spec.Schema {
 		schema.SetProperty(name, *fieldSchema)
 	}
 	g.schemas[key] = schema
-	// This will cause big-size of api-doc-file
-	// ref.ExtraProps = map[string]interface{}{rawSchemaKey: schema}
 	return ref
 }
 
