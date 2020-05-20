@@ -236,7 +236,7 @@ func (g *Generator) schemaForType(typ *api.Type) *spec.Schema {
 }
 
 func (g *Generator) schemaForStruct(typ *api.Type) *spec.Schema {
-	const rawSchemaKey = "raw"
+	// const rawSchemaKey = "raw"
 	typeName := typ.TypeName()
 	schema, ok := g.schemaMappings[typeName]
 	if ok {
