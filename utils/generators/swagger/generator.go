@@ -525,6 +525,9 @@ func (g *Generator) generateResponse(results []api.Result, examples []api.Exampl
 		case "body":
 			response.Description = g.escapeNewline(result.Description)
 			schema := g.schemaForTypeName(result.Type)
+			// responses.xx.schema should NOT have additional properties
+			// additionalProperty: title
+			schema.Title = ""
 			response.Schema = schema
 		}
 	}
