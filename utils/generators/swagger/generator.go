@@ -17,6 +17,8 @@ limitations under the License.
 package swagger
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"reflect"
@@ -485,7 +487,41 @@ func (g *Generator) generateAutoParameter(typ api.TypeName) []spec.Parameter {
 		return nil
 	}
 	return g.enum(structType)
+}
 
+var converters = map[string]service.Converter{
+	"bool":      service.ConvertToBool,
+	"int":       service.ConvertToInt,
+	"int8":      service.ConvertToInt8,
+	"int16":     service.ConvertToInt16,
+	"int32":     service.ConvertToInt32,
+	"int64":     service.ConvertToInt64,
+	"uint":      service.ConvertToUint,
+	"uint8":     service.ConvertToUint8,
+	"uint16":    service.ConvertToUint16,
+	"uint32":    service.ConvertToUint32,
+	"uint64":    service.ConvertToUint64,
+	"float32":   service.ConvertToFloat32,
+	"float64":   service.ConvertToFloat64,
+	"string":    service.ConvertToString,
+	"*bool":     service.ConvertToBoolP,
+	"*int":      service.ConvertToIntP,
+	"*int8":     service.ConvertToInt8P,
+	"*int16":    service.ConvertToInt16P,
+	"*int32":    service.ConvertToInt32P,
+	"*int64":    service.ConvertToInt64P,
+	"*uint":     service.ConvertToUintP,
+	"*uint8":    service.ConvertToUint8P,
+	"*uint16":   service.ConvertToUint16P,
+	"*uint32":   service.ConvertToUint32P,
+	"*uint64":   service.ConvertToUint64P,
+	"*float32":  service.ConvertToFloat32P,
+	"*float64":  service.ConvertToFloat64P,
+	"*string":   service.ConvertToStringP,
+	"[]bool":    service.ConvertToBoolSlice,
+	"[]int":     service.ConvertToIntSlice,
+	"[]float64": service.ConvertToFloat64Slice,
+	"[]string":  service.ConvertToStringSlice,
 }
 
 func (g *Generator) enum(typ *api.Type) []spec.Parameter {
@@ -495,14 +531,22 @@ func (g *Generator) enum(typ *api.Type) []spec.Parameter {
 		parameters := []spec.Parameter(nil)
 		if tag != "" {
 			source, name, apc, err := service.ParseAutoParameterTag(tag)
-			defaultValue := apc.Get(service.AutoParameterConfigKeyDefaultValue)
+			rawDefaultValue := apc.Get(service.AutoParameterConfigKeyDefaultValue)
+			var defaultValue []byte
+			if c := converters[string(field.Type)]; rawDefaultValue != "" && c != nil {
+				// we don't find a good way to handle the default value of non-basic types,
+				// so for now the default value of those types are always empty
+				v, _ := c(context.TODO(), []string{rawDefaultValue})
+				defaultValue, _ = json.Marshal(v)
+			}
+
 			if err == nil {
 				parameters = g.generateParameter(&api.Parameter{
 					Source:      source,
 					Name:        name,
 					Description: g.escapeNewline(field.Comments),
 					Type:        field.Type,
-					Default:     []byte(defaultValue),
+					Default:     defaultValue,
 				})
 			}
 		} else {
