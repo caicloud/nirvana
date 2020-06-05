@@ -198,7 +198,7 @@ func (o *initOptions) directories(project string) []string {
 		"pkg/apis/v1/converters",
 		"pkg/apis/v1/descriptors",
 		"pkg/filters",
-		"pkg/handler",
+		"pkg/handlers",
 		"pkg/middlewares",
 		"pkg/modifiers",
 		"pkg/version",
@@ -222,7 +222,7 @@ func (o *initOptions) templates(proj string) map[string]string {
 		"pkg/apis/v1/descriptors/descriptors.go": o.templateDescriptorsV1(),
 		"pkg/apis/v1/descriptors/message.go":     o.templateMessageDescriptors(),
 		"pkg/filters/filters.go":                 o.templateFilters(),
-		"pkg/handler/message.go":                 o.templateMessageHandler(),
+		"pkg/handlers/message.go":                o.templateMessageHandler(),
 		"pkg/middlewares/middlewares.go":         o.templateMiddlewares(),
 		"pkg/modifiers/modifiers.go":             o.templateModifiers(),
 		"pkg/version/version.go":                 o.templateVersion(),
@@ -485,7 +485,7 @@ func (o *initOptions) templateMessageDescriptors() string {
 package descriptors
 
 import (
-	"{{ .ProjectPackage }}/pkg/handler"
+	"{{ .ProjectPackage }}/pkg/handlers"
 
 	def "github.com/caicloud/nirvana/definition"
 )
@@ -505,7 +505,7 @@ var listMessages = def.Definition{
 	Method:   def.List,
 	Summary: "List Messages",
 	Description: "Query a specified number of messages and returns an array",
-	Function: handler.ListMessages,
+	Function: handlers.ListMessages,
 	Parameters: []def.Parameter{
 		{
 			Source:      def.Query,
@@ -521,7 +521,7 @@ var getMessage = def.Definition{
 	Method:   def.Get,
 	Summary: "Get Message",
 	Description: "Get a message by id",
-	Function: handler.GetMessage,
+	Function: handlers.GetMessage,
 	Parameters: []def.Parameter{
 		def.PathParameterFor("message", "Message id"),
 	},
@@ -557,7 +557,7 @@ func (o *initOptions) templateMessageHandler() string {
 {{ .GoBoilerplate }}
 {{- end }}
 
-package handler
+package handlers
 
 import (
 	"context"
@@ -995,7 +995,7 @@ This command generates standard nirvana project structure.
 │   │       └── types.go            #
 │   ├── filters                     # Store HTTP Request filter
 │   │   └── filter.go               #
-│   ├── handler                     # Store the logical processing required by APIs
+│   ├── handlers                    # Store the logical processing required by APIs
 │   │   └── message.go              #
 │   ├── middlewares                 # Store middlewares
 │   │   └── middlewares.go          #
