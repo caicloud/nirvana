@@ -196,7 +196,7 @@ func (o *initOptions) directories(project string) []string {
 		"docs",
 		"hack",
 		"pkg/apis/v1/converters",
-		"pkg/descriptors/v1",
+		"pkg/apis/v1/descriptors",
 		"pkg/filters",
 		"pkg/handler",
 		"pkg/middlewares",
@@ -216,11 +216,11 @@ func (o *initOptions) templates(proj string) map[string]string {
 		"hack/read_cpus_available.sh":            o.templateHackCPUScript(),
 		"hack/script.sh":                         o.templateHackScript(),
 		"hack/tools.go":                          o.templateHackTools(),
+		"pkg/apis/descriptors.go":                o.templateDescriptors(),
 		"pkg/apis/v1/types.go":                   o.templateAPITypes(),
 		"pkg/apis/v1/converters/converters.go":   o.templateConverters(),
-		"pkg/descriptors/descriptors.go":         o.templateDescriptors(),
-		"pkg/descriptors/v1/descriptors.go":      o.templateDescriptorsV1(),
-		"pkg/descriptors/v1/message.go":          o.templateMessageDescriptors(),
+		"pkg/apis/v1/descriptors/descriptors.go": o.templateDescriptorsV1(),
+		"pkg/apis/v1/descriptors/message.go":     o.templateMessageDescriptors(),
 		"pkg/filters/filters.go":                 o.templateFilters(),
 		"pkg/handler/message.go":                 o.templateMessageHandler(),
 		"pkg/middlewares/middlewares.go":         o.templateMiddlewares(),
@@ -246,7 +246,7 @@ package main
 import (
 	"fmt"
 
-	"{{ .ProjectPackage }}/pkg/descriptors"
+	"{{ .ProjectPackage }}/pkg/apis"
 	"{{ .ProjectPackage }}/pkg/filters"
 	"{{ .ProjectPackage }}/pkg/modifiers"
 	"{{ .ProjectPackage }}/pkg/version"
@@ -254,7 +254,6 @@ import (
 	"github.com/caicloud/nirvana"
 	"github.com/caicloud/nirvana/config"
 	"github.com/caicloud/nirvana/log"
-	"github.com/caicloud/nirvana/plugins/logger"
 	"github.com/caicloud/nirvana/plugins/metrics"
 	"github.com/caicloud/nirvana/plugins/reqlog"
 	pversion "github.com/caicloud/nirvana/plugins/version"
@@ -269,7 +268,6 @@ func main() {
 
 	// Create plugin options.
 	metricsOption := metrics.NewDefaultOption() // Metrics plugin.
-	loggerOption := logger.NewDefaultOption()   // Logger plugin.
 	reqlogOption := reqlog.NewDefaultOption()   // Request log plugin.
 	versionOption := pversion.NewOption(        // Version plugin.
 		"{{ .ProjectName }}",
@@ -279,17 +277,17 @@ func main() {
 	)
 
 	// Enable plugins.
-	cmd.EnablePlugin(metricsOption, loggerOption, reqlogOption, versionOption)
+	cmd.EnablePlugin(metricsOption, reqlogOption, versionOption)
 
 	// Create server config.
 	serverConfig := nirvana.NewConfig()
 
 	// Configure APIs. These configurations may be changed by plugins.
 	serverConfig.Configure(
-		nirvana.Logger(log.DefaultLogger()), // Will be changed by logger plugin.
+		nirvana.Logger(log.DefaultLogger()),
 		nirvana.Filter(filters.Filters()...),
 		nirvana.Modifier(modifiers.Modifiers()...),
-		nirvana.Descriptor(descriptors.Descriptor()),
+		nirvana.Descriptor(apis.Descriptor()),
 	)
 
 	// Set nirvana command hooks.
@@ -422,11 +420,11 @@ func (o *initOptions) templateDescriptors() string {
 
 // +nirvana:api=descriptors:"Descriptor"
 
-package descriptors
+package apis
 
 import (
+	descriptorsv1 "{{ .ProjectPackage }}/pkg/apis/v1/descriptors"
 	"{{ .ProjectPackage }}/pkg/middlewares"
-	v1 "{{ .ProjectPackage }}/pkg/descriptors/v1"
 
 	def "github.com/caicloud/nirvana/definition"
 )
@@ -440,7 +438,7 @@ func Descriptor() def.Descriptor {
 		Consumes:    []string{def.MIMEJSON},
 		Produces:    []string{def.MIMEJSON},
 		Children: []def.Descriptor{
-			v1.Descriptor(),
+			descriptorsv1.Descriptor(),
 		},
 	}
 }
@@ -986,15 +984,15 @@ This command generates standard nirvana project structure.
 │   └── script.sh                   #
 ├── nirvana.yaml                    # File to describes your project
 ├── pkg                             # Store structures and converters required by API, distinguish by version
-│   ├── apis                        #
-│   │   └── v1                      #
-│   │       ├── converters          #
-│   │       │   └── converters.go   #
-│   │       └── types.go            #
-│   ├── descriptors                 # Store API descriptions (routing and others), distinguish by version
-│   │   └── v1                      #
-│   │       ├── descriptors.go      #
-│   │       └── message.go          # Store API definition of message
+│   ├── apis                        #
+│   │   ├── descriptors.go          # Store API descriptions (routing and others), distinguish by version
+│   │   └── v1                      #
+│   │       ├── converters          #
+│   │       │   └── converters.go   #
+│   │       ├── descriptors         #
+│   │       │   ├── descriptors.go  #
+│   │       │   └── message.go      # Store API definition of message
+│   │       └── types.go            #
 │   ├── filters                     # Store HTTP Request filter
 │   │   └── filter.go               #
 │   ├── handler                     # Store the logical processing required by APIs
