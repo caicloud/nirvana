@@ -340,24 +340,26 @@ func (o *initOptions) templateHackCPUScript() string {
 
 set -e
 
-CPUS_AVAILABLE=1
+if [ -z "$MAX_CPUS" ]; then
+    MAX_CPUS=1
 
-case "$(uname -s)" in
-Darwin)
-    CPUS_AVAILABLE=$(sysctl -n machdep.cpu.core_count)
-    ;;
-Linux)
-    CFS_QUOTA=$(cat /sys/fs/cgroup/cpu/cpu.cfs_quota_us)
-    if [ $CFS_QUOTA -ge 100000 ]; then
-    CPUS_AVAILABLE=$(expr ${CFS_QUOTA} / 100 / 1000)
-    fi
-    ;;
-*)
-    # Unsupported host OS. Must be Linux or Mac OS X.
-    ;;
-esac
+    case "$(uname -s)" in
+    Darwin)
+        MAX_CPUS=$(sysctl -n machdep.cpu.core_count)
+        ;;
+    Linux)
+        CFS_QUOTA=$(cat /sys/fs/cgroup/cpu/cpu.cfs_quota_us)
+        if [ "$CFS_QUOTA" -ge 100000 ]; then
+            MAX_CPUS=$(("$CFS_QUOTA" / 100 / 1000))
+        fi
+        ;;
+    *)
+        # Unsupported host OS. Must be Linux or Mac OS X.
+        ;;
+    esac
+fi
 
-echo ${CPUS_AVAILABLE}
+echo "$MAX_CPUS"
 `
 }
 
@@ -805,17 +807,17 @@ CPUS ?= $(shell /bin/bash hack/read_cpus_available.sh)
 # Track code version with Docker Label.
 DOCKER_LABELS ?= git-describe="$(shell date -u +v%Y%m%d)-$(shell git describe --tags --always --dirty)"
 
+# Golang standard bin directory.
+GOPATH ?= $(shell go env GOPATH)
+BIN_DIR := $(GOPATH)/bin
+GOLANGCI_LINT := $(BIN_DIR)/golangci-lint
+
 # Default golang flags used in build and test
 # -mod=vendor: force go to use the vendor files instead of using the` + " `$GOPATH/pkg/mod` " + `
 # -p: the number of programs that can be run in parallel
 # -race: enable data race detection
 # -count: run each test and benchmark 1 times. Set this flag to disable test cache
 export GOFLAGS ?= -mod=vendor -p=$(CPUS) -race -count=1
-
-# Golang standard bin directory.
-GOPATH ?= $(shell go env GOPATH)
-BIN_DIR := $(GOPATH)/bin
-GOLANGCI_LINT := $(BIN_DIR)/golangci-lint
 
 #
 # Define all targets. At least the following commands are required:
@@ -846,7 +848,7 @@ build-local:
 	done
 
 build-linux:
-	@docker run --rm                                                                   \
+	@docker run --rm -it                                                               \
 	  -v $(PWD):/go/src/$(ROOT)                                                        \
 	  -w /go/src/$(ROOT)                                                               \
 	  -e GOOS=linux                                                                    \
