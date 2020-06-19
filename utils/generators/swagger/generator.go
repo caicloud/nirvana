@@ -169,9 +169,8 @@ func (g *Generator) buildSwaggerInfo(
 	if len(rules) > 0 {
 		for path, item := range g.paths {
 			for _, rule := range rules {
-				path = rule.Replace(path)
-				if path != "" {
-					swagger.Paths.Paths[path] = *item
+				if replacedPath := rule.Replace(path); replacedPath != "" {
+					swagger.Paths.Paths[replacedPath] = *item
 					break
 				}
 			}
