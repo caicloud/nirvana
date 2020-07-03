@@ -815,9 +815,8 @@ GOLANGCI_LINT := $(BIN_DIR)/golangci-lint
 # Default golang flags used in build and test
 # -mod=vendor: force go to use the vendor files instead of using the` + " `$GOPATH/pkg/mod` " + `
 # -p: the number of programs that can be run in parallel
-# -race: enable data race detection
 # -count: run each test and benchmark 1 times. Set this flag to disable test cache
-export GOFLAGS ?= -mod=vendor -p=$(CPUS) -race -count=1
+export GOFLAGS ?= -mod=vendor -p=$(CPUS) -count=1
 
 #
 # Define all targets. At least the following commands are required:
@@ -836,7 +835,7 @@ $(GOLANGCI_LINT):
 	curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $(BIN_DIR) v1.23.6
 
 test:
-	@go test -coverprofile=coverage.out ./...
+	@go test -race -coverprofile=coverage.out ./...
 	@go tool cover -func coverage.out | tail -n 1 | awk '{ print "Total coverage: " $$3 }'
 
 build-local:
