@@ -18,6 +18,7 @@ package definition
 
 import (
 	"context"
+	"net/http"
 	"reflect"
 )
 
@@ -202,6 +203,11 @@ type Definition struct {
 	// In some cases, succeessful data and error data should be generated in
 	// different ways.
 	ErrorProduces []string
+	// Handler is a http.Handler implementation, nirvana supports to add a http.Handler (e.g. httputil.ReverseProxy)
+	// directly to the router.
+	// If this field is not nil, there is no need to set the Function, Parameters, and Results fields.
+	// See examples/getting-started/handler for a real example.
+	Handler http.Handler
 	// Function is a function handler. It must be func type.
 	Function interface{}
 	// Parameters describes function parameters.

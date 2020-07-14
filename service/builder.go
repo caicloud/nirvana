@@ -151,6 +151,7 @@ func (b *builder) copyDefinition(d *definition.Definition, consumes []string, pr
 		Method:      d.Method,
 		Summary:     d.Summary,
 		Function:    d.Function,
+		Handler:     d.Handler,
 		Description: d.Description,
 	}
 	if len(d.Consumes) > 0 {
