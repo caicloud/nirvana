@@ -154,7 +154,7 @@ def get_regexs():
     # Search for "YEAR" which exists in the boilerplate, but shouldn't in the real thing
     regexs["year"] = re.compile('YEAR')
     # dates can be 2017 or 2018, company holder names can be anything
-    regexs["date"] = re.compile('(2017|2018)')
+    regexs["date"] = re.compile('(2017|2018|2019|2020)')
     # strip // +build \n\n build constraints
     regexs["go_build_constraints"] = re.compile(r"^(// \+build.*\n)+\n", re.MULTILINE)
     # strip #!.* from shell/python scripts

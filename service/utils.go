@@ -112,7 +112,7 @@ var definitionNoConsumes = errors.InternalServerError.Build("Nirvana:Service:Def
 var definitionNoProduces = errors.InternalServerError.Build("Nirvana:Service:DefinitionNoProduces", "no content type to produce in [${method}]${path}")
 var definitionNoErrorProduces = errors.InternalServerError.Build("Nirvana:Service:DefinitionNoErrorProduces",
 	"no content type to produce error in [${method}]${path}")
-var definitionNoFunction = errors.InternalServerError.Build("Nirvana:Service:DefinitionNoFunction", "no function in [${method}]${path}")
+var definitionNoFunction = errors.InternalServerError.Build("Nirvana:Service:DefinitionNoFunction", "no function or handler in [${method}]${path}")
 var definitionInvalidFunctionType = errors.InternalServerError.Build("Nirvana:Service:DefinitionInvalidFunctionType",
 	"${type} is not function in [${method}]${path}")
 

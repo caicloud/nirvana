@@ -95,6 +95,10 @@ type Definition struct {
 
 // NewDefinition creates openapi.Definition from definition.Definition.
 func NewDefinition(tc *TypeContainer, d *definition.Definition) (*Definition, error) {
+	if d.Function == nil {
+		return nil, nil
+	}
+
 	cd := &Definition{
 		Method:        d.Method,
 		HTTPMethod:    service.HTTPMethodFor(d.Method),
@@ -162,6 +166,9 @@ func NewDefinitions(tc *TypeContainer, definitions []definition.Definition) ([]D
 		cd, err := NewDefinition(tc, &d)
 		if err != nil {
 			return nil, err
+		}
+		if cd == nil {
+			continue
 		}
 		result[i] = *cd
 	}
