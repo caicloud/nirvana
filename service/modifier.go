@@ -79,12 +79,9 @@ func ProduceAllIfProducesIsEmpty() DefinitionModifier {
 	}
 }
 
-// ConsumeNoneForHTTPGet adds definition.MIMENone to consumes for get definitions.
-// Then you don't need to manually write the consume to every get definitions.
-// The get is http get rather than definition.Get.
-func ConsumeNoneForHTTPGet() DefinitionModifier {
+func consumeNoneFor(method string) DefinitionModifier {
 	return func(d *definition.Definition) {
-		if HTTPMethodFor(d.Method) == http.MethodGet {
+		if HTTPMethodFor(d.Method) == method {
 			found := false
 			for _, v := range d.Consumes {
 				if v == definition.MIMENone {
@@ -99,32 +96,9 @@ func ConsumeNoneForHTTPGet() DefinitionModifier {
 	}
 }
 
-// ConsumeNoneForHTTPDelete adds definition.MIMENone to consumes for delete definitions.
-// Then you don't need to manually write the consume to every delete definitions.
-// The delete is http delete rather than definition.Delete.
-func ConsumeNoneForHTTPDelete() DefinitionModifier {
+func produceNoneFor(method string) DefinitionModifier {
 	return func(d *definition.Definition) {
-		if HTTPMethodFor(d.Method) == http.MethodDelete {
-			found := false
-			for _, v := range d.Consumes {
-				if v == definition.MIMENone {
-					found = true
-					break
-				}
-			}
-			if !found {
-				d.Consumes = append(d.Consumes, definition.MIMENone)
-			}
-		}
-	}
-}
-
-// ProduceNoneForHTTPDelete adds definition.MIMENone to produces for delete definitions.
-// Then you don't need to manually write the produce to every delete definitions.
-// The delete is http delete rather than definition.Delete.
-func ProduceNoneForHTTPDelete() DefinitionModifier {
-	return func(d *definition.Definition) {
-		if HTTPMethodFor(d.Method) == http.MethodDelete {
+		if HTTPMethodFor(d.Method) == method {
 			found := false
 			for _, v := range d.Produces {
 				if v == definition.MIMENone {
@@ -137,6 +111,41 @@ func ProduceNoneForHTTPDelete() DefinitionModifier {
 			}
 		}
 	}
+}
+
+// ConsumeNoneForHTTPGet adds definition.MIMENone to consumes for get definitions.
+// Then you don't need to manually write the consume to every get definitions.
+// The get is http get rather than definition.Get.
+func ConsumeNoneForHTTPGet() DefinitionModifier {
+	return consumeNoneFor(http.MethodGet)
+}
+
+// ConsumeNoneForHTTPDelete adds definition.MIMENone to consumes for delete definitions.
+// Then you don't need to manually write the consume to every delete definitions.
+// The delete is http delete rather than definition.Delete.
+func ConsumeNoneForHTTPDelete() DefinitionModifier {
+	return consumeNoneFor(http.MethodDelete)
+}
+
+// ProduceNoneForHTTPDelete adds definition.MIMENone to produces for delete definitions.
+// Then you don't need to manually write the produce to every delete definitions.
+// The delete is http delete rather than definition.Delete.
+func ProduceNoneForHTTPDelete() DefinitionModifier {
+	return produceNoneFor(http.MethodDelete)
+}
+
+// ConsumeNoneForHTTPHead adds definition.MIMENone to consumes for head definitions.
+// Then you don't need to manually write the consume to every head definitions.
+// The head is http head rather than definition.Head.
+func ConsumeNoneForHTTPHead() DefinitionModifier {
+	return consumeNoneFor(http.MethodHead)
+}
+
+// ProduceNoneForHTTPHead adds definition.MIMENone to produces for head definitions.
+// Then you don't need to manually write the produce to every head definitions.
+// The head is http head rather than definition.Head.
+func ProduceNoneForHTTPHead() DefinitionModifier {
+	return produceNoneFor(http.MethodHead)
 }
 
 // LastErrorResult adds a error result into all definitions.

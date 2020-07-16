@@ -76,6 +76,8 @@ type Operator interface {
 type Method string
 
 const (
+	// Head binds to http.MethodHead and code http.StatusOK(200)
+	Head Method = "Head"
 	// List binds to http.MethodGet and code http.StatusOK(200).
 	List Method = "List"
 	// Get binds to http.MethodGet and code http.StatusOK(200).

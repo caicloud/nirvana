@@ -31,6 +31,7 @@ type statusMapping struct {
 }
 
 var mappings = map[definition.Method]statusMapping{
+	definition.Head:        {http.MethodHead, http.StatusOK},
 	definition.List:        {http.MethodGet, http.StatusOK},
 	definition.Get:         {http.MethodGet, http.StatusOK},
 	definition.Create:      {http.MethodPost, http.StatusCreated},
