@@ -26,26 +26,6 @@ import (
 	"github.com/caicloud/nirvana/log"
 )
 
-var upload = definition.Descriptor{
-	Path:        "/",
-	Description: "Upload API",
-	Definitions: []definition.Definition{
-		{
-			Method:   definition.Create,
-			Function: Upload,
-			Consumes: []string{definition.MIMEAll},
-			Produces: []string{definition.MIMEAll},
-			Parameters: []definition.Parameter{
-				{
-					Source: definition.File,
-					Name:   "file",
-				},
-			},
-			Results: definition.DataErrorResults(""),
-		},
-	},
-}
-
 func Upload(ctx context.Context, file multipart.File) (string, error) {
 	if file == nil {
 		return "no content", nil
@@ -58,8 +38,49 @@ func Upload(ctx context.Context, file multipart.File) (string, error) {
 }
 
 func main() {
+	descriptors := []definition.Descriptor{
+		{
+			Path:        "/required",
+			Description: "Upload API",
+			Definitions: []definition.Definition{
+				{
+					Method:   definition.Create,
+					Function: Upload,
+					Consumes: []string{definition.MIMEAll},
+					Produces: []string{definition.MIMEAll},
+					Parameters: []definition.Parameter{
+						{
+							Source: definition.File,
+							Name:   "file",
+						},
+					},
+					Results: definition.DataErrorResults(""),
+				},
+			},
+		},
+		{
+			Path:        "/optional",
+			Description: "Upload API",
+			Definitions: []definition.Definition{
+				{
+					Method:   definition.Create,
+					Function: Upload,
+					Consumes: []string{definition.MIMEAll},
+					Produces: []string{definition.MIMEAll},
+					Parameters: []definition.Parameter{
+						{
+							Source:   definition.File,
+							Name:     "file",
+							Optional: true,
+						},
+					},
+					Results: definition.DataErrorResults(""),
+				},
+			},
+		},
+	}
 	cmd := config.NewDefaultNirvanaCommand()
-	if err := cmd.Execute(upload); err != nil {
+	if err := cmd.Execute(descriptors...); err != nil {
 		log.Fatal(err)
 	}
 }

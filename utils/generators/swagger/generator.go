@@ -452,10 +452,11 @@ func (g *Generator) generateParameter(param *api.Parameter) []spec.Parameter {
 			Description: g.escapeNewline(param.Description),
 			Schema:      schema,
 			In:          source,
+			Required:    !param.Optional,
 		},
 	}
-	if len(param.Default) <= 0 {
-		parameter.Required = true
+	if len(param.Default) > 0 {
+		parameter.Required = false
 	}
 	if parameter.In != "body" {
 		// Only body parameter can hold a schema. Other parameters uses type
