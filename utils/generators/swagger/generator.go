@@ -356,6 +356,14 @@ func (g *Generator) parsePaths() {
 					item.Delete = op
 				case http.MethodOptions:
 					item.Options = op
+				case string(definition.Any):
+					item.Get = op
+					item.Head = op
+					item.Post = op
+					item.Put = op
+					item.Patch = op
+					item.Delete = op
+					item.Options = op
 				default:
 					continue
 				}
