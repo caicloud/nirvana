@@ -203,6 +203,7 @@ func (i *inspector) generateParameters(funcName string, typ reflect.Type, ps []d
 			defaultValue: p.Default,
 			generator:    generator,
 			operators:    p.Operators,
+			optional:     p.Optional,
 		}
 		if len(p.Operators) <= 0 {
 			param.targetType = typ.In(index)
@@ -379,6 +380,7 @@ type parameter struct {
 	defaultValue interface{}
 	generator    ParameterGenerator
 	operators    []definition.Operator
+	optional     bool
 }
 
 type result struct {
@@ -446,6 +448,10 @@ func (e *executor) Execute(ctx context.Context) (err error) {
 			if err != nil {
 				return writeError(ctx, e.errorProducers, err)
 			}
+		}
+
+		if result == nil && !p.optional {
+			return writeError(ctx, e.errorProducers, requiredField.Error(p.name, p.generator.Source()))
 		}
 
 		if closer, ok := result.(io.Closer); ok {

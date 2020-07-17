@@ -169,6 +169,27 @@ type Parameter struct {
 	Operators []Operator
 	// Description describes the parameter.
 	Description string
+	// Optional used to set whether this parameter is optional or not, we take the File parameter as an example,
+	// in current usage, if the value of parameter is empty, nirvana will return an error directly:
+	// {
+	//    "reason": "Nirvana:Service:RequiredField",
+	//    "message": "required field file in File but got empty",
+	//    "data": {
+	//        "field": "file",
+	//        "source": "File"
+	//    }
+	// }
+	//
+	// if you set the `Optional` to true, then nirvana won't interrupt the request, you can handle
+	// the situation where the parameter may be nil yourself, eg:
+	//
+	// func Upload(ctx context.Context, file multipart.File) (string, error) {
+	//    if file == nil {
+	//        // do something
+	//    }
+	//    // do something else
+	// }
+	Optional bool
 }
 
 // Result describes how to handle a result from function results.

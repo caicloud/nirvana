@@ -139,6 +139,7 @@ var noDestinationHandler = errors.InternalServerError.Build("Nirvana:Service:NoD
 var noContext = errors.InternalServerError.Build("Nirvana:Service:NoContext", "can't find http context, "+
 	"you should define `ctx context.Context` as the first parameter of your handler function")
 
+var requiredField = errors.InternalServerError.Build("Nirvana:Service:RequiredField", "required field ${field} in ${source} but got empty")
 var invalidMetaType = errors.InternalServerError.Build("Nirvana:Service:InvalidMetaType", "can't recognize meta for type ${type}")
 var noProducerToWrite = errors.NotAcceptable.Build("Nirvana:Service:NoProducerToWrite", "can't find producer for accept types ${types}")
 var invalidMethod = errors.InternalServerError.Build("Nirvana:Service:InvalidMethod", "http method ${method} is invalid")
