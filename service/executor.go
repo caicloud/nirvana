@@ -46,7 +46,12 @@ func newInspector(path string, logger log.Logger) *inspector {
 }
 
 func (i *inspector) addDefinition(d definition.Definition) error {
-	method := HTTPMethodFor(d.Method)
+	var method string
+	if d.Method == definition.Any {
+		method = string(definition.Any)
+	} else {
+		method = HTTPMethodFor(d.Method)
+	}
 	if method == "" {
 		return definitionNoMethod.Error(d.Method, i.path)
 	}
@@ -323,8 +328,11 @@ func (i *inspector) Inspect(ctx context.Context) (router.Executor, error) {
 	if req == nil {
 		return nil, noContext.Error()
 	}
-	executors := []*executor{}
+	executors := make([]*executor, 0)
 	if cs, ok := i.executors[req.Method]; ok && len(cs) > 0 {
+		executors = append(executors, cs...)
+	}
+	if cs, ok := i.executors[string(definition.Any)]; ok && len(cs) > 0 {
 		executors = append(executors, cs...)
 	}
 	if len(executors) <= 0 {
@@ -477,6 +485,19 @@ func (e *executor) Execute(ctx context.Context) (err error) {
 
 		paramValues = append(paramValues, reflect.ValueOf(result))
 	}
+
+	code := e.code
+	if code == 0 {
+		switch c.Request().Method {
+		case http.MethodPost:
+			code = http.StatusCreated
+		case http.MethodDelete:
+			code = http.StatusNoContent
+		default:
+			code = http.StatusOK
+		}
+	}
+
 	resultValues := e.function.Call(paramValues)
 	for _, r := range e.results {
 		v := resultValues[r.index]
@@ -503,7 +524,7 @@ func (e *executor) Execute(ctx context.Context) (err error) {
 			// Select correct producers to produce error.
 			producers = e.errorProducers
 		}
-		goon, err := r.handler.Handle(ctx, producers, e.code, data)
+		goon, err := r.handler.Handle(ctx, producers, code, data)
 		if err != nil {
 			return err
 		}
@@ -513,7 +534,7 @@ func (e *executor) Execute(ctx context.Context) (err error) {
 	}
 	resp := c.ResponseWriter()
 	if resp.HeaderWritable() {
-		resp.WriteHeader(e.code)
+		resp.WriteHeader(code)
 	}
 	return nil
 }
