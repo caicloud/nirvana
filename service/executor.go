@@ -328,7 +328,7 @@ func (i *inspector) Inspect(ctx context.Context) (router.Executor, error) {
 	if req == nil {
 		return nil, noContext.Error()
 	}
-	executors := make([]*executor, 0, 0)
+	executors := make([]*executor, 0)
 	if cs, ok := i.executors[req.Method]; ok && len(cs) > 0 {
 		executors = append(executors, cs...)
 	}
