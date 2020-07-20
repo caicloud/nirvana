@@ -35,6 +35,8 @@ type Parameter struct {
 	Type TypeName
 	// Default is encoded default value.
 	Default []byte
+	// Optional used to set whether this parameter is optional or not.
+	Optional bool
 }
 
 // Result describes a function result.
@@ -114,6 +116,7 @@ func NewDefinition(tc *TypeContainer, d *definition.Definition) (*Definition, er
 			Name:        p.Name,
 			Description: p.Description,
 			Type:        functionType.In[i].Type,
+			Optional:    p.Optional,
 		}
 		if p.Default != nil {
 			data, err := encode(p.Default)
