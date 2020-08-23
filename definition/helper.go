@@ -56,70 +56,72 @@ func DataErrorResults(description string) []Result {
 }
 
 // ParameterFor creates a simple parameter.
-func ParameterFor(source Source, name string, description string) Parameter {
+func ParameterFor(source Source, name string, description string, operators ...Operator) Parameter {
 	return Parameter{
 		Source:      source,
 		Name:        name,
 		Description: description,
+		Operators:   operators,
 	}
 }
 
 // PathParameterFor creates a path parameter
-func PathParameterFor(name string, description string) Parameter {
-	return ParameterFor(Path, name, description)
+func PathParameterFor(name string, description string, operators ...Operator) Parameter {
+	return ParameterFor(Path, name, description, operators...)
 }
 
 // QueryParameterFor creates a query parameter
-func QueryParameterFor(name string, description string) Parameter {
-	return ParameterFor(Query, name, description)
+func QueryParameterFor(name string, description string, operators ...Operator) Parameter {
+	return ParameterFor(Query, name, description, operators...)
 }
 
 // HeaderParameterFor creates a header parameter
-func HeaderParameterFor(name string, description string) Parameter {
-	return ParameterFor(Header, name, description)
+func HeaderParameterFor(name string, description string, operators ...Operator) Parameter {
+	return ParameterFor(Header, name, description, operators...)
 }
 
 // FormParameterFor creates a form parameter
-func FormParameterFor(name string, description string) Parameter {
-	return ParameterFor(Form, name, description)
+func FormParameterFor(name string, description string, operators ...Operator) Parameter {
+	return ParameterFor(Form, name, description, operators...)
 }
 
 // FileParameterFor creates a file parameter
-func FileParameterFor(name string, description string) Parameter {
-	return ParameterFor(File, name, description)
+func FileParameterFor(name string, description string, operators ...Operator) Parameter {
+	return ParameterFor(File, name, description, operators...)
 }
 
 // BodyParameterFor creates a body parameter
-func BodyParameterFor(description string) Parameter {
-	return ParameterFor(Body, "", description)
+func BodyParameterFor(description string, operators ...Operator) Parameter {
+	return ParameterFor(Body, "", description, operators...)
 }
 
 // PrefabParameterFor creates a prefab parameter
-func PrefabParameterFor(name string, description string) Parameter {
-	return ParameterFor(Prefab, name, description)
+func PrefabParameterFor(name string, description string, operators ...Operator) Parameter {
+	return ParameterFor(Prefab, name, description, operators...)
 }
 
 // AutoParameterFor creates an auto parameter
-func AutoParameterFor(description string) Parameter {
-	return ParameterFor(Auto, "", description)
+func AutoParameterFor(description string, operators ...Operator) Parameter {
+	return ParameterFor(Auto, "", description, operators...)
 }
 
 // ResultFor creates a simple result.
-func ResultFor(dest Destination, description string) Result {
+func ResultFor(dest Destination, description string, operators ...Operator) Result {
 	return Result{
 		Destination: dest,
 		Description: description,
+		Operators:   operators,
 	}
 }
 
 // MetaResultFor creates meta result.
-func MetaResultFor(description string) Result {
-	return ResultFor(Meta, description)
+func MetaResultFor(description string, operators ...Operator) Result {
+	return ResultFor(Meta, description, operators...)
 }
 
 // DataResultFor creates data result.
-func DataResultFor(description string) Result {
-	return ResultFor(Data, description)
+func DataResultFor(description string, operators ...Operator) Result {
+	return ResultFor(Data, description, operators...)
 }
 
 // ErrorResult creates error result.
