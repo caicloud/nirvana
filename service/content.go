@@ -25,6 +25,7 @@ import (
 	"io/ioutil"
 	"reflect"
 	"strconv"
+	"time"
 
 	"github.com/caicloud/nirvana/definition"
 )
@@ -370,38 +371,40 @@ func (p *ContextPrefab) Make(ctx context.Context) (interface{}, error) {
 type Converter func(ctx context.Context, data []string) (interface{}, error)
 
 var converters = map[reflect.Type]Converter{
-	reflect.TypeOf(bool(false)):  ConvertToBool,
-	reflect.TypeOf(int(0)):       ConvertToInt,
-	reflect.TypeOf(int8(0)):      ConvertToInt8,
-	reflect.TypeOf(int16(0)):     ConvertToInt16,
-	reflect.TypeOf(int32(0)):     ConvertToInt32,
-	reflect.TypeOf(int64(0)):     ConvertToInt64,
-	reflect.TypeOf(uint(0)):      ConvertToUint,
-	reflect.TypeOf(uint8(0)):     ConvertToUint8,
-	reflect.TypeOf(uint16(0)):    ConvertToUint16,
-	reflect.TypeOf(uint32(0)):    ConvertToUint32,
-	reflect.TypeOf(uint64(0)):    ConvertToUint64,
-	reflect.TypeOf(float32(0)):   ConvertToFloat32,
-	reflect.TypeOf(float64(0)):   ConvertToFloat64,
-	reflect.TypeOf(string("")):   ConvertToString,
-	reflect.TypeOf(new(bool)):    ConvertToBoolP,
-	reflect.TypeOf(new(int)):     ConvertToIntP,
-	reflect.TypeOf(new(int8)):    ConvertToInt8P,
-	reflect.TypeOf(new(int16)):   ConvertToInt16P,
-	reflect.TypeOf(new(int32)):   ConvertToInt32P,
-	reflect.TypeOf(new(int64)):   ConvertToInt64P,
-	reflect.TypeOf(new(uint)):    ConvertToUintP,
-	reflect.TypeOf(new(uint8)):   ConvertToUint8P,
-	reflect.TypeOf(new(uint16)):  ConvertToUint16P,
-	reflect.TypeOf(new(uint32)):  ConvertToUint32P,
-	reflect.TypeOf(new(uint64)):  ConvertToUint64P,
-	reflect.TypeOf(new(float32)): ConvertToFloat32P,
-	reflect.TypeOf(new(float64)): ConvertToFloat64P,
-	reflect.TypeOf(new(string)):  ConvertToStringP,
-	reflect.TypeOf([]bool{}):     ConvertToBoolSlice,
-	reflect.TypeOf([]int{}):      ConvertToIntSlice,
-	reflect.TypeOf([]float64{}):  ConvertToFloat64Slice,
-	reflect.TypeOf([]string{}):   ConvertToStringSlice,
+	reflect.TypeOf(false):          ConvertToBool,
+	reflect.TypeOf(0):              ConvertToInt,
+	reflect.TypeOf(int8(0)):        ConvertToInt8,
+	reflect.TypeOf(int16(0)):       ConvertToInt16,
+	reflect.TypeOf(int32(0)):       ConvertToInt32,
+	reflect.TypeOf(int64(0)):       ConvertToInt64,
+	reflect.TypeOf(uint(0)):        ConvertToUint,
+	reflect.TypeOf(uint8(0)):       ConvertToUint8,
+	reflect.TypeOf(uint16(0)):      ConvertToUint16,
+	reflect.TypeOf(uint32(0)):      ConvertToUint32,
+	reflect.TypeOf(uint64(0)):      ConvertToUint64,
+	reflect.TypeOf(float32(0)):     ConvertToFloat32,
+	reflect.TypeOf(float64(0)):     ConvertToFloat64,
+	reflect.TypeOf(time.Time{}):    ConvertToTime,
+	reflect.TypeOf(""):             ConvertToString,
+	reflect.TypeOf(new(bool)):      ConvertToBoolP,
+	reflect.TypeOf(new(int)):       ConvertToIntP,
+	reflect.TypeOf(new(int8)):      ConvertToInt8P,
+	reflect.TypeOf(new(int16)):     ConvertToInt16P,
+	reflect.TypeOf(new(int32)):     ConvertToInt32P,
+	reflect.TypeOf(new(int64)):     ConvertToInt64P,
+	reflect.TypeOf(new(uint)):      ConvertToUintP,
+	reflect.TypeOf(new(uint8)):     ConvertToUint8P,
+	reflect.TypeOf(new(uint16)):    ConvertToUint16P,
+	reflect.TypeOf(new(uint32)):    ConvertToUint32P,
+	reflect.TypeOf(new(uint64)):    ConvertToUint64P,
+	reflect.TypeOf(new(float32)):   ConvertToFloat32P,
+	reflect.TypeOf(new(float64)):   ConvertToFloat64P,
+	reflect.TypeOf(new(string)):    ConvertToStringP,
+	reflect.TypeOf(new(time.Time)): ConvertToTimeP,
+	reflect.TypeOf([]bool{}):       ConvertToBoolSlice,
+	reflect.TypeOf([]int{}):        ConvertToIntSlice,
+	reflect.TypeOf([]float64{}):    ConvertToFloat64Slice,
+	reflect.TypeOf([]string{}):     ConvertToStringSlice,
 }
 
 // ConverterFor gets converter for specified type.
@@ -665,6 +668,16 @@ func ConvertToFloat64(ctx context.Context, data []string) (interface{}, error) {
 	return target, nil
 }
 
+// ConvertToTime converts []string to time.Time. Only the first data is used.
+func ConvertToTime(ctx context.Context, data []string) (interface{}, error) {
+	origin := data[0]
+	target, err := time.Parse(time.RFC3339, origin)
+	if err != nil {
+		return nil, invalidConversion.Error(origin, "time")
+	}
+	return target, nil
+}
+
 // ConvertToFloat64P converts []string to *float64. Only the first data is used.
 func ConvertToFloat64P(ctx context.Context, data []string) (interface{}, error) {
 	ret, err := ConvertToFloat64(ctx, data)
@@ -683,6 +696,16 @@ func ConvertToString(ctx context.Context, data []string) (interface{}, error) {
 // ConvertToStringP return the first element's pointer in []string.
 func ConvertToStringP(ctx context.Context, data []string) (interface{}, error) {
 	return &data[0], nil
+}
+
+// ConvertToTimeP return the first element's pointer in []string.
+func ConvertToTimeP(ctx context.Context, data []string) (interface{}, error) {
+	ret, err := ConvertToTime(ctx, data)
+	if err != nil {
+		return nil, err
+	}
+	value := ret.(time.Time)
+	return &value, nil
 }
 
 // ConvertToBoolSlice converts all elements in data to bool, and return []bool
