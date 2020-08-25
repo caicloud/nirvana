@@ -22,6 +22,7 @@ import (
 	"io"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/caicloud/nirvana/definition"
 )
@@ -119,6 +120,7 @@ func TestProducer(t *testing.T) {
 }
 
 func TestConverterFor(t *testing.T) {
+	wantTime, _ := time.Parse(time.RFC3339, "2020-08-25T05:12:18Z")
 	tests := []struct {
 		tpy     reflect.Type
 		data    []string
@@ -126,13 +128,13 @@ func TestConverterFor(t *testing.T) {
 		pointer bool
 	}{
 		{
-			reflect.TypeOf(bool(false)),
+			reflect.TypeOf(false),
 			[]string{"true", "false"},
 			true,
 			false,
 		},
 		{
-			reflect.TypeOf(int(0)),
+			reflect.TypeOf(0),
 			[]string{"1", "2"},
 			1,
 			false,
@@ -192,9 +194,15 @@ func TestConverterFor(t *testing.T) {
 			false,
 		},
 		{
-			reflect.TypeOf(string("")),
+			reflect.TypeOf(""),
 			[]string{"1", "2"},
 			"1",
+			false,
+		},
+		{
+			reflect.TypeOf(time.Time{}),
+			[]string{"2020-08-25T05:12:18Z", "2020-08-25T05:12:18Z"},
+			wantTime,
 			false,
 		},
 		{
@@ -282,6 +290,12 @@ func TestConverterFor(t *testing.T) {
 			reflect.TypeOf(new(string)),
 			[]string{"1.2", "2"},
 			"1.2",
+			true,
+		},
+		{
+			reflect.TypeOf(new(time.Time)),
+			[]string{"2020-08-25T05:12:18Z", "2020-08-25T05:12:18Z"},
+			wantTime,
 			true,
 		},
 		{
