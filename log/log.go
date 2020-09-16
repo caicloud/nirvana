@@ -16,21 +16,18 @@ limitations under the License.
 
 package log
 
-import "math"
-
-// Level is log level of verboser. We strongly recommend you to
-// follow the rules:
-// 1. Use LevelDebug for debug log.
-// 2. Use 1 for important but not frequent log.
-// 3. Use 2 for important and frequent log.
-// 4. Use 3 for not important and not frequent log.
-// 5. Use 4 for not important but frequent log.
-// 6. Use [5, LevelDebug) only if you want to custom log levels.
+// Level is log level of verboser. We strongly recommend you to follow the rules:
+// 0 - logs that must be visible to users, e.g. programmer errors, panic context, cli argument, etc
+// 1 - logs that is useful to users, e.g. config (listening on X, watching Y), important error info, etc
+// 2 - logs about system behavior, e.g. system state change, request info, etc
+// 3 - logs that is nice to have, e.g. scheduler decision, monitoring info, etc
+// 4 - debug level verbosity
+// N - not recommended to use but up to developers
 type Level int32
 
 const (
 	// LevelDebug is for debug info.
-	LevelDebug Level = math.MaxInt32
+	LevelDebug Level = 4
 )
 
 // Severity has four classes to correspond with log situation.
