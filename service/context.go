@@ -170,6 +170,8 @@ type ResponseWriter interface {
 	StatusCode() int
 	// ContentLength returns the length of written content.
 	ContentLength() int
+	// ResponseBody returns response body.
+	ResponseBody() []byte
 }
 
 type response struct {
@@ -177,6 +179,7 @@ type response struct {
 	statusCode    int
 	contentLength int
 	hijacked      bool
+	respBody      []byte
 }
 
 // For http.HTTPResponseWriter and HTTPResponseInfo
@@ -191,6 +194,8 @@ func (c *response) Write(data []byte) (int, error) {
 	}
 	length, err := c.writer.Write(data)
 	c.contentLength += length
+	// Append the data to the response cache for the special purpose of users.
+	c.respBody = append(c.respBody, data[:length]...)
 	return length, err
 }
 
@@ -239,6 +244,11 @@ func (c *response) ContentLength() int {
 // not recall WriteHeader().
 func (c *response) HeaderWritable() bool {
 	return !c.hijacked && c.statusCode <= 0
+}
+
+// ResponseBody returns response body.
+func (c *response) ResponseBody() []byte {
+	return c.respBody
 }
 
 // HTTPContext describes an http context.
