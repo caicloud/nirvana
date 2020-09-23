@@ -18,6 +18,7 @@ package api
 
 import (
 	"encoding/json"
+	"net/http"
 
 	"github.com/caicloud/nirvana/definition"
 	"github.com/caicloud/nirvana/service"
@@ -112,6 +113,10 @@ func NewDefinition(tc *TypeContainer, d *definition.Definition) (*Definition, er
 		Produces:      d.Produces,
 		ErrorProduces: d.ErrorProduces,
 		Function:      tc.NameOfInstance(d.Function),
+	}
+	if d.Method == definition.Any {
+		cd.HTTPMethod = string(definition.Any)
+		cd.HTTPCode = http.StatusOK
 	}
 	functionType := tc.Type(cd.Function)
 	for i, p := range d.Parameters {
