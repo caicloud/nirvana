@@ -27,7 +27,6 @@ import (
 	"github.com/caicloud/nirvana/config"
 	"github.com/caicloud/nirvana/definition"
 	"github.com/caicloud/nirvana/log"
-	"github.com/caicloud/nirvana/middlewares/reqlog"
 )
 
 func main() {
@@ -60,9 +59,6 @@ func main() {
 		{
 			Path:        "/proxy",
 			Description: "proxy API",
-			Middlewares: []definition.Middleware{
-				reqlog.Default(),
-			},
 			Definitions: []definition.Definition{
 				{
 					Method:   definition.Get,
