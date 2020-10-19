@@ -101,13 +101,13 @@ func (o *apiOptions) Run(cmd *cobra.Command, args []string) error {
 	}
 
 	files := map[string][]byte{}
-	for _, s := range swaggers {
+	for filename, s := range swaggers {
 		data, err := json.MarshalIndent(s, "", "  ")
 		if err != nil {
 			return err
 		}
 
-		files[s.Info.Version] = data
+		files[filename] = data
 	}
 
 	if o.Output != "" {

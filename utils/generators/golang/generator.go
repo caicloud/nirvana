@@ -62,25 +62,27 @@ func (g *Generator) Generate() (map[string][]byte, error) {
 		return nil, err
 	}
 	codes := make(map[string][]byte)
-	versions := make([]string, 0, len(definitions))
-	for version, defs := range definitions {
-		versions = append(versions, version)
-		helper, err := newHelper(g.rootPkg, defs)
+	versions := make([]utils.Version, 0, len(definitions))
+	for _, d := range definitions {
+		versions = append(versions, d.Version)
+		helper, err := newHelper(g.rootPkg, d.Defs)
 		if err != nil {
 			return nil, err
 		}
+		// all lower case string
+		packageName := d.Version.Module + d.Version.Name
 		types, imports := helper.Types()
-		typeCodes, err := g.typeCodes(version, types, imports)
+		typeCodes, err := g.typeCodes(packageName, types, imports)
 		if err != nil {
 			return nil, err
 		}
 		functions, imports := helper.Functions()
-		functionCodes, err := g.functionCodes(version, functions, imports)
+		functionCodes, err := g.functionCodes(packageName, functions, imports)
 		if err != nil {
 			return nil, err
 		}
-		codes[version+"/types"] = typeCodes
-		codes[version+"/client"] = functionCodes
+		codes[packageName+"/types"] = typeCodes
+		codes[packageName+"/client"] = functionCodes
 	}
 	client, err := g.aggregationClientCode(versions)
 	if err != nil {
@@ -98,11 +100,14 @@ func (g *Generator) typeCodes(version string, types []Type, imports []string) ([
 		_ = err
 	}
 
-	writeln("import (")
-	for _, pkg := range imports {
-		writeln(pkg)
+	if len(imports) > 0 {
+		writeln("import (")
+		for _, pkg := range imports {
+			writeln(pkg)
+		}
+		writeln(")")
 	}
-	writeln(")")
+
 	for _, typ := range types {
 		writeln("")
 		writeln(string(typ.Generate()))
@@ -116,7 +121,7 @@ func (g *Generator) functionCodes(version string, functions []function, imports 
 package {{ .Version }}
 
 import (
-	context "context"
+	"context"
 
 	{{- range .Imports }}
 	{{.}}
@@ -205,20 +210,21 @@ func (c *Client) {{ .Name }}(ctx context.Context{{ range .Parameters }},{{ .Prop
 }
 
 type versionedPackage struct {
+	Alias    string
 	Version  string
 	Path     string
 	Function string
 }
 
-func (g *Generator) aggregationClientCode(versions []string) ([]byte, error) {
+func (g *Generator) aggregationClientCode(versions []utils.Version) ([]byte, error) {
 	buf := bytes.NewBuffer(nil)
 	template, err := template.New("codes").Parse(`
 package {{ .PackageName }}
 
 import (
 	{{ range .Pakcages }}
-	{{ .Version }} "{{ .Path }}"
-	{{ end }}
+	"{{ .Path }}"
+	{{- end }}
 
 	rest "{{ .Rest }}"
 )
@@ -226,16 +232,16 @@ import (
 // Interface describes a versioned client.
 type Interface interface {
 {{- range .Pakcages }}
-	// {{ .Function }} returns {{ .Version }} client.
-	{{ .Function }}() {{ .Version }}.Interface
+	// {{ .Function }} returns {{ .Alias }} client.
+	{{ .Function }}() {{ .Alias }}.Interface
 {{- end }}
 }
 
 // Client contains versioned clients.
 type Client struct {
 	{{ range .Pakcages }}
-	{{ .Version }} *{{ .Version }}.Client
-	{{ end }}
+	{{ .Version }} *{{ .Alias }}.Client
+	{{- end }}
 }
 
 // NewClient creates a new client.
@@ -243,11 +249,11 @@ func NewClient(cfg *rest.Config) (Interface, error) {
 	c := &Client{}
 	var err error
 	{{ range .Pakcages }}
-	c.{{ .Version }}, err =  {{ .Version }}.NewClient(cfg)
+	c.{{ .Version }}, err =  {{ .Alias }}.NewClient(cfg)
 	if err != nil {
 		return nil, err
 	}
-	{{ end }}
+	{{ end -}}
 	return c, nil
 }
 
@@ -255,15 +261,14 @@ func NewClient(cfg *rest.Config) (Interface, error) {
 func MustNewClient(cfg *rest.Config) Interface {
 	return &Client{
 	{{- range .Pakcages }}
-	{{ .Version }}: {{ .Version }}.MustNewClient(cfg),
+	{{ .Version }}: {{ .Alias }}.MustNewClient(cfg),
 	{{- end }}
 	}
 }
 
-
 {{ range .Pakcages }}
 // {{ .Function }} returns a versioned client.
-func (c *Client) {{ .Function }}() {{ .Version }}.Interface {
+func (c *Client) {{ .Function }}() {{ .Alias }}.Interface {
 	return c.{{ .Version }}
 }
 {{ end }}
@@ -271,12 +276,20 @@ func (c *Client) {{ .Function }}() {{ .Version }}.Interface {
 	if err != nil {
 		return nil, err
 	}
-	packages := []versionedPackage{}
+	packages := make([]versionedPackage, 0, len(versions))
 	for _, version := range versions {
+		alias := version.Module + version.Name
+		var v string
+		if version.Module != "" {
+			v = version.Module + strings.Title(version.Name)
+		} else {
+			v = version.Name
+		}
 		packages = append(packages, versionedPackage{
-			Version:  version,
-			Path:     path.Join(g.pkg, version),
-			Function: strings.Title(version),
+			Alias:    alias,
+			Version:  v,
+			Path:     path.Join(g.pkg, alias),
+			Function: strings.Title(version.Module) + strings.Title(version.Name),
 		})
 	}
 	err = template.Execute(buf, map[string]interface{}{
