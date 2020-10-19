@@ -102,6 +102,9 @@ func (r *PathRule) Validate() error {
 
 // Version describes an API version.
 type Version struct {
+	// Module is the name of the module to which the version belongs.
+	// optional, can be empty if there is only one module
+	Module string `yaml:"module"`
 	// Name is version number. SemVer is recommended.
 	Name string `yaml:"name"`
 	// Description describes this version.
