@@ -18,9 +18,9 @@ package golang
 
 import (
 	"fmt"
+	"go/token"
 	"path"
 	"reflect"
-	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -28,6 +28,7 @@ import (
 	"github.com/caicloud/nirvana/definition"
 	"github.com/caicloud/nirvana/service"
 	"github.com/caicloud/nirvana/utils/api"
+	"github.com/caicloud/nirvana/utils/generators/utils"
 )
 
 // Type abstracts common ability from type declarations.
@@ -147,8 +148,10 @@ type parameterExtension struct {
 }
 
 type functionParameter struct {
-	Source       string
-	Name         string
+	Source string
+	// Name is the name in the Parameter of the Definition, used in the generated function body.
+	Name string
+	// ProposedName is the parameter name of the generated function.
 	ProposedName string
 	Typ          string
 	Extensions   []parameterExtension
@@ -189,8 +192,8 @@ func newHelper(rootPkg string, definitions *api.Definitions) (*helper, error) {
 
 // Types returns types which is required to generate.
 func (h *helper) Types() ([]Type, []string) {
-	types := []Type{}
-	generatedTypes := []*api.Type{}
+	types := make([]Type, 0, len(h.definitions.Types))
+	generatedTypes := make([]*api.Type, 0, len(h.definitions.Types))
 
 	for name, typ := range h.definitions.Types {
 		if typ.Kind == reflect.Func || typ.PkgPath == "" ||
@@ -270,7 +273,7 @@ func (h *helper) packages(types []*api.Type, extended bool) []string {
 			pkgMap[pkg] = true
 		}
 	}
-	results := []string{}
+	results := make([]string, 0, len(pkgMap))
 	for pkg := range pkgMap {
 		alias := h.namer.Alias(pkg)
 		results = append(results, fmt.Sprintf(`%s "%s"`, alias, pkg))
@@ -280,14 +283,18 @@ func (h *helper) packages(types []*api.Type, extended bool) []string {
 
 // pkgs generates a list of imported packages without aliases.
 func (h *helper) pkgs(typ *api.Type, extended bool) []string {
-	switch typ.Kind {
-	case reflect.Array, reflect.Slice, reflect.Ptr:
-		return h.pkgs(h.definitions.Types[typ.Elem], extended)
-	case reflect.Map:
-		pkgs := h.pkgs(h.definitions.Types[typ.Key], extended)
-		return append(pkgs, h.pkgs(h.definitions.Types[typ.Elem], extended)...)
-	}
-
+	// handle third-party types and cases where the referenced type is an array/map alias
+	// eg:
+	//   import (
+	//	     "go.mongodb.org/mongo-driver/bson/primitive"
+	//   )
+	//
+	//   type XXX struct {
+	//	     ID primitive.ObjectID `json:"_id"`
+	//   }
+	// definition of ObjectID:
+	//   type ObjectID [12]byte
+	// for this type, you don't need to import the package of its child, just the package itself
 	if typ.PkgPath != "" {
 		index := strings.LastIndex(typ.PkgPath, "/vendor/")
 		if index >= 0 ||
@@ -298,22 +305,34 @@ func (h *helper) pkgs(typ *api.Type, extended bool) []string {
 			}
 			return []string{pkg}
 		}
+
 		if extended && typ.Kind == reflect.Struct {
-			pkgs := []string{}
+			pkgs := make([]string, 0, len(typ.Fields))
 			for _, field := range typ.Fields {
 				pkgs = append(pkgs, h.pkgs(h.definitions.Types[field.Type], extended)...)
 			}
 			return pkgs
 		}
+		return nil
 	}
-	return []string{}
+
+	// handle normal array/map definitions, eg:
+	//   Metas   []*v1.ObjectMeta      `json:"metas"`
+	//   Objects map[string]*v1.Object `json:"objects"`
+	switch typ.Kind {
+	case reflect.Array, reflect.Slice, reflect.Ptr:
+		return h.pkgs(h.definitions.Types[typ.Elem], extended)
+	case reflect.Map:
+		return append(h.pkgs(h.definitions.Types[typ.Key], extended), h.pkgs(h.definitions.Types[typ.Elem], extended)...)
+	}
+	return nil
 }
 
 // Functions returns functions which is required to generate.
 func (h *helper) Functions() ([]function, []string) {
 	functionNames := map[string]int{}
-	functions := []function{}
-	types := []*api.Type{}
+	functions := make([]function, 0, len(h.definitions.Definitions))
+	types := make([]*api.Type, 0, len(h.definitions.Definitions))
 	for path, defs := range h.definitions.Definitions {
 		for _, def := range defs {
 			fn := function{
@@ -324,7 +343,7 @@ func (h *helper) Functions() ([]function, []string) {
 			// The priority of summary is higher than original function name.
 			if def.Summary != "" {
 				// Remove invalid chars and regard as function name.
-				fn.Name = nameReplacer.ReplaceAllString(def.Summary, "")
+				fn.Name = utils.NameReplacer.ReplaceAllString(def.Summary, "")
 			}
 
 			if fn.Name == "" {
@@ -454,18 +473,20 @@ type nameContainer struct {
 	namer *typeNamer
 }
 
-var nameReplacer = regexp.MustCompile(`[^a-zA-Z0-9]`)
-
 func (n *nameContainer) proposeName(name string, typ api.TypeName) string {
 	if name == "" {
 		name = n.deconstruct(typ)
 	}
-	name = nameReplacer.ReplaceAllString(name, "")
+	name = utils.NameReplacer.ReplaceAllString(name, "")
 	if name == "" {
 		name = "temp"
 	}
 	if name[0] >= 'A' && name[0] <= 'Z' {
 		name = string(name[0]|0x20) + name[1:]
+	}
+	// name may be `type` etc.
+	if token.Lookup(name).IsKeyword() {
+		name += "_"
 	}
 	index := n.names[name]
 	if index > 0 {
