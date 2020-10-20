@@ -91,11 +91,11 @@ func NewGenerator(
 }
 
 // Generate generates swagger specifications.
-func (g *Generator) Generate() ([]spec.Swagger, error) {
+func (g *Generator) Generate() (map[string]spec.Swagger, error) {
 	g.parseSchemas()
 	g.parsePaths()
 
-	swaggers := make([]spec.Swagger, 0, len(g.config.Versions))
+	swaggers := make(map[string]spec.Swagger, len(g.config.Versions))
 	for _, version := range g.config.Versions {
 		title := fmt.Sprintln(g.config.Project, "APIs")
 		description := g.config.Description
@@ -120,7 +120,13 @@ func (g *Generator) Generate() ([]spec.Swagger, error) {
 			schemes, hosts, contacts,
 			version.PathRules,
 		)
-		swaggers = append(swaggers, *swagger)
+		var filename string
+		if version.Module != "" {
+			filename = strings.ToLower(version.Module) + "." + strings.ToLower(version.Name)
+		} else {
+			filename = strings.ToLower(version.Name)
+		}
+		swaggers[filename] = *swagger
 	}
 
 	if len(swaggers) <= 0 {
@@ -129,7 +135,7 @@ func (g *Generator) Generate() ([]spec.Swagger, error) {
 			g.config.Schemes, g.config.Hosts, g.config.Contacts,
 			nil,
 		)
-		swaggers = append(swaggers, *swagger)
+		swaggers["unknown"] = *swagger
 	}
 	return swaggers, nil
 }
