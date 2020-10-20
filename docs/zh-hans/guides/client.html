@@ -859,6 +859,43 @@ INFO  0702-15:50:55.610+08 client.go:106 | Generated golang client package mypro
 </code></pre>
 <p>&#x751F;&#x6210;&#x7684;&#x5BA2;&#x6237;&#x7AEF;&#x662F;&#x7248;&#x672C;&#x5316;&#x7684;&#xFF0C;&#x7248;&#x672C;&#x5728; nirvana.yaml &#x4E2D;&#x5B9A;&#x4E49;&#x3002;API &#x4F9D;&#x8D56;&#x7684;&#x7ED3;&#x6784;&#x4F53;&#x90FD;&#x4F1A;&#x88AB;&#x63D0;&#x53D6;&#x51FA;&#x6765;&#x5E76;&#x751F;&#x6210;&#x5230; <code>types.go</code> &#x6587;&#x4EF6;&#x4E2D;&#xFF0C;&#x65B9;&#x4FBF;&#x5BA2;&#x6237;&#x7AEF;&#x4F7F;&#x7528;&#x3002;</p>
 <p>&#x6BCF;&#x4E2A;&#x670D;&#x52A1;&#x90FD;&#x53EF;&#x4EE5;&#x751F;&#x6210;&#x4E00;&#x4EFD;&#x5BA2;&#x6237;&#x7AEF;&#xFF0C;&#x4E3A;&#x4E86;&#x65B9;&#x4FBF;&#x4F7F;&#x7528;&#xFF0C;&#x53EF;&#x4EE5;&#x5C06;&#x5BA2;&#x6237;&#x7AEF;&#x6574;&#x5408;&#x5728;&#x4E00;&#x8D77;&#x3002;&#x5177;&#x4F53;&#x5185;&#x5BB9;&#x8BF7;&#x53C2;&#x8003; <a href="../concepts/clients.html">&#x591A;&#x5BA2;&#x6237;&#x7AEF;&#x6574;&#x5408;</a>&#x3002;</p>
+<h3 id="&#x6CE8;&#x610F;&#x4E8B;&#x9879;">&#x6CE8;&#x610F;&#x4E8B;&#x9879;</h3>
+<h4 id="&#x51FD;&#x6570;&#x540D;&#x79F0;">&#x51FD;&#x6570;&#x540D;&#x79F0;</h4>
+<p>&#x751F;&#x6210;&#x7684; client &#x51FD;&#x6570;&#x7684;&#x540D;&#x79F0;&#x4F1A;&#x4F18;&#x5148;&#x4F7F;&#x7528;&#x5BF9;&#x5E94; <code>Definition</code> &#x7684; <code>Summary</code> &#x5B57;&#x6BB5;&#xFF0C;&#x5C06;&#x5176;&#x53BB;&#x6389;&#x7A7A;&#x683C;&#x62FC;&#x63A5;&#x8D77;&#x6765;&#xFF0C;&#x6BD4;&#x5982; <code>Summary</code> &#x4E3A; <code>Create XX</code>&#xFF0C;&#x5219;&#x51FD;&#x6570;&#x540D;&#x79F0;&#x4E3A; <code>CreateXX</code>&#xFF1B;&#x82E5; <code>Summary</code> &#x5B57;&#x6BB5;&#x4E3A;&#x7A7A;&#xFF0C;&#x4F1A;&#x4F7F;&#x7528; <code>Definition</code> &#x7684; <code>Function</code> &#x540D;&#x79F0;&#xFF0C;&#x82E5; <code>Function</code> &#x662F;&#x533F;&#x540D;&#x51FD;&#x6570;&#xFF0C;&#x5219;&#x4F1A;&#x4F7F;&#x7528; <code>AnonymousAPI</code>&#x3002;</p>
+<h4 id="api-types-&#x5B9A;&#x4E49;">API types &#x5B9A;&#x4E49;</h4>
+<p>&#x4E0D;&#x8981;&#x5728; struct &#x91CC;&#x9762;&#x5D4C;&#x5957;&#x533F;&#x540D; struct&#xFF1A;</p>
+<table>
+<thead><tr><th>Bad</th><th>Good</th></tr></thead>
+<tbody>
+
+<tr><td>
+
+```go
+type XXObject struct {
+    AA struct {
+        Test string `json:&quot;test&quot;`
+    } `json:&quot;aa&quot;`
+}
+```
+
+</td>
+
+<td>
+
+```go
+type XXObject struct {
+    AA AA `json:&quot;aa&quot;`
+}
+
+type AA struct {
+    Test string `json:&quot;test&quot;`
+}
+```
+
+</td></tr>
+</tbody></table>
+
+
 <h2 id="&#x4F7F;&#x7528;&#x5BA2;&#x6237;&#x7AEF;">&#x4F7F;&#x7528;&#x5BA2;&#x6237;&#x7AEF;</h2>
 <p>&#x5BA2;&#x6237;&#x7AEF;&#x7684;&#x4F7F;&#x7528;&#x975E;&#x5E38;&#x7B80;&#x5355;&#xFF0C;&#x53EA;&#x9700;&#x8981;&#x521B;&#x5EFA;&#x5BA2;&#x6237;&#x7AEF;&#xFF0C;&#x7136;&#x540E;&#x8C03;&#x7528;&#x76F8;&#x5E94;&#x7684; API &#x51FD;&#x6570;&#x5373;&#x53EF;&#xFF1A;</p>
 <pre><code class="lang-go"><span class="hljs-keyword">func</span> main() {
@@ -914,7 +951,7 @@ INFO  0702-15:50:55.610+08 client.go:106 | Generated golang client package mypro
     <script>
         var gitbook = gitbook || [];
         gitbook.push(function() {
-            gitbook.page.hasChanged({"page":{"title":"生成客户端","level":"1.2.4","depth":2,"next":{"title":"概念","level":"1.3","depth":1,"ref":"","articles":[{"title":"Consumer && Producer","level":"1.3.1","depth":2,"path":"concepts/cp.md","ref":"concepts/cp.md","articles":[]},{"title":"Operator","level":"1.3.2","depth":2,"path":"concepts/operator.md","ref":"concepts/operator.md","articles":[]},{"title":"Filter","level":"1.3.3","depth":2,"path":"concepts/filter.md","ref":"concepts/filter.md","articles":[]},{"title":"Prefab","level":"1.3.4","depth":2,"path":"concepts/prefab.md","ref":"concepts/prefab.md","articles":[]},{"title":"Modifier","level":"1.3.5","depth":2,"path":"concepts/modifier.md","ref":"concepts/modifier.md","articles":[]},{"title":"Middleware","level":"1.3.6","depth":2,"path":"concepts/middleware.md","ref":"concepts/middleware.md","articles":[]},{"title":"Context","level":"1.3.7","depth":2,"path":"concepts/context.md","ref":"concepts/context.md","articles":[]},{"title":"Parameter Generator","level":"1.3.8","depth":2,"path":"concepts/source.md","ref":"concepts/source.md","articles":[]},{"title":"Destination Handler","level":"1.3.9","depth":2,"path":"concepts/destination.md","ref":"concepts/destination.md","articles":[]},{"title":"错误包","level":"1.3.10","depth":2,"path":"concepts/error.md","ref":"concepts/error.md","articles":[]},{"title":"方法包","level":"1.3.11","depth":2,"path":"concepts/method.md","ref":"concepts/method.md","articles":[]},{"title":"配置器机制","level":"1.3.12","depth":2,"path":"concepts/configurer.md","ref":"concepts/configurer.md","articles":[]},{"title":"插件机制","level":"1.3.13","depth":2,"path":"concepts/plugin.md","ref":"concepts/plugin.md","articles":[]},{"title":"多客户端整合","level":"1.3.14","depth":2,"path":"concepts/clients.md","ref":"concepts/clients.md","articles":[]}]},"previous":{"title":"生成 API 文档","level":"1.2.3","depth":2,"path":"guides/doc.md","ref":"guides/doc.md","articles":[]},"dir":"ltr"},"config":{"plugins":[],"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"pluginsConfig":{"highlight":{},"search":{},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"fontsettings":{"theme":"white","family":"sans","size":2},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"theme":"default","pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"variables":{},"language":"zh-hans","gitbook":"*"},"file":{"path":"guides/client.md","mtime":"2019-08-06T09:48:58.230Z","type":"markdown"},"gitbook":{"version":"3.2.3","time":"2020-06-17T07:31:20.610Z"},"basePath":"..","book":{"language":"zh-hans"}});
+            gitbook.page.hasChanged({"page":{"title":"生成客户端","level":"1.2.4","depth":2,"next":{"title":"概念","level":"1.3","depth":1,"ref":"","articles":[{"title":"Consumer && Producer","level":"1.3.1","depth":2,"path":"concepts/cp.md","ref":"concepts/cp.md","articles":[]},{"title":"Operator","level":"1.3.2","depth":2,"path":"concepts/operator.md","ref":"concepts/operator.md","articles":[]},{"title":"Filter","level":"1.3.3","depth":2,"path":"concepts/filter.md","ref":"concepts/filter.md","articles":[]},{"title":"Prefab","level":"1.3.4","depth":2,"path":"concepts/prefab.md","ref":"concepts/prefab.md","articles":[]},{"title":"Modifier","level":"1.3.5","depth":2,"path":"concepts/modifier.md","ref":"concepts/modifier.md","articles":[]},{"title":"Middleware","level":"1.3.6","depth":2,"path":"concepts/middleware.md","ref":"concepts/middleware.md","articles":[]},{"title":"Context","level":"1.3.7","depth":2,"path":"concepts/context.md","ref":"concepts/context.md","articles":[]},{"title":"Parameter Generator","level":"1.3.8","depth":2,"path":"concepts/source.md","ref":"concepts/source.md","articles":[]},{"title":"Destination Handler","level":"1.3.9","depth":2,"path":"concepts/destination.md","ref":"concepts/destination.md","articles":[]},{"title":"错误包","level":"1.3.10","depth":2,"path":"concepts/error.md","ref":"concepts/error.md","articles":[]},{"title":"方法包","level":"1.3.11","depth":2,"path":"concepts/method.md","ref":"concepts/method.md","articles":[]},{"title":"配置器机制","level":"1.3.12","depth":2,"path":"concepts/configurer.md","ref":"concepts/configurer.md","articles":[]},{"title":"插件机制","level":"1.3.13","depth":2,"path":"concepts/plugin.md","ref":"concepts/plugin.md","articles":[]},{"title":"多客户端整合","level":"1.3.14","depth":2,"path":"concepts/clients.md","ref":"concepts/clients.md","articles":[]}]},"previous":{"title":"生成 API 文档","level":"1.2.3","depth":2,"path":"guides/doc.md","ref":"guides/doc.md","articles":[]},"dir":"ltr"},"config":{"plugins":[],"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"pluginsConfig":{"highlight":{},"search":{},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"sharing":{"facebook":true,"twitter":true,"google":false,"weibo":false,"instapaper":false,"vk":false,"all":["facebook","google","twitter","weibo","instapaper"]},"fontsettings":{"theme":"white","family":"sans","size":2},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"theme":"default","pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56}},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"variables":{},"language":"zh-hans","gitbook":"*"},"file":{"path":"guides/client.md","mtime":"2020-10-20T10:33:08.389Z","type":"markdown"},"gitbook":{"version":"3.2.3","time":"2020-10-20T10:33:16.586Z"},"basePath":"..","book":{"language":"zh-hans"}});
         });
     </script>
 </div>
