@@ -1,6 +1,5 @@
 # 生成客户端
 
-
 ## 生成代码
 
 API 文档通常足够使用者使用。但是在微服务场景下，服务之间也会存在调用关系。因此需要使调用者方便快速的进行 API 调用，可以生成客户端以供使用：
@@ -148,6 +147,48 @@ type Message struct {
 生成的客户端是版本化的，版本在 nirvana.yaml 中定义。API 依赖的结构体都会被提取出来并生成到 `types.go` 文件中，方便客户端使用。
 
 每个服务都可以生成一份客户端，为了方便使用，可以将客户端整合在一起。具体内容请参考 [多客户端整合](../concepts/clients.md)。
+
+### 注意事项
+
+#### 函数名称
+
+生成的 client 函数的名称会优先使用对应 `Definition` 的 `Summary` 字段，将其去掉空格拼接起来，比如 `Summary` 为 `Create XX`，则函数名称为 `CreateXX`；若 `Summary` 字段为空，会使用 `Definition` 的 `Function` 名称，若 `Function` 是匿名函数，则会使用 `AnonymousAPI`。
+
+#### API types 定义
+
+不要在 struct 里面嵌套匿名 struct：
+
+<table>
+<thead><tr><th>Bad</th><th>Good</th></tr></thead>
+<tbody>
+
+<tr><td>
+
+```go
+type XXObject struct {
+	AA struct {
+		Test string `json:"test"`
+	} `json:"aa"`
+}
+```
+
+</td>
+
+<td>
+
+```go
+type XXObject struct {
+	AA AA `json:"aa"`
+}
+
+type AA struct {
+	Test string `json:"test"`
+}
+```
+
+</td></tr>
+</tbody></table>
+
 
 ## 使用客户端
 
