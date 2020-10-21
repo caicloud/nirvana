@@ -20,7 +20,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"net/http"
 	"path"
 	"reflect"
 	"runtime"
@@ -64,16 +63,19 @@ func (i *inspector) addDefinition(d definition.Definition) error {
 	if len(d.ErrorProduces) <= 0 {
 		return definitionNoErrorProduces.Error(d.Method, i.path)
 	}
-	if d.Function == nil && d.Handler == nil {
+	if d.Function == nil {
 		return definitionNoFunction.Error(d.Method, i.path)
 	}
-
-	c := &executor{
-		logger: i.logger,
-		method: method,
-		code:   HTTPCodeFor(d.Method),
+	value := reflect.ValueOf(d.Function)
+	if value.Kind() != reflect.Func {
+		return definitionInvalidFunctionType.Error(value.Type(), d.Method, i.path)
 	}
-
+	c := &executor{
+		logger:   i.logger,
+		method:   method,
+		code:     HTTPCodeFor(d.Method),
+		function: value,
+	}
 	consumeAll := false
 	consumes := map[string]bool{}
 	for _, ct := range d.Consumes {
@@ -118,19 +120,6 @@ func (i *inspector) addDefinition(d definition.Definition) error {
 			}
 		}
 	}
-
-	if d.Handler != nil {
-		c.handler = d.Handler
-		i.executors[method] = append(i.executors[method], c)
-		return nil
-	}
-
-	value := reflect.ValueOf(d.Function)
-	if value.Kind() != reflect.Func {
-		return definitionInvalidFunctionType.Error(value.Type(), d.Method, i.path)
-	}
-	c.function = value
-
 	errorProduceAll := false
 	errorProduces := map[string]bool{}
 	for _, ct := range d.ErrorProduces {
@@ -391,7 +380,6 @@ type executor struct {
 	parameters     []parameter
 	results        []result
 	function       reflect.Value
-	handler        http.Handler
 }
 
 type parameter struct {
@@ -450,11 +438,6 @@ func (e *executor) Execute(ctx context.Context) (err error) {
 	if c == nil {
 		return noContext.Error()
 	}
-	if e.handler != nil {
-		e.handler.ServeHTTP(c.ResponseWriter(), c.Request())
-		return nil
-	}
-
 	paramValues := make([]reflect.Value, 0, len(e.parameters))
 	for _, p := range e.parameters {
 		result, err := p.generator.Generate(ctx, c.ValueContainer(), e.consumers, p.name, p.targetType)
