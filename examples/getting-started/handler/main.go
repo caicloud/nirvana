@@ -27,6 +27,7 @@ import (
 	"github.com/caicloud/nirvana/config"
 	"github.com/caicloud/nirvana/definition"
 	"github.com/caicloud/nirvana/log"
+	"github.com/caicloud/nirvana/middlewares/reqlog"
 	"github.com/caicloud/nirvana/service"
 )
 
@@ -47,9 +48,9 @@ func main() {
 			Description: "hello API",
 			Definitions: []definition.Definition{
 				{
-					Method:   definition.Any,
+					Method:   definition.Get,
 					Consumes: []string{definition.MIMEAll},
-					Produces: []string{definition.MIMEText},
+					Produces: []string{definition.MIMEJSON},
 					Function: func(ctx context.Context) (string, error) {
 						return "hello", nil
 					},
@@ -60,9 +61,12 @@ func main() {
 		{
 			Path:        "/proxy",
 			Description: "proxy API",
+			Middlewares: []definition.Middleware{
+				reqlog.Default(),
+			},
 			Definitions: []definition.Definition{
 				{
-					Method:   definition.Any,
+					Method:   definition.Get,
 					Consumes: []string{definition.MIMEAll},
 					Produces: []string{definition.MIMEAll},
 					Function: service.WrapHTTPHandler(httputil.NewSingleHostReverseProxy(rpURL)),
