@@ -134,7 +134,7 @@ import (
 type Interface interface {
 {{- range .Functions }}
 {{ .Comments -}}
-	{{ .Name }}(ctx context.Context{{ range .Parameters }},{{ .ProposedName }} {{ .Typ }}{{- end }}) (
+	{{ .Name }}(ctx context.Context{{- if eq .Method "Any" }}, method string, responseCode int{{- end }}{{ range .Parameters }},{{ .ProposedName }} {{ .Typ }}{{- end }}) (
 	{{- range .Results }}{{ .ProposedName }} {{ .Typ }}, {{ end }}err error)
 {{- end }}
 }
@@ -164,14 +164,14 @@ func MustNewClient(cfg *rest.Config) *Client {
 
 {{ range .Functions }}
 {{ .Comments -}}
-func (c *Client) {{ .Name }}(ctx context.Context{{ range .Parameters }},{{ .ProposedName }} {{ .Typ }}{{- end }}) (
+func (c *Client) {{ .Name }}(ctx context.Context{{- if eq .Method "Any" }}, method string, responseCode int{{- end }}{{ range .Parameters }},{{ .ProposedName }} {{ .Typ }}{{- end }}) (
 	{{- range .Results }}{{ .ProposedName }} {{ .Typ }}, {{ end }}err error) {
 	{{- range .Results }}
 	{{- if ne .Creator "" }}
 	{{ .ProposedName }} = {{ .Creator }}
     {{- end }}
     {{- end }}
-	err = c.rest.Request("{{ .Method }}", {{ .Code }}, "{{ .Path }}").
+	err = c.rest.Request({{- if eq .Method "Any" }}method, responseCode{{- else }}"{{ .Method }}", {{ .Code }}{{- end }}, "{{ .Path }}").
 	{{ range .Parameters }}
 	{{ $param := .ProposedName }}
 	{{ if not .Extensions }}
