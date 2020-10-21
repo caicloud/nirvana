@@ -47,9 +47,9 @@ func main() {
 			Description: "hello API",
 			Definitions: []definition.Definition{
 				{
-					Method:   definition.Any,
+					Method:   definition.Get,
 					Consumes: []string{definition.MIMEAll},
-					Produces: []string{definition.MIMEText},
+					Produces: []string{definition.MIMEJSON},
 					Function: func(ctx context.Context) (string, error) {
 						return "hello", nil
 					},
@@ -62,7 +62,7 @@ func main() {
 			Description: "proxy API",
 			Definitions: []definition.Definition{
 				{
-					Method:   definition.Any,
+					Method:   definition.Get,
 					Consumes: []string{definition.MIMEAll},
 					Produces: []string{definition.MIMEAll},
 					Function: service.WrapHTTPHandler(httputil.NewSingleHostReverseProxy(rpURL)),
