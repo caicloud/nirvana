@@ -27,6 +27,7 @@ import (
 	"github.com/caicloud/nirvana/config"
 	"github.com/caicloud/nirvana/definition"
 	"github.com/caicloud/nirvana/log"
+	"github.com/caicloud/nirvana/service"
 )
 
 func main() {
@@ -48,7 +49,7 @@ func main() {
 				{
 					Method:   definition.Any,
 					Consumes: []string{definition.MIMEAll},
-					Produces: []string{definition.MIMEAll},
+					Produces: []string{definition.MIMEText},
 					Function: func(ctx context.Context) (string, error) {
 						return "hello", nil
 					},
@@ -64,7 +65,7 @@ func main() {
 					Method:   definition.Any,
 					Consumes: []string{definition.MIMEAll},
 					Produces: []string{definition.MIMEAll},
-					Handler:  httputil.NewSingleHostReverseProxy(rpURL),
+					Function: service.WrapHTTPHandler(httputil.NewSingleHostReverseProxy(rpURL)),
 				},
 			},
 		},

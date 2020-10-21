@@ -28,6 +28,7 @@ import (
 	"github.com/caicloud/nirvana/definition"
 	"github.com/caicloud/nirvana/log"
 	"github.com/caicloud/nirvana/middlewares/reqlog"
+	"github.com/caicloud/nirvana/service"
 )
 
 func main() {
@@ -68,7 +69,7 @@ func main() {
 					Method:   definition.Get,
 					Consumes: []string{definition.MIMEAll},
 					Produces: []string{definition.MIMEAll},
-					Handler:  httputil.NewSingleHostReverseProxy(rpURL),
+					Function: service.WrapHTTPHandler(httputil.NewSingleHostReverseProxy(rpURL)),
 				},
 			},
 		},
