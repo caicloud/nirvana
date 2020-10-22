@@ -1,0 +1,23 @@
+project: myproject
+description: This project uses nirvana as API framework
+schemes:
+- http
+hosts:
+- localhost:8080
+contacts:
+- name: nobody
+  email: nobody@nobody.io
+  description: Maintain this project
+versions:
+- name: v1
+  description: The v1 version is the first version of this project
+  rules:
+  - prefix: /api/v1
+    regexp: ""
+    replacement: ""
+- name: v2
+  description: The v2 version is the first version of this project
+  rules:
+  - prefix: /api/v2
+    regexp: ""
+    replacement: ""

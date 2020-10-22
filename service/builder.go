@@ -38,9 +38,9 @@ type Builder interface {
 	SetModifier(m DefinitionModifier)
 	// Filters returns all request filters.
 	Filters() []Filter
-	// AddFilters add filters to filter requests.
+	// AddFilter add filters to filter requests.
 	AddFilter(filters ...Filter)
-	// AddDescriptors adds descriptors to router.
+	// AddDescriptor adds descriptors to router.
 	AddDescriptor(descriptors ...definition.Descriptor) error
 	// Middlewares returns all router middlewares.
 	Middlewares() map[string][]definition.Middleware
@@ -77,7 +77,7 @@ func (b *builder) Filters() []Filter {
 	return result
 }
 
-// AddFilters add filters to filter requests.
+// AddFilter add filters to filter requests.
 func (b *builder) AddFilter(filters ...Filter) {
 	b.filters = append(b.filters, filters...)
 }
