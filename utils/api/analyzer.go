@@ -19,69 +19,63 @@ package api
 import (
 	"fmt"
 	"go/ast"
-	"go/build"
-	"go/parser"
 	"go/token"
 	"go/types"
-	"path/filepath"
-	"strings"
+
+	"golang.org/x/tools/go/packages"
 )
 
 // Analyzer analyzes go packages.
 type Analyzer struct {
 	root         string
+	packages     map[string]*packages.Package
 	files        map[string]*ast.File
 	packageFiles map[string][]*ast.File
-	packages     map[string]*types.Package
-	fileset      *token.FileSet
 }
 
 // NewAnalyzer creates a code analyzer.
-func NewAnalyzer(root string) *Analyzer {
-	return &Analyzer{
-		root:         root,
-		files:        map[string]*ast.File{},
-		packageFiles: map[string][]*ast.File{},
-		packages:     map[string]*types.Package{},
-		fileset:      token.NewFileSet(),
+func NewAnalyzer(root string, paths ...string) (*Analyzer, error) {
+	pkgs, err := packages.Load(&packages.Config{
+		Mode:  packages.NeedName | packages.NeedFiles | packages.NeedCompiledGoFiles | packages.NeedTypes | packages.NeedTypesInfo | packages.NeedSyntax | packages.NeedDeps | packages.NeedImports,
+		Tests: false,
+		Dir:   root,
+	}, paths...)
+	if err != nil {
+		return nil, fmt.Errorf("error loading packages: %w", err)
 	}
+
+	analyzer := &Analyzer{
+		root:         root,
+		packages:     make(map[string]*packages.Package),
+		files:        make(map[string]*ast.File),
+		packageFiles: make(map[string][]*ast.File),
+	}
+
+	for _, pkg := range pkgs {
+		analyzer.packages[pkg.PkgPath] = pkg
+		for _, p := range pkg.Imports {
+			analyzer.packages[p.PkgPath] = p
+		}
+	}
+
+	for _, pkg := range analyzer.packages {
+		files := make([]*ast.File, 0, len(pkg.CompiledGoFiles))
+		for i, filename := range pkg.CompiledGoFiles {
+			files = append(files, pkg.Syntax[i])
+			analyzer.files[filename] = pkg.Syntax[i]
+		}
+		analyzer.packageFiles[pkg.PkgPath] = files
+	}
+	return analyzer, nil
 }
 
-// Import imports a package and all packages it depends on.
-func (a *Analyzer) Import(path string) (*types.Package, error) {
-	pkg, err := build.Import(path, a.root, 0)
-	if err != nil {
-		return nil, err
+// Paths returns all packages' paths.
+func (a *Analyzer) Paths() []string {
+	paths := make([]string, 0, len(a.packages))
+	for _, pkg := range a.packages {
+		paths = append(paths, pkg.PkgPath)
 	}
-	if parsedPkg, ok := a.packages[pkg.ImportPath]; ok {
-		return parsedPkg, nil
-	}
-	cfg := &types.Config{
-		IgnoreFuncBodies: true,
-		Importer:         a,
-		Error: func(err error) {
-		},
-	}
-	files := make([]*ast.File, len(pkg.GoFiles))
-	for i, path := range pkg.GoFiles {
-		path = filepath.Join(pkg.Dir, path)
-		file, ok := a.files[path]
-		if !ok {
-			file, err = parser.ParseFile(a.fileset, path, nil, parser.ParseComments)
-			if err != nil {
-				return nil, err
-			}
-		}
-		a.files[path] = file
-		files[i] = file
-	}
-	a.packageFiles[pkg.ImportPath] = files
-	parsedPkg, err := cfg.Check(pkg.ImportPath, a.fileset, files, nil)
-	a.packages[path] = parsedPkg
-	if pkg.ImportPath != path {
-		a.packages[pkg.ImportPath] = parsedPkg
-	}
-	return parsedPkg, err
+	return paths
 }
 
 // PackageComments returns comments above package keyword.
@@ -91,7 +85,7 @@ func (a *Analyzer) PackageComments(path string) []*ast.CommentGroup {
 	if !ok {
 		return nil
 	}
-	results := []*ast.CommentGroup{}
+	results := make([]*ast.CommentGroup, 0, len(files))
 	for _, file := range files {
 		for _, cg := range file.Comments {
 			if cg.End() < file.Package {
@@ -102,40 +96,14 @@ func (a *Analyzer) PackageComments(path string) []*ast.CommentGroup {
 	return results
 }
 
-// Packages returns packages under specified directory (including itself).
-// Import package before calling this method.
-func (a *Analyzer) Packages(parent string, vendor bool) []string {
-	results := []string{}
-	for path := range a.packages {
-		if !vendor && strings.Index(path, "/vendor/") > 0 {
-			continue
-		}
-		if strings.HasPrefix(path, parent) {
-			results = append(results, path)
-		}
-	}
-	return results
-}
-
-// FindPackages returns packages which contain target.
-// Import package before calling this method.
-func (a *Analyzer) FindPackages(target string) []string {
-	results := []string{}
-	for path := range a.packages {
-		if strings.Contains(path, target) {
-			results = append(results, path)
-		}
-	}
-	return results
-}
-
 // Comments returns immediate comments above pos.
 // Import package before calling this method.
-func (a *Analyzer) Comments(pos token.Pos) *ast.CommentGroup {
-	position := a.fileset.Position(pos)
+func (a *Analyzer) Comments(pkg string, pos token.Pos) *ast.CommentGroup {
+	p := a.packages[pkg]
+	position := p.Fset.Position(pos)
 	file := a.files[position.Filename]
 	for _, cg := range file.Comments {
-		cgPos := a.fileset.Position(cg.End())
+		cgPos := p.Fset.Position(cg.End())
 		if cgPos.Line == position.Line-1 {
 			return cg
 		}
@@ -145,13 +113,12 @@ func (a *Analyzer) Comments(pos token.Pos) *ast.CommentGroup {
 
 // ObjectOf returns declaration object of target.
 func (a *Analyzer) ObjectOf(pkg, name string) (types.Object, error) {
-	p, err := a.Import(pkg)
-	// Ignore the error if p is not nil.
 	// We need to rewrite analyzer with go/parser rather than go/types.
-	if p == nil && err != nil {
-		return nil, err
+	p, ok := a.packages[pkg]
+	if !ok {
+		return nil, fmt.Errorf("can't find package %s", pkg)
 	}
-	obj := p.Scope().Lookup(name)
+	obj := p.Types.Scope().Lookup(name)
 	if obj == nil {
 		return nil, fmt.Errorf("can't find declearation of %s.%s", pkg, name)
 	}

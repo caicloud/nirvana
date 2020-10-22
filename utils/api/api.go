@@ -22,6 +22,7 @@ import (
 
 	"github.com/caicloud/nirvana/definition"
 	"github.com/caicloud/nirvana/service"
+	"github.com/caicloud/nirvana/utils/project"
 )
 
 // Definitions describes all APIs and its related object types.
@@ -111,11 +112,15 @@ type Container struct {
 }
 
 // NewContainer creates API container.
-func NewContainer(root string) *Container {
+func NewContainer(root string, paths ...string) (*Container, error) {
+	analyzer, err := NewAnalyzer(root, project.Subdirectories(false, paths...)...)
+	if err != nil {
+		return nil, err
+	}
 	return &Container{
 		typeContainer: NewTypeContainer(),
-		analyzer:      NewAnalyzer(root),
-	}
+		analyzer:      analyzer,
+	}, nil
 }
 
 // AddModifier add definition modifiers to container.

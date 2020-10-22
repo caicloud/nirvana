@@ -305,7 +305,7 @@ func (tc *TypeContainer) Complete(analyzer *Analyzer) error {
 			errors = append(errors, err)
 			continue
 		}
-		if comments := analyzer.Comments(obj.Pos()); comments != nil {
+		if comments := analyzer.Comments(typ.PkgPath, obj.Pos()); comments != nil {
 			typ.Comments = comments.Text()
 		}
 		switch typ.Kind {
@@ -322,7 +322,7 @@ func (tc *TypeContainer) Complete(analyzer *Analyzer) error {
 				field := st.Field(i)
 				for j := 0; j < len(typ.Fields); j++ {
 					if typ.Fields[j].Name == field.Name() {
-						if comments := analyzer.Comments(field.Pos()); comments != nil {
+						if comments := analyzer.Comments(typ.PkgPath, field.Pos()); comments != nil {
 							typ.Fields[j].Comments = comments.Text()
 						}
 						break
