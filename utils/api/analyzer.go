@@ -51,12 +51,9 @@ func NewAnalyzer(root string, paths ...string) (*Analyzer, error) {
 		packageFiles: make(map[string][]*ast.File),
 	}
 
-	for _, pkg := range pkgs {
+	packages.Visit(pkgs, nil, func(pkg *packages.Package) {
 		analyzer.packages[pkg.PkgPath] = pkg
-		for _, p := range pkg.Imports {
-			analyzer.packages[p.PkgPath] = p
-		}
-	}
+	})
 
 	for _, pkg := range analyzer.packages {
 		files := make([]*ast.File, 0, len(pkg.CompiledGoFiles))

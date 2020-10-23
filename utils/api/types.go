@@ -297,7 +297,8 @@ func (tc *TypeContainer) Complete(analyzer *Analyzer) error {
 	defer tc.lock.Unlock()
 	errors := make([]error, 0)
 	for _, typ := range tc.types {
-		if typ.PkgPath == "" {
+		if typ.PkgPath == "" || strings.HasSuffix(typ.PkgPath, ".glob.") {
+			// xxx.glob. is the PkgPath of an anonymous function
 			continue
 		}
 		obj, err := analyzer.ObjectOf(typ.PkgPath, typ.Name)
@@ -343,6 +344,9 @@ func (tc *TypeContainer) Complete(analyzer *Analyzer) error {
 				typ.Out[i].Name = result.Name()
 			}
 		}
+	}
+	if len(errors) == 0 {
+		return nil
 	}
 	return fmt.Errorf("%v", errors)
 }
