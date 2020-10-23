@@ -50,13 +50,6 @@ func srcPath(goPath string) string {
 	return filepath.Join(goPath, "src")
 }
 
-// GoPaths returns existent go paths.
-func GoPaths() []string {
-	result := make([]string, len(goPaths))
-	copy(result, goPaths)
-	return result
-}
-
 // GoPath finds the go path and absolute path for specified directory.
 func GoPath(directory string) (goPath string, absPath string, err error) {
 	absPath, err = filepath.Abs(directory)
@@ -113,7 +106,7 @@ func Subdirectories(vendor bool, paths ...string) []string {
 		})
 		_ = err
 	}
-	results := []string{}
+	results := make([]string, 0, len(goDir))
 	for path := range goDir {
 		results = append(results, path)
 	}

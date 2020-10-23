@@ -31,7 +31,6 @@ import (
 	"text/template"
 
 	"github.com/caicloud/nirvana/utils/api"
-	"github.com/caicloud/nirvana/utils/project"
 )
 
 var buildTagRegexp = regexp.MustCompile(`^[ \t]*\+nirvana:api[ \t]*=(.*)\n`)
@@ -52,67 +51,15 @@ func NewAPIBuilder(root string, paths ...string) *APIBuilder {
 
 // Build builds api definitions.
 func (b *APIBuilder) Build() (*api.Definitions, error) {
-	analyzer := api.NewAnalyzer(b.root)
-	parents := []string{}
-	for _, path := range b.paths {
-		path, err := project.PackageForPath(path)
-		if err != nil {
-			return nil, err
-		}
-		pkg, err := analyzer.Import(path)
-		if pkg == nil && err != nil {
-			return nil, err
-		}
-		parents = append(parents, pkg.Path())
+	analyzer, err := api.NewAnalyzer(b.root, b.paths...)
+	if err != nil {
+		return nil, err
 	}
 
-	packages := map[string]bool{}
-	for _, parent := range parents {
-		for _, pkg := range analyzer.Packages(parent, false) {
-			packages[pkg] = true
-		}
-	}
+	descriptors := make([]function, 0)
+	modifiers := make([]function, 0)
 
-	descriptors := []function{}
-	modifiers := []function{}
-
-	var getFunction = func(pkg, name string) (*function, error) {
-		f := &function{
-			Pkg:  pkg,
-			Name: name,
-		}
-		obj, err := analyzer.ObjectOf(pkg, name)
-		if err != nil {
-			return nil, err
-		}
-		key := fmt.Sprintf("%s.%s", pkg, name)
-		if !obj.Exported() {
-			return nil, fmt.Errorf("%s is not exported", key)
-		}
-		ft, ok := obj.Type().(*types.Signature)
-		if !ok {
-			return nil, fmt.Errorf("%s is not a function", key)
-		}
-		if ft.Params().Len() > 0 {
-			return nil, fmt.Errorf("%s should not have parameters", key)
-		}
-		results := ft.Results()
-		if results.Len() != 1 {
-			return nil, fmt.Errorf("%s should have one result", key)
-		}
-		result := results.At(0)
-		switch result.Type().(type) {
-		case *types.Named:
-			f.Array = false
-		case *types.Slice:
-			f.Array = true
-		default:
-			return nil, fmt.Errorf("%s should return an object or a slice", key)
-		}
-		return f, nil
-	}
-
-	for pkg := range packages {
+	for _, pkg := range analyzer.Paths() {
 		groups := analyzer.PackageComments(pkg)
 		for _, group := range groups {
 			matches := buildTagRegexp.FindAllStringSubmatch(group.Text(), -1)
@@ -121,7 +68,7 @@ func (b *APIBuilder) Build() (*api.Definitions, error) {
 					tag := reflect.StructTag(match[1])
 					descriptorFunc := tag.Get("descriptors")
 					if descriptorFunc != "" {
-						f, err := getFunction(pkg, descriptorFunc)
+						f, err := getFunction(analyzer, pkg, descriptorFunc)
 						if err != nil {
 							return nil, err
 						}
@@ -129,7 +76,7 @@ func (b *APIBuilder) Build() (*api.Definitions, error) {
 					}
 					modifierFunc := tag.Get("modifiers")
 					if modifierFunc != "" {
-						f, err := getFunction(pkg, modifierFunc)
+						f, err := getFunction(analyzer, pkg, modifierFunc)
 						if err != nil {
 							return nil, err
 						}
@@ -142,7 +89,7 @@ func (b *APIBuilder) Build() (*api.Definitions, error) {
 	if len(descriptors) <= 0 {
 		return nil, fmt.Errorf("can't find descriptors from %v", b.paths)
 	}
-	return b.runMain(descriptors, modifiers, b.root)
+	return b.runMain(descriptors, modifiers, b.root, b.paths)
 }
 
 type function struct {
@@ -151,7 +98,43 @@ type function struct {
 	Array bool
 }
 
-func (b *APIBuilder) runMain(descriptors, modifiers []function, root string) (*api.Definitions, error) {
+func getFunction(analyzer *api.Analyzer, pkg, name string) (*function, error) {
+	f := &function{
+		Pkg:  pkg,
+		Name: name,
+	}
+	obj, err := analyzer.ObjectOf(pkg, name)
+	if err != nil {
+		return nil, err
+	}
+	key := fmt.Sprintf("%s.%s", pkg, name)
+	if !obj.Exported() {
+		return nil, fmt.Errorf("%s is not exported", key)
+	}
+	ft, ok := obj.Type().(*types.Signature)
+	if !ok {
+		return nil, fmt.Errorf("%s is not a function", key)
+	}
+	if ft.Params().Len() > 0 {
+		return nil, fmt.Errorf("%s should not have parameters", key)
+	}
+	results := ft.Results()
+	if results.Len() != 1 {
+		return nil, fmt.Errorf("%s should have one result", key)
+	}
+	result := results.At(0)
+	switch result.Type().(type) {
+	case *types.Named:
+		f.Array = false
+	case *types.Slice:
+		f.Array = true
+	default:
+		return nil, fmt.Errorf("%s should return an object or a slice", key)
+	}
+	return f, nil
+}
+
+func (b *APIBuilder) runMain(descriptors, modifiers []function, root string, paths []string) (*api.Definitions, error) {
 	tempDir, err := ioutil.TempDir(root, "nirvana-generated")
 	if err != nil {
 		return nil, err
@@ -161,7 +144,7 @@ func (b *APIBuilder) runMain(descriptors, modifiers []function, root string) (*a
 		err := os.RemoveAll(tempDir)
 		_ = err
 	}()
-	data, err := b.file(descriptors, modifiers, root)
+	data, err := b.file(descriptors, modifiers, root, paths)
 	if err != nil {
 		return nil, err
 	}
@@ -183,7 +166,7 @@ func (b *APIBuilder) runMain(descriptors, modifiers []function, root string) (*a
 	return definitions, nil
 }
 
-func (b *APIBuilder) file(descriptors, modifiers []function, root string) ([]byte, error) {
+func (b *APIBuilder) file(descriptors, modifiers []function, root string, paths []string) ([]byte, error) {
 	const tpl = `
 package main
 
@@ -203,7 +186,10 @@ import (
 )
 
 func main() {
-	container := api.NewContainer({{ .root }})
+	container, err := api.NewContainer({{ .root }}{{ range .paths }}, "{{ . }}"{{ end }})
+	if err != nil {
+		log.Fatal(err)
+	}
 	{{ range $i,$m := .modifiers }}
 	container.AddModifier(m{{ $i }}.{{ $m.Name }}(){{ if $m.Array }}...{{ end }})
 	{{ end }}
@@ -230,6 +216,7 @@ func main() {
 		"modifiers":   modifiers,
 		"descriptors": descriptors,
 		"root":        strconv.Quote(root),
+		"paths":       paths,
 	}); err != nil {
 		return nil, err
 	}
