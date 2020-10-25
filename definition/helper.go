@@ -24,7 +24,7 @@ import (
 
 // MIME types
 const (
-	// acceptTypeAll indicates a accept type from http request.
+	// MIMEAll indicates a accept type from http request.
 	// It means client can receive any content.
 	// Request content type in header "Content-Type" must not set to "*/*".
 	// It only can exist in request header "Accept".
@@ -33,6 +33,7 @@ const (
 	MIMEAll         = "*/*"
 	MIMENone        = ""
 	MIMEText        = "text/plain"
+	MIMEHTML        = "text/html"
 	MIMEJSON        = "application/json"
 	MIMEXML         = "application/xml"
 	MIMEOctetStream = "application/octet-stream"

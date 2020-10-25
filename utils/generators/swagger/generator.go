@@ -464,7 +464,8 @@ func (g *Generator) generateParameter(param *api.Parameter) []spec.Parameter {
 	if len(param.Default) > 0 {
 		parameter.Required = false
 	}
-	if parameter.In != "body" {
+	body := "body"
+	if parameter.In != body {
 		// Only body parameter can hold a schema. Other parameters uses type
 		// and format.
 		parameter.Type = schema.Type[0]
@@ -479,6 +480,10 @@ func (g *Generator) generateParameter(param *api.Parameter) []spec.Parameter {
 			parameter.Items.Format = schema.Items.Schema.Format
 		}
 		parameter.Schema = nil
+	} else {
+		// add parameter name for body, it required by swagger ui,
+		// cause api.Parameter.Name is always nil when In is body
+		parameter.Name = body
 	}
 
 	if len(param.Default) > 0 {

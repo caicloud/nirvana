@@ -17,14 +17,6 @@ limitations under the License.
 package api
 
 import (
-	"bytes"
-	"context"
-	"encoding/json"
-	"fmt"
-	"html/template"
-	"io/ioutil"
-	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -33,12 +25,12 @@ import (
 	"github.com/caicloud/nirvana/definition"
 	"github.com/caicloud/nirvana/log"
 	"github.com/caicloud/nirvana/service"
-	"github.com/caicloud/nirvana/utils/generators/swagger"
+	"github.com/caicloud/nirvana/utils/api"
+	generatorsutils "github.com/caicloud/nirvana/utils/generators/utils"
+
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
-
-const mimeHTML = "text/html"
 
 func init() {
 	err := service.RegisterProducer(service.NewSimpleSerializer("text/html"))
@@ -94,24 +86,13 @@ func (o *apiOptions) Run(cmd *cobra.Command, args []string) error {
 
 	log.Infof("Project root directory is %s", config.Root)
 
-	generator := swagger.NewDefaultGenerator(config, definitions)
-	swaggers, err := generator.Generate()
+	files, err := generatorsutils.GenSwaggerData(config, definitions)
 	if err != nil {
 		return err
 	}
 
-	files := map[string][]byte{}
-	for filename, s := range swaggers {
-		data, err := json.MarshalIndent(s, "", "  ")
-		if err != nil {
-			return err
-		}
-
-		files[filename] = data
-	}
-
 	if o.Output != "" {
-		if err = o.write(files); err != nil {
+		if err = api.WriteFiles(o.Output, files); err != nil {
 			return err
 		}
 	}
@@ -120,25 +101,6 @@ func (o *apiOptions) Run(cmd *cobra.Command, args []string) error {
 		err = o.serve(files)
 	}
 	return err
-}
-
-func (o *apiOptions) write(apis map[string][]byte) error {
-	dir := o.Output
-	dir, err := filepath.Abs(dir)
-	if err != nil {
-		return err
-	}
-	if err := os.MkdirAll(dir, 0775); err != nil {
-		return err
-	}
-	for version, data := range apis {
-		file := filepath.Join(dir, o.pathForVersion(version))
-		if err := ioutil.WriteFile(file, data, 0664); err != nil {
-			return err
-		}
-	}
-	log.Infof("Generated openapi schemes to %s", dir)
-	return nil
 }
 
 func (o *apiOptions) serve(apis map[string][]byte) error {
@@ -160,132 +122,24 @@ func (o *apiOptions) serve(apis map[string][]byte) error {
 	}
 	log.SetDefaultLogger(log.NewStdLogger(0))
 	cfg := nirvana.NewDefaultConfig()
-	versions := []string{}
+	versions := make([]string, 0, len(apis))
 	for v, data := range apis {
 		versions = append(versions, v)
 		cfg.Configure(nirvana.Descriptor(
-			o.descriptorForData(o.pathForVersion(v), data, definition.MIMEJSON),
+			api.DescriptorForData(api.PathForVersion("/", v), data, definition.MIMEJSON),
 		))
 	}
-	data, err := o.indexData(versions)
+	data, err := api.GenSwaggerPageData("/", versions)
 	if err != nil {
 		return err
 	}
 	cfg.Configure(
-		nirvana.Descriptor(o.descriptorForData("/", data, mimeHTML)),
+		nirvana.Descriptor(api.DescriptorForData("/", data, definition.MIMEHTML)),
 		nirvana.IP(ip),
 		nirvana.Port(port),
 	)
 	log.Infof("Listening on %s:%d. Please open your browser to view api docs", cfg.IP(), cfg.Port())
 	return nirvana.NewServer(cfg).Serve()
-}
-
-func (o *apiOptions) descriptorForData(path string, data []byte, ct string) definition.Descriptor {
-	return definition.Descriptor{
-		Path: path,
-		Definitions: []definition.Definition{
-			{
-				Method:   definition.Get,
-				Consumes: []string{definition.MIMENone},
-				Produces: []string{ct},
-				Function: func(context.Context) ([]byte, error) {
-					return data, nil
-				},
-				Parameters: []definition.Parameter{},
-				Results:    definition.DataErrorResults(""),
-			},
-		},
-	}
-}
-
-func (o *apiOptions) pathForVersion(version string) string {
-	return fmt.Sprintf("/api.%s.json", version)
-}
-
-func (o *apiOptions) indexData(versions []string) ([]byte, error) {
-	index := `
-<!-- HTML for static distribution bundle build -->
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8">
-    <title>Swagger UI</title>
-    <link rel="stylesheet" type="text/css" href="https://unpkg.com/swagger-ui-dist@3.25.3/swagger-ui.css" >
-    <link rel="icon" type="image/png" href="https://unpkg.com/swagger-ui-dist@3.25.3/favicon-32x32.png" sizes="32x32" />
-    <link rel="icon" type="image/png" href="https://unpkg.com/swagger-ui-dist@3.25.3/favicon-16x16.png" sizes="16x16" />
-    <style>
-      html
-      {
-        box-sizing: border-box;
-        overflow: -moz-scrollbars-vertical;
-        overflow-y: scroll;
-      }
-      *,
-      *:before,
-      *:after
-      {
-        box-sizing: inherit;
-      }
-      body
-      {
-        margin:0;
-        background: #fafafa;
-      }
-    </style>
-  </head>
-  <body>
-    <div id="swagger-ui"></div>
-    <script src="https://unpkg.com/swagger-ui-dist@3.25.3/swagger-ui-bundle.js"> </script>
-    <script src="https://unpkg.com/swagger-ui-dist@3.25.3/swagger-ui-standalone-preset.js"> </script>
-    <script>
-	  // list of APIS
-      var apis = [
-        {{ range $i, $v := . }}
-        {
-            name: '{{ $v.Name }}',
-            url: '{{ $v.Path }}'
-        },
-		{{ end }}
-      ];
-    window.onload = function() {
-      // Begin Swagger UI call region
-      const ui = SwaggerUIBundle({
-        urls: apis,
-        dom_id: '#swagger-ui',
-        deepLinking: true,
-        presets: [
-          SwaggerUIBundle.presets.apis,
-          SwaggerUIStandalonePreset
-        ],
-        plugins: [
-          SwaggerUIBundle.plugins.DownloadUrl
-        ],
-        layout: "StandaloneLayout"
-      })
-      // End Swagger UI call region
-      window.ui = ui
-    }
-  </script>
-  </body>
-</html>
-`
-	tmpl, err := template.New("index.html").Parse(index)
-	if err != nil {
-		return nil, err
-	}
-	data := make([]struct {
-		Name string
-		Path string
-	}, len(versions))
-	for i, v := range versions {
-		data[i].Name = v
-		data[i].Path = o.pathForVersion(v)
-	}
-	buf := bytes.NewBuffer(nil)
-	if err := tmpl.Execute(buf, data); err != nil {
-		return nil, err
-	}
-	return buf.Bytes(), nil
 }
 
 func (o *apiOptions) Manuals() string {
