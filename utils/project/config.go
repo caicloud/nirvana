@@ -24,7 +24,7 @@ import (
 	"regexp"
 	"strings"
 
-	yaml "gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v2"
 )
 
 // DefaultProjectFileName is the default project file name of a nirvana project.
@@ -196,17 +196,44 @@ func FindDefaultProjectFile(directory string) (string, error) {
 // FindProjectFile finds the path of project file.
 // It will find the path itself and its parents recursively.
 func FindProjectFile(directory string, fileName string) (string, error) {
+	var (
+		notFoundErr = fmt.Errorf("can't find nirvana.yaml")
+		useModules  = os.Getenv("GO111MODULE")
+	)
+
+	if useModules != "off" {
+		root := findModuleRoot(directory)
+		if len(root) != 0 {
+			path, exists := getProjectFile(root, fileName)
+			if exists {
+				return path, nil
+			}
+		}
+		if useModules == "on" {
+			return "", notFoundErr
+		}
+	}
+
 	goPath, absPath, err := GoPath(directory)
 	if err != nil {
 		return "", err
 	}
 	for len(absPath) > len(goPath) {
-		path := filepath.Join(absPath, fileName)
-		info, err := os.Stat(path)
-		if err == nil && !info.IsDir() {
+		path, exists := getProjectFile(absPath, fileName)
+		if exists {
 			return path, nil
 		}
 		absPath = filepath.Dir(absPath)
 	}
-	return "", fmt.Errorf("can't find nirvana.yaml")
+	return "", notFoundErr
+}
+
+// getProjectFile returns the absolute path and existence of the project file.
+func getProjectFile(dir, name string) (absPath string, exists bool) {
+	path := filepath.Join(dir, name)
+	info, err := os.Stat(path)
+	if err == nil && !info.IsDir() {
+		return path, true
+	}
+	return "", false
 }

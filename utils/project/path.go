@@ -37,7 +37,7 @@ func init() {
 		}
 		info, err := os.Stat(path)
 		if err != nil || !info.IsDir() {
-			// Ignore go path which is inexistent or non-readable.
+			// Ignore go path which is nonexistent or non-readable.
 			continue
 		}
 		goPaths = append(goPaths, path)
@@ -74,17 +74,37 @@ func PackageForPath(directory string) (string, error) {
 }
 
 // Subdirectories walkthroughs all subdirectories. The results contains itself.
-// If a path is non-existent or not in GOPATH, the path will be ignored.
+// The path will be ignored if:
+// 1. The path is non-existent
+// 2. Go module is disabled and the path is not in GOPATH
+// 3. Go modules is enabled and the path doesn't belong to a go module
 func Subdirectories(vendor bool, paths ...string) []string {
 	walked := map[string]bool{}
 	goDir := map[string]bool{}
 	for _, path := range paths {
-		_, absPath, err := GoPath(path)
+		var (
+			absPath string
+			err     error
+		)
+		useModule := os.Getenv("GO111MODULE")
+		if useModule == "off" {
+			_, absPath, err = GoPath(path)
+		} else {
+			root := findModuleRoot(path)
+			if len(root) > 0 {
+				absPath, err = filepath.Abs(path)
+			} else {
+				if useModule == "on" {
+					continue
+				}
+				_, absPath, err = GoPath(path)
+			}
+		}
 		if err != nil {
 			// Ignore the err and go next.
 			continue
 		}
-		err = filepath.Walk(absPath, func(path string, info os.FileInfo, err error) error {
+		_ = filepath.Walk(absPath, func(path string, info os.FileInfo, err error) error {
 			if err != nil {
 				return filepath.SkipDir
 			}
@@ -104,11 +124,31 @@ func Subdirectories(vendor bool, paths ...string) []string {
 			}
 			return nil
 		})
-		_ = err
 	}
 	results := make([]string, 0, len(goDir))
 	for path := range goDir {
 		results = append(results, path)
 	}
 	return results
+}
+
+// findModuleRoot returns the path of main module.
+func findModuleRoot(dir string) string {
+	if dir == "" {
+		return ""
+	}
+	dir = filepath.Clean(dir)
+
+	// Look for enclosing go.mod.
+	for {
+		if fi, err := os.Stat(filepath.Join(dir, "go.mod")); err == nil && !fi.IsDir() {
+			return dir
+		}
+		d := filepath.Dir(dir)
+		if d == dir {
+			break
+		}
+		dir = d
+	}
+	return ""
 }
