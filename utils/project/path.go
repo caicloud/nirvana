@@ -66,11 +66,19 @@ func GoPath(directory string) (goPath string, absPath string, err error) {
 
 // PackageForPath gets package path for a path.
 func PackageForPath(directory string) (string, error) {
-	goPath, absPath, err := GoPath(directory)
+	absPath, err := filepath.Abs(directory)
 	if err != nil {
 		return "", err
 	}
-	return filepath.ToSlash(strings.Trim(absPath[len(srcPath(goPath)):], string(os.PathSeparator))), nil
+	for i, path := range goSrcPaths {
+		if strings.HasPrefix(absPath, path) {
+			// in GOPATH
+			return filepath.ToSlash(strings.Trim(absPath[len(srcPath(goPaths[i])):], string(os.PathSeparator))), nil
+		}
+	}
+
+	// not in GOPATH, use the directory directly
+	return filepath.Base(directory), nil
 }
 
 // Subdirectories walkthroughs all subdirectories. The results contains itself.
