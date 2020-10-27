@@ -17,11 +17,13 @@ limitations under the License.
 package main
 
 import (
+	"github.com/spf13/cobra"
+
 	"github.com/caicloud/nirvana/cmd/nirvana/api"
 	"github.com/caicloud/nirvana/cmd/nirvana/client"
 	"github.com/caicloud/nirvana/cmd/nirvana/project"
+	"github.com/caicloud/nirvana/cmd/nirvana/version"
 	"github.com/caicloud/nirvana/log"
-	"github.com/spf13/cobra"
 )
 
 var root = &cobra.Command{
@@ -33,6 +35,7 @@ func main() {
 	project.Register(root)
 	api.Register(root)
 	client.Register(root)
+	version.Register(root)
 	if err := root.Execute(); err != nil {
 		log.Fatalln(err)
 	}
