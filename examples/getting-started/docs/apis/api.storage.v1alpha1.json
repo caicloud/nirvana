@@ -1,0 +1,116 @@
+{
+  "schemes": [
+    "http"
+  ],
+  "swagger": "2.0",
+  "info": {
+    "description": "Example module management RESTful APIs\u003cbr/\u003eThe storage v1alpha1 version",
+    "title": "module-template APIs\n",
+    "contact": {
+      "name": "Xinzhao Xu",
+      "email": "xuxinzhao@caicloud.io"
+    },
+    "version": "v1alpha1"
+  },
+  "host": "localhost:8080",
+  "paths": {
+    "/apis/storage/v1alpha1/objects": {
+      "get": {
+        "description": "Query a specified number of objects and returns an array",
+        "consumes": [
+          "application/json",
+          ""
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "summary": "List Objects",
+        "parameters": [
+          {
+            "type": "number",
+            "format": "int",
+            "default": 10,
+            "description": "Number of objects",
+            "name": "count",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A list of objects",
+            "schema": {
+              "type": "array",
+              "items": {
+                "title": "Object",
+                "$ref": "#/definitions/github.com_caicloud_module-template_pkg_server_apis_storage_v1alpha1.Object"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/apis/storage/v1alpha1/objects/{object}": {
+      "get": {
+        "description": "Get a object by id",
+        "consumes": [
+          "application/json",
+          ""
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "summary": "Get Object",
+        "parameters": [
+          {
+            "type": "number",
+            "format": "int",
+            "description": "object id",
+            "name": "object",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A object",
+            "schema": {
+              "$ref": "#/definitions/github.com_caicloud_module-template_pkg_server_apis_storage_v1alpha1.Object"
+            }
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "github.com_caicloud_module-template_pkg_server_apis_addon_v1alpha1.Object": {
+      "title": "Object",
+      "properties": {
+        "id": {
+          "type": "number",
+          "format": "int",
+          "title": "int"
+        }
+      }
+    },
+    "github.com_caicloud_module-template_pkg_server_apis_app_v1.Workload": {
+      "title": "Workload",
+      "properties": {
+        "name": {
+          "type": "string",
+          "format": "string",
+          "title": "string"
+        }
+      }
+    },
+    "github.com_caicloud_module-template_pkg_server_apis_storage_v1alpha1.Object": {
+      "title": "Object",
+      "properties": {
+        "id": {
+          "type": "number",
+          "format": "int",
+          "title": "int"
+        }
+      }
+    }
+  }
+}
