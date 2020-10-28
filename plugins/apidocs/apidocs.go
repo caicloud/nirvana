@@ -17,29 +17,28 @@ limitations under the License.
 package apidocs
 
 import (
-	"context"
-	"fmt"
 	"io/ioutil"
-	"os"
+	"path"
 	"strings"
 
 	"github.com/caicloud/nirvana"
 	"github.com/caicloud/nirvana/definition"
 	"github.com/caicloud/nirvana/service"
+	"github.com/caicloud/nirvana/utils/api"
 )
 
 func init() {
 	// Register apidocs config installer into nirvana.
-	nirvana.RegisterConfigInstaller(&apidocsInstaller{})
+	nirvana.RegisterConfigInstaller(&apiDocsInstaller{})
 }
 
 // ExternalConfigName is the external config name of apidocs.
 const ExternalConfigName = "apidocs"
 
-type apidocsInstaller struct{}
+type apiDocsInstaller struct{}
 
 // Name is the external config name.
-func (i *apidocsInstaller) Name() string {
+func (i *apiDocsInstaller) Name() string {
 	return ExternalConfigName
 }
 
@@ -49,55 +48,37 @@ type config struct {
 }
 
 // Install installs stuffs before server starting.
-func (i *apidocsInstaller) Install(builder service.Builder, cfg *nirvana.Config) error {
-	var err error
-	wrapper(cfg, func(c *config) {
-		var descriptors []definition.Descriptor
-		var routerPaths []string
-
-		for path, filePath := range c.files {
-			b, err := ioutil.ReadFile(filePath)
+func (i *apiDocsInstaller) Install(builder service.Builder, cfg *nirvana.Config) error {
+	return wrapper(cfg, func(c *config) error {
+		files := make(map[string][]byte)
+		for filename, path := range c.files {
+			data, err := ioutil.ReadFile(path)
 			if err != nil {
-				panic(err)
+				return err
 			}
-
-			router := strings.Join([]string{strings.TrimRight(c.path, "/"), strings.Trim(path, "/")}, "/")
-			routerPaths = append(routerPaths, router)
-
-			ds := definition.Descriptor{
-				Path:     path,
-				Consumes: []string{definition.MIMEAll},
-				Produces: []string{definition.MIMEJSON},
-				Definitions: []definition.Definition{{
-					Method:  definition.Get,
-					Results: definition.DataErrorResults(""),
-					Function: func(ctx context.Context) ([]byte, error) {
-						return b, nil
-					}},
-				}}
-
-			descriptors = append(descriptors, []definition.Descriptor{ds}...)
+			files[filename] = data
 		}
 
-		err = builder.AddDescriptor(definition.Descriptor{
-			Path:     c.path,
-			Consumes: []string{definition.MIMEAll},
-			Produces: []string{definition.MIMEJSON},
-			Children: descriptors,
-			Definitions: []definition.Definition{{
-				Method:  definition.List,
-				Results: definition.DataErrorResults(""),
-				Function: func(ctx context.Context) ([]string, error) {
-					return routerPaths, nil
-				},
-			}},
-		})
+		apiDescriptor := make([]definition.Descriptor, 0, len(files)+1)
+		versions := make([]string, 0, len(files))
+		for v, data := range files {
+			versions = append(versions, v)
+			apiDescriptor = append(apiDescriptor, api.DescriptorForData(api.PathForVersion(c.path, v), data, definition.MIMEJSON))
+		}
+		data, err := api.GenSwaggerPageData(c.path, versions)
+		if err != nil {
+			return err
+		}
+		apiDescriptor = append(
+			apiDescriptor,
+			api.DescriptorForData(c.path, data, definition.MIMEHTML),
+		)
+		return builder.AddDescriptor(apiDescriptor...)
 	})
-	return err
 }
 
 // Uninstall uninstalls stuffs after server terminating.
-func (i *apidocsInstaller) Uninstall(builder service.Builder, cfg *nirvana.Config) error {
+func (i *apiDocsInstaller) Uninstall(builder service.Builder, cfg *nirvana.Config) error {
 	return nil
 }
 
@@ -113,36 +94,36 @@ func Disable() nirvana.Configurer {
 // Default Configurer does nothing but ensure default config was set.
 func Default() nirvana.Configurer {
 	return func(c *nirvana.Config) error {
-		wrapper(c, func(c *config) {
+		return wrapper(c, func(c *config) error {
+			return nil
 		})
-		return nil
 	}
 }
 
 // Path returns a configurer to set apidocs path.
 func Path(path string) nirvana.Configurer {
 	if path == "" {
-		path = "/apidocs"
+		path = "/docs"
 	}
 	return func(c *nirvana.Config) error {
-		wrapper(c, func(c *config) {
+		return wrapper(c, func(c *config) error {
 			c.path = path
+			return nil
 		})
-		return nil
 	}
 }
 
 // Files Configurer sets apidocs files config.
 func Files(files map[string]string) nirvana.Configurer {
 	return func(c *nirvana.Config) error {
-		wrapper(c, func(c *config) {
+		return wrapper(c, func(c *config) error {
 			c.files = files
+			return nil
 		})
-		return nil
 	}
 }
 
-func wrapper(c *nirvana.Config, f func(c *config)) {
+func wrapper(c *nirvana.Config, f func(c *config) error) error {
 	conf := c.Config(ExternalConfigName)
 	var cfg *config
 	if conf == nil {
@@ -152,21 +133,24 @@ func wrapper(c *nirvana.Config, f func(c *config)) {
 		// Panic if config type is wrong.
 		cfg = conf.(*config)
 	}
-	f(cfg)
+	if err := f(cfg); err != nil {
+		return err
+	}
 	c.Set(ExternalConfigName, cfg)
+	return nil
 }
 
 // Option contains basic configurations of apidocs.
 type Option struct {
-	Path  string `desc:"Path to list information of all API docs"`
-	Files string `desc:"Comma separated of apidocsVersion:apidocsPath, it can be v1:./apis/api.v1.json,v2:./apis/api.v2.json"`
+	Path      string `desc:"Path to the API documentation page, default: /docs"`
+	FilesPath string `desc:"The folder path that contains all swagger JSON files, default: apis"`
 }
 
 // NewDefaultOption creates default option.
 func NewDefaultOption() *Option {
 	return &Option{
-		Path:  "/apidocs",
-		Files: "",
+		Path:      "/docs",
+		FilesPath: "apis",
 	}
 }
 
@@ -177,36 +161,22 @@ func (p *Option) Name() string {
 
 // Configure configures nirvana config via current options.
 func (p *Option) Configure(cfg *nirvana.Config) error {
-	filesSet := strings.Split(p.Files, ",")
-	filesMap := make(map[string]string, len(filesSet))
-
-	for _, s := range filesSet {
-		if s == "" {
+	// ignore errors, do not serve API documentation if files read failed (e.g. the folder does not exist)
+	filesInfo, _ := ioutil.ReadDir(p.FilesPath)
+	files := make(map[string]string, len(filesInfo))
+	for _, f := range filesInfo {
+		if f.IsDir() || !strings.HasSuffix(f.Name(), ".json") {
 			continue
 		}
-
-		if !strings.Contains(s, ":") {
-			panic(fmt.Errorf("Please specify the apidocs config with apidocsVersion:apidocsPath, it can be v1:./apis/api.v1.json,v2:./apis/api.v2.json"))
-		}
-
-		set := strings.Split(s, ":")
-		if len(set) != 2 {
-			panic(fmt.Errorf("Please specify the apidocs config with apidocsVersion:apidocsPath, it can be v1:./apis/api.v1.json,v2:./apis/api.v2.json"))
-		}
-
-		filePath := strings.TrimSpace(set[1])
-		if _, err := os.Stat(filePath); err != nil {
-			if os.IsNotExist(err) {
-				panic(err)
-			}
-		}
-
-		filesMap[strings.TrimSpace(set[0])] = filePath
+		// api.xxx.json --> xxx
+		name := strings.TrimPrefix(f.Name(), "api.")
+		name = strings.TrimSuffix(name, ".json")
+		files[name] = path.Join(p.FilesPath, f.Name())
 	}
 
 	cfg.Configure(
 		Path(p.Path),
-		Files(filesMap),
+		Files(files),
 	)
 	return nil
 }

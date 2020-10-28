@@ -17,6 +17,7 @@ limitations under the License.
 package api
 
 import (
+	"encoding/json"
 	"strconv"
 	"strings"
 
@@ -26,7 +27,7 @@ import (
 	"github.com/caicloud/nirvana/log"
 	"github.com/caicloud/nirvana/service"
 	"github.com/caicloud/nirvana/utils/api"
-	generatorsutils "github.com/caicloud/nirvana/utils/generators/utils"
+	"github.com/caicloud/nirvana/utils/generators/swagger"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -86,9 +87,20 @@ func (o *apiOptions) Run(cmd *cobra.Command, args []string) error {
 
 	log.Infof("Project root directory is %s", config.Root)
 
-	files, err := generatorsutils.GenSwaggerData(config, definitions)
+	generator := swagger.NewDefaultGenerator(config, definitions)
+	swaggers, err := generator.Generate()
 	if err != nil {
 		return err
+	}
+
+	files := make(map[string][]byte, len(swaggers))
+	for filename, s := range swaggers {
+		data, err := json.MarshalIndent(s, "", "  ")
+		if err != nil {
+			return err
+		}
+
+		files[filename] = data
 	}
 
 	if o.Output != "" {

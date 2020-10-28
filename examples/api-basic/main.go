@@ -29,7 +29,6 @@ func main() {
 	cfg := nirvana.NewDefaultConfig()
 	cfg.Configure(
 		nirvana.Descriptor(v1.Descriptor(), v2.Descriptor()),
-		nirvana.APIDocs("github.com/caicloud/nirvana/examples/api-basic", "/docs"),
 	)
 	if err := cmd.ExecuteWithConfig(cfg); err != nil {
 		log.Fatal(err)
