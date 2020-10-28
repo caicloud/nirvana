@@ -21,13 +21,30 @@ import (
 )
 
 func TestPackageForPath(t *testing.T) {
-	directory := "./test1"
-	dest := "github.com/caicloud/nirvana/utils/project/test1"
-	packagePath, err := PackageForPath(directory)
-	if err != nil {
-		t.Error(err)
+	goPaths = []string{"/go"}
+	goSrcPaths = []string{"/go/src"}
+
+	tests := []struct {
+		name      string
+		directory string
+		wanted    string
+	}{
+		{
+			name:      "in GOPATH test",
+			directory: "/go/src/github.com/caicloud/test1",
+			wanted:    "github.com/caicloud/test1",
+		},
+		{
+			name:      "not in GOPATH test",
+			directory: "/usr/test",
+			wanted:    "test",
+		},
 	}
-	if packagePath != dest {
-		t.Error(packagePath)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got, _ := PackageForPath(tt.directory); got != tt.wanted {
+				t.Errorf("%s PackageForPath() = %v, want %v", tt.name, got, tt.wanted)
+			}
+		})
 	}
 }
