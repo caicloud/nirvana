@@ -20,7 +20,9 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path"
 	"path/filepath"
+	"strings"
 
 	"github.com/caicloud/nirvana/cmd/nirvana/buildutils"
 	"github.com/caicloud/nirvana/log"
@@ -88,6 +90,11 @@ func (o *clientOptions) Run(cmd *cobra.Command, args []string) error {
 	rootPkg, err := project.PackageForPath(config.Root)
 	if err != nil {
 		return err
+	}
+
+	// handle go module project, pkg maybe just a directory name, eg: `client`
+	if !strings.HasPrefix(pkg, rootPkg) {
+		pkg = path.Join(rootPkg, pkg)
 	}
 
 	generator := golang.NewGenerator(config, definitions, o.Rest, pkg, rootPkg)
