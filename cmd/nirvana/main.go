@@ -21,12 +21,14 @@ import (
 	"github.com/caicloud/nirvana/cmd/nirvana/client"
 	"github.com/caicloud/nirvana/cmd/nirvana/project"
 	"github.com/caicloud/nirvana/log"
+
 	"github.com/spf13/cobra"
 )
 
 var root = &cobra.Command{
-	Use:   "nirvana",
-	Short: "Nirvana toolchains",
+	Use:     "nirvana",
+	Short:   "Nirvana toolchains",
+	Version: "v0.3.0",
 }
 
 func main() {
