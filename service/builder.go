@@ -115,32 +115,32 @@ func (b *builder) AddDescriptor(descriptors ...definition.Descriptor) error {
 }
 
 func (b *builder) addDescriptor(prefix string, consumes []string, produces []string, tags []string, descriptor definition.Descriptor) {
-	path := strings.Join([]string{prefix, strings.Trim(descriptor.Path, "/")}, "/")
-	if descriptor.Consumes != nil {
-		consumes = descriptor.Consumes
+	path := strings.Join([]string{prefix, strings.Trim(descriptor.GetPath(), "/")}, "/")
+	if descriptor.GetConsumes() != nil {
+		consumes = descriptor.GetConsumes()
 	}
-	if descriptor.Produces != nil {
-		produces = descriptor.Produces
+	if descriptor.GetProduces() != nil {
+		produces = descriptor.GetProduces()
 	}
-	if descriptor.Tags != nil {
-		tags = descriptor.Tags
+	if descriptor.GetTags() != nil {
+		tags = descriptor.GetTags()
 	}
-	if len(descriptor.Middlewares) > 0 || len(descriptor.Definitions) > 0 {
+	if len(descriptor.GetMiddlewares()) > 0 || len(descriptor.GetDefinitions()) > 0 {
 		bd, ok := b.bindings[path]
 		if !ok {
 			bd = &binding{}
 			b.bindings[path] = bd
 		}
-		if len(descriptor.Middlewares) > 0 {
-			bd.middlewares = append(bd.middlewares, descriptor.Middlewares...)
+		if len(descriptor.GetMiddlewares()) > 0 {
+			bd.middlewares = append(bd.middlewares, descriptor.GetMiddlewares()...)
 		}
-		if len(descriptor.Definitions) > 0 {
-			for _, d := range descriptor.Definitions {
+		if len(descriptor.GetDefinitions()) > 0 {
+			for _, d := range descriptor.GetDefinitions() {
 				bd.definitions = append(bd.definitions, *b.copyDefinition(&d, consumes, produces, tags))
 			}
 		}
 	}
-	for _, child := range descriptor.Children {
+	for _, child := range descriptor.GetChildren() {
 		b.addDescriptor(strings.TrimRight(path, "/"), consumes, produces, tags, child)
 	}
 }
@@ -152,6 +152,7 @@ func (b *builder) copyDefinition(d *definition.Definition, consumes []string, pr
 		Summary:     d.Summary,
 		Function:    d.Function,
 		Description: d.Description,
+		Condition:   d.Condition,
 	}
 	if len(d.Consumes) > 0 {
 		consumes = d.Consumes
@@ -193,6 +194,8 @@ func (b *builder) copyDefinition(d *definition.Definition, consumes []string, pr
 	}
 	newOne.Examples = make([]definition.Example, len(d.Examples))
 	copy(newOne.Examples, d.Examples)
+	newOne.PreFunctions = make([]definition.Middleware, len(d.PreFunctions))
+	copy(newOne.PreFunctions, d.PreFunctions)
 	return newOne
 }
 
@@ -252,8 +255,13 @@ func (b *builder) Build() (Service, error) {
 			}
 			inspector := newInspector(path, b.logger)
 			for _, d := range bd.definitions {
-				b.logger.V(log.LevelDebug).Infof("  Method: %s Consumes: %v Produces: %v",
-					d.Method, d.Consumes, d.Produces)
+				if d.Condition.Description != nil {
+					b.logger.V(log.LevelDebug).Infof("  Method: %s Consumes: %v Produces: %v Path: %v",
+						d.Method, d.Consumes, d.Produces, path+d.Condition.Description())
+				} else {
+					b.logger.V(log.LevelDebug).Infof("  Method: %s Consumes: %v Produces: %v",
+						d.Method, d.Consumes, d.Produces)
+				}
 				if b.modifier != nil {
 					b.modifier(&d)
 				}

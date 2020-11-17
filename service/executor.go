@@ -72,10 +72,12 @@ func (i *inspector) addDefinition(d definition.Definition) error {
 		return definitionInvalidFunctionType.Error(value.Type(), d.Method, i.path)
 	}
 	c := &executor{
-		logger:   i.logger,
-		method:   method,
-		code:     HTTPCodeFor(d.Method),
-		function: value,
+		logger:       i.logger,
+		method:       method,
+		code:         HTTPCodeFor(d.Method),
+		function:     value,
+		condition:    d.Condition,
+		preFunctions: d.PreFunctions,
 	}
 	consumeAll := false
 	consumes := map[string]bool{}
@@ -173,8 +175,12 @@ func (i *inspector) conflictCheck(c *executor) error {
 	if len(cs) <= 0 {
 		return nil
 	}
-	ctMap := map[string]bool{}
+	ctMap := make(map[string]bool)
+	uniqMap := make(map[string]bool)
 	for _, extant := range cs {
+		if extant.condition.UniqID != nil {
+			uniqMap[extant.condition.UniqID()] = true
+		}
 		result := extant.ctMap()
 		for k, vs := range result {
 			for _, v := range vs {
@@ -185,7 +191,7 @@ func (i *inspector) conflictCheck(c *executor) error {
 	cMap := c.ctMap()
 	for k, vs := range cMap {
 		for _, v := range vs {
-			if ctMap[k+":"+v] {
+			if ctMap[k+":"+v] && (c.condition.UniqID == nil || uniqMap[c.condition.UniqID()]) {
 				return definitionConflict.Error(k, v, c.method, i.path)
 			}
 		}
@@ -329,6 +335,9 @@ func (i *inspector) Inspect(ctx context.Context) (router.Executor, error) {
 	if len(executors) <= 0 {
 		return nil, noExecutorForMethod.Error()
 	}
+	sort.Slice(executors, func(i, j int) bool {
+		return executors[i].condition.Satisfied != nil && executors[i].condition.Satisfied(req)
+	})
 	ct, err := ContentType(req)
 	if err != nil {
 		return nil, err
@@ -381,6 +390,9 @@ type executor struct {
 	parameters     []parameter
 	results        []result
 	function       reflect.Value
+	condition      definition.Condition
+	preFunctions   []definition.Middleware
+	index          int
 }
 
 type parameter struct {
@@ -433,8 +445,25 @@ func (e *executor) producible(ats []string) bool {
 	return e.check(e.producers, ats) && e.check(e.errorProducers, ats)
 }
 
+func (e *executor) Continue(ctx context.Context) error {
+	if e.index >= len(e.preFunctions) {
+		return e.execute(ctx)
+	}
+	m := e.preFunctions[e.index]
+	e.index++
+	return m(ctx, e)
+}
+
 // Execute executes with context.
 func (e *executor) Execute(ctx context.Context) (err error) {
+	e.index = 0
+	defer func() {
+		e.index = 0
+	}()
+	return e.Continue(ctx)
+}
+
+func (e *executor) execute(ctx context.Context) (err error) {
 	c := HTTPContextFrom(ctx)
 	if c == nil {
 		return noContext.Error()

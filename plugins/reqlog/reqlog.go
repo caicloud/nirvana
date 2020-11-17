@@ -54,7 +54,7 @@ func (i *reqlogInstaller) Install(builder service.Builder, cfg *nirvana.Config) 
 	var err error
 	wrapper(cfg, func(c *config) {
 		begin, end := i.buildPrinters(c)
-		err = builder.AddDescriptor(definition.Descriptor{
+		err = builder.AddDescriptor(definition.RESTfulDescriptor{
 			Path: "/",
 			Middlewares: []definition.Middleware{
 				func(ctx context.Context, next definition.Chain) error {

@@ -20,14 +20,14 @@ import (
 	"github.com/caicloud/nirvana/definition"
 )
 
-var descriptors = []definition.Descriptor{}
+var descriptors = []definition.RESTfulDescriptor{}
 
-func register(ds ...definition.Descriptor) {
+func register(ds ...definition.RESTfulDescriptor) {
 	descriptors = append(descriptors, ds...)
 }
 
-func Descriptor() definition.Descriptor {
-	return definition.Descriptor{
+func Descriptor() definition.RESTfulDescriptor {
+	return definition.RESTfulDescriptor{
 		Path:        "/api/v2",
 		Description: "It contains all APIs in v2",
 		Consumes:    []string{definition.MIMEAll},

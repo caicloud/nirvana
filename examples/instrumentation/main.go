@@ -46,7 +46,7 @@ func main() {
 	}
 }
 
-var example = definition.Descriptor{
+var example = definition.RESTfulDescriptor{
 	Path:        "/hello",
 	Description: "metrics example",
 	Definitions: []definition.Definition{

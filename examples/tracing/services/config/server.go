@@ -40,7 +40,7 @@ func NewServer() error {
 	return cmd.Execute(app)
 }
 
-var app = definition.Descriptor{
+var app = definition.RESTfulDescriptor{
 	Path:        "/config",
 	Produces:    []string{definition.MIMEJSON},
 	Consumes:    []string{definition.MIMEJSON},

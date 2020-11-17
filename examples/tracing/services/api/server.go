@@ -48,7 +48,7 @@ type appForm struct {
 	Config    string `json:"config"`
 }
 
-var app = definition.Descriptor{
+var app = definition.RESTfulDescriptor{
 	Path:        "/applications",
 	Produces:    []string{definition.MIMEJSON},
 	Consumes:    []string{definition.MIMEJSON},

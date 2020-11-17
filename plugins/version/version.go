@@ -64,7 +64,7 @@ func (i *versionInstaller) Install(builder service.Builder, cfg *nirvana.Config)
 			Hash:        c.hash,
 			Description: c.description,
 		}
-		err = builder.AddDescriptor(definition.Descriptor{
+		err = builder.AddDescriptor(definition.RESTfulDescriptor{
 			Path:     c.path,
 			Consumes: []string{definition.MIMEAll},
 			Produces: []string{definition.MIMEAll},

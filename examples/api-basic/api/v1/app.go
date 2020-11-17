@@ -26,7 +26,7 @@ func init() {
 	register(app)
 }
 
-var app = definition.Descriptor{
+var app = definition.RESTfulDescriptor{
 	Path:        "/applications",
 	Description: "Application API",
 	Definitions: []definition.Definition{

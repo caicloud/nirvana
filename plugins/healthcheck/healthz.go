@@ -80,7 +80,7 @@ func (i *healthcheckInstaller) Install(builder service.Builder, cfg *nirvana.Con
 			function = c.checkerWithType
 		}
 
-		err = builder.AddDescriptor(definition.Descriptor{
+		err = builder.AddDescriptor(definition.RESTfulDescriptor{
 			Path:     c.path,
 			Consumes: []string{definition.MIMEAll},
 			Produces: []string{definition.MIMEAll},

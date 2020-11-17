@@ -48,7 +48,7 @@ func (i *metricsInstaller) Install(builder service.Builder, cfg *nirvana.Config)
 	var err error
 	wrapper(cfg, func(c *config) {
 
-		monitorMiddleware := definition.Descriptor{
+		monitorMiddleware := definition.RESTfulDescriptor{
 			Path:        "/",
 			Middlewares: []definition.Middleware{metrics.Namespace(c.namespace)},
 		}

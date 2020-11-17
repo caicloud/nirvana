@@ -43,7 +43,7 @@ func main() {
 	}
 
 	descriptors := []definition.Descriptor{
-		{
+		definition.RESTfulDescriptor{
 			Path:        "/",
 			Description: "hello API",
 			Definitions: []definition.Definition{
@@ -58,7 +58,7 @@ func main() {
 				},
 			},
 		},
-		{
+		definition.RESTfulDescriptor{
 			Path:        "/proxy",
 			Description: "proxy API",
 			Middlewares: []definition.Middleware{

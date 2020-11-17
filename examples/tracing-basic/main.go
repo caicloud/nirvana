@@ -28,7 +28,7 @@ import (
 )
 
 func main() {
-	example := definition.Descriptor{
+	example := definition.RESTfulDescriptor{
 		Path:        "/",
 		Description: "trace example",
 		Definitions: []definition.Definition{

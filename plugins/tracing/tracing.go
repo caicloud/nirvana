@@ -156,8 +156,8 @@ const (
 )
 
 // descriptor creates descriptor for middleware.
-func descriptor(tracer opentracing.Tracer, hook Hook) definition.Descriptor {
-	return definition.Descriptor{
+func descriptor(tracer opentracing.Tracer, hook Hook) definition.RESTfulDescriptor {
+	return definition.RESTfulDescriptor{
 		Path:        "/",
 		Middlewares: []definition.Middleware{middleware(tracer, hook)},
 	}

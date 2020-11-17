@@ -113,8 +113,8 @@ func Path(path string) nirvana.Configurer {
 }
 
 // descriptor creates descriptor for profiling.
-func descriptor(path string) definition.Descriptor {
-	return definition.Descriptor{
+func descriptor(path string) definition.RESTfulDescriptor {
+	return definition.RESTfulDescriptor{
 		Path:     path,
 		Consumes: []string{definition.MIMEAll},
 		Produces: []string{definition.MIMEAll},
@@ -122,7 +122,7 @@ func descriptor(path string) definition.Descriptor {
 			Method:   definition.Get,
 			Function: service.WrapHTTPHandlerFunc(index),
 		}},
-		Children: []definition.Descriptor{
+		Children: []definition.RESTfulDescriptor{
 			{
 				Path: "cmdline",
 				Definitions: []definition.Definition{{

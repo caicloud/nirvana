@@ -27,7 +27,7 @@ import (
 	"github.com/caicloud/nirvana/definition"
 )
 
-var test = definition.Descriptor{
+var test = definition.RESTfulDescriptor{
 	Path:        "/",
 	Description: "trace example",
 	Definitions: []definition.Definition{

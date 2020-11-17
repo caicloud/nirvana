@@ -30,7 +30,7 @@ type Body struct {
 	Name string
 }
 
-var echo = definition.Descriptor{
+var echo = definition.RESTfulDescriptor{
 	Path:        "/echo",
 	Description: "Echo API",
 	Definitions: []definition.Definition{

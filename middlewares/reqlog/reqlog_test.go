@@ -67,7 +67,7 @@ func buildService(middleware definition.Middleware) (service.Service, error) {
 	builder := service.NewBuilder()
 	builder.SetModifier(service.FirstContextParameter())
 	if err := builder.AddDescriptor(
-		definition.Descriptor{
+		definition.RESTfulDescriptor{
 			Path:        "/api/v1/foo",
 			Consumes:    []string{"*/*"},
 			Produces:    []string{"application/json"},

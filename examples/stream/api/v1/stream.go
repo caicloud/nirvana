@@ -25,7 +25,7 @@ func init() {
 	register(app)
 }
 
-var app = definition.Descriptor{
+var app = definition.RESTfulDescriptor{
 	Path:        "/stream",
 	Description: "Example for explaining how to write stream",
 	Definitions: []definition.Definition{

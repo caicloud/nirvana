@@ -248,7 +248,7 @@ func (o *operatorRef) Operate(ctx context.Context, field string, object interfac
 // The descriptor consumes all content types and produces all
 // accept types.
 func SimpleDescriptor(method Method, path string, f interface{}) Descriptor {
-	return Descriptor{
+	return RESTfulDescriptor{
 		Path: path,
 		Definitions: []Definition{
 			{

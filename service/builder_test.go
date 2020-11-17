@@ -52,12 +52,12 @@ func (r *responseWriter) WriteHeader(code int) {
 	r.code = code
 }
 
-var desc = definition.Descriptor{
+var desc = definition.RESTfulDescriptor{
 	Path:        "/api/v1/",
 	Definitions: []definition.Definition{},
 	Consumes:    []string{"application/json"},
 	Produces:    []string{"application/json"},
-	Children: []definition.Descriptor{
+	Children: []definition.RESTfulDescriptor{
 		{
 			Path: "/{target1}/{target2}",
 			Definitions: []definition.Definition{
@@ -160,15 +160,15 @@ func TestServer(t *testing.T) {
 	}
 }
 
-var childrenDesc = definition.Descriptor{
+var childrenDesc = definition.RESTfulDescriptor{
 	Path:        "",
 	Definitions: []definition.Definition{},
 	Consumes:    []string{definition.MIMEJSON},
 	Produces:    []string{definition.MIMEJSON},
-	Children: []definition.Descriptor{
+	Children: []definition.RESTfulDescriptor{
 		{
 			Path: "/api/v1",
-			Children: []definition.Descriptor{
+			Children: []definition.RESTfulDescriptor{
 				{
 					Path: "",
 					Definitions: []definition.Definition{
@@ -182,7 +182,7 @@ var childrenDesc = definition.Descriptor{
 							},
 						},
 					},
-					Children: []definition.Descriptor{
+					Children: []definition.RESTfulDescriptor{
 						{
 							Path: "/ping",
 							Definitions: []definition.Definition{
@@ -248,12 +248,12 @@ func TestChildrenPath(t *testing.T) {
 	}
 }
 
-var homeDesc = definition.Descriptor{
+var homeDesc = definition.RESTfulDescriptor{
 	Path:        "",
 	Definitions: []definition.Definition{},
 	Consumes:    []string{definition.MIMEJSON},
 	Produces:    []string{definition.MIMEJSON},
-	Children: []definition.Descriptor{
+	Children: []definition.RESTfulDescriptor{
 		{
 			Path: "/",
 			Definitions: []definition.Definition{
@@ -320,11 +320,11 @@ type User struct {
 	Password string `source:"Header,Password"`
 }
 
-var defaultParamsDesc = definition.Descriptor{
+var defaultParamsDesc = definition.RESTfulDescriptor{
 	Definitions: []definition.Definition{},
 	Consumes:    []string{definition.MIMEJSON},
 	Produces:    []string{definition.MIMEJSON},
-	Children: []definition.Descriptor{
+	Children: []definition.RESTfulDescriptor{
 		{
 			Path: "/default",
 			Definitions: []definition.Definition{
@@ -405,12 +405,12 @@ func TestDefaultParams(t *testing.T) {
 	}
 }
 
-var errDesc = definition.Descriptor{
+var errDesc = definition.RESTfulDescriptor{
 	Path:        "/api/v1/",
 	Definitions: []definition.Definition{},
 	Consumes:    []string{definition.MIMEAll},
 	Produces:    []string{definition.MIMEJSON},
-	Children: []definition.Descriptor{
+	Children: []definition.RESTfulDescriptor{
 		{
 			Path: "/{err}",
 			Definitions: []definition.Definition{

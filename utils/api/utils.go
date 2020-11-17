@@ -142,8 +142,8 @@ func GenSwaggerPageData(root string, versions []string) ([]byte, error) {
 }
 
 // DescriptorForData generates a Descriptor for API docs page.
-func DescriptorForData(path string, data []byte, contentType string) definition.Descriptor {
-	return definition.Descriptor{
+func DescriptorForData(path string, data []byte, contentType string) definition.RESTfulDescriptor {
+	return definition.RESTfulDescriptor{
 		Path: path,
 		Definitions: []definition.Definition{
 			{
