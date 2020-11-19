@@ -55,7 +55,7 @@ type Builder interface {
 //          ↓                    ↑
 // |-----Filters------|          ↑
 //          ↓                    ↑
-// |---Router Match---|          ↑
+// |-Router/RPC Action Match-|   ↑
 //          ↓                    ↑
 // |-------------Middlewares------------|
 //          ↓                    ↑

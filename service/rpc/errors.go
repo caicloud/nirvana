@@ -20,4 +20,4 @@ import (
 	"github.com/caicloud/nirvana/errors"
 )
 
-var noExecutorForPath = errors.MethodNotAllowed.Build("Nirvana:Service:NoExecutorForPath", "no executor for path ${path}")
+var noExecutorForAction = errors.MethodNotAllowed.Build("Nirvana:Service:NoExecutorForAction", "no executor for action ${path}")

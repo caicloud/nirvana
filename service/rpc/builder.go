@@ -33,6 +33,9 @@ type binding struct {
 }
 
 type builder struct {
+	// bindings contains all RPC action definitions, the key is a unique id (path + version + name),
+	// it is currently formatted as an API URL path, eg: /?Version=2020-10-10&Action=Echo, which is useful for both
+	// printing logs and generating API documents/client
 	bindings map[string]*binding
 	modifier service.DefinitionModifier
 	filters  []service.Filter
@@ -94,7 +97,7 @@ func (b *builder) AddDescriptor(descriptors ...interface{}) error {
 		if !ok {
 			return fmt.Errorf("not a Descriptor")
 		}
-		p := descriptor.Prefix
+		p := descriptor.Path
 		if p == "" {
 			p = "/"
 		}
@@ -184,7 +187,7 @@ func (b *builder) Build() (service.Service, error) {
 		}
 	}
 
-	s := &rpcService{
+	s := &server{
 		executors: b.bindings,
 		filters:   b.filters,
 		logger:    b.logger,
@@ -193,14 +196,14 @@ func (b *builder) Build() (service.Service, error) {
 	return s, nil
 }
 
-type rpcService struct {
+type server struct {
 	executors map[string]*binding
 	filters   []service.Filter
 	logger    log.Logger
 	producers []service.Producer
 }
 
-func (s *rpcService) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
+func (s *server) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 	for _, f := range s.filters {
 		if !f(resp, req) {
 			return
@@ -213,7 +216,7 @@ func (s *rpcService) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 	path := genRPCPath(req.URL.Path, version, action)
 	e, ok := s.executors[path]
 	if !ok {
-		if err := service.WriteError(ctx, s.producers, noExecutorForPath.Error(path)); err != nil {
+		if err := service.WriteError(ctx, s.producers, noExecutorForAction.Error(path)); err != nil {
 			s.logger.Error(err)
 		}
 		return

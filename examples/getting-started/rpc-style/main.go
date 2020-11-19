@@ -67,7 +67,7 @@ var echo = definition.RPCDescriptor{
 }
 
 var echo2 = definition.RPCDescriptor{
-	Prefix:      "/aaa",
+	Path:        "/aaa",
 	Description: "Echo API",
 	Actions: []definition.RPCAction{
 		{
