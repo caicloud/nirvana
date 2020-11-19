@@ -21,31 +21,43 @@ import (
 )
 
 var (
-	DefinitionNoMethod            = errors.InternalServerError.Build("Nirvana:Service:DefinitionNoMethod", "no http method in [${method}]${path}")
-	DefinitionNoConsumes          = errors.InternalServerError.Build("Nirvana:Service:DefinitionNoConsumes", "no content type to consume in [${method}]${path}")
-	DefinitionNoProduces          = errors.InternalServerError.Build("Nirvana:Service:DefinitionNoProduces", "no content type to produce in [${method}]${path}")
-	DefinitionNoErrorProduces     = errors.InternalServerError.Build("Nirvana:Service:DefinitionNoErrorProduces", "no content type to produce error in [${method}]${path}")
-	DefinitionNoFunction          = errors.InternalServerError.Build("Nirvana:Service:DefinitionNoFunction", "no function in [${method}]${path}")
-	DefinitionInvalidFunctionType = errors.InternalServerError.Build("Nirvana:Service:DefinitionInvalidFunctionType",
-		"${type} is not function in [${method}]${path}")
-	DefinitionNoConsumer = errors.InternalServerError.Build("Nirvana:Service:DefinitionNoConsumer",
-		"no consumer for content type ${type} in [${method}]${path}")
-	DefinitionNoProducer = errors.InternalServerError.Build("Nirvana:Service:DefinitionNoProducer",
-		"no producer for content type ${type} in [${method}]${path}")
-	DefinitionConflict = errors.InternalServerError.Build("Nirvana:Service:DefinitionConflict",
-		"consumer-producer pair ${key}:${value} conflicts in [http.${method}]${path}")
-	DefinitionUnmatchedParameters = errors.InternalServerError.Build("Nirvana:Service:DefinitionUnmatchedParameters",
-		"function ${function} has ${count} parameters but want ${desired} in ${path}, "+
-			"you can define it with descriptor->definition[]->parameters[]")
-	DefinitionUnmatchedResults = errors.InternalServerError.Build("Nirvana:Service:DefinitionUnmatchedResults",
-		"function ${function} has ${count} results but want ${desired} in ${path}, "+
-			"you can define it with descriptor->definition[]->results[]")
-	NoDestinationHandler = errors.InternalServerError.Build("Nirvana:Service:NoDestinationHandler", "no destination handler for destination ${destination}, "+
-		"you can define it with descriptor->definition[]->results[]->destination")
-	InvalidOperatorInType = errors.InternalServerError.Build("Nirvana:Service:InvalidOperatorInType",
-		"the type ${type} is not compatible to the in type of the ${index} operator")
-	InvalidOperatorOutType = errors.InternalServerError.Build("Nirvana:Service:InvalidOperatorOutType",
-		"the out type of the ${index} operator is not compatible to the type ${type}")
+	// DefinitionNoMethod represents no http method error.
+	DefinitionNoMethod = errors.InternalServerError.Build("Nirvana:Service:DefinitionNoMethod", "no http method in [${method}]${path}")
+	// DefinitionNoConsumes represents no content type to consume.
+	DefinitionNoConsumes = errors.InternalServerError.Build("Nirvana:Service:DefinitionNoConsumes", "no content type to consume in [${method}]${path}")
+	// DefinitionNoProduces represents no content type to produce.
+	DefinitionNoProduces = errors.InternalServerError.Build("Nirvana:Service:DefinitionNoProduces", "no content type to produce in [${method}]${path}")
+	// DefinitionNoErrorProduces represents no content type to produce error.
+	DefinitionNoErrorProduces = errors.InternalServerError.Build("Nirvana:Service:DefinitionNoErrorProduces", "no content type to produce error in [${method}]${path}")
+	// DefinitionNoFunction represents no function error.
+	DefinitionNoFunction = errors.InternalServerError.Build("Nirvana:Service:DefinitionNoFunction", "no function in [${method}]${path}")
+	// DefinitionInvalidFunctionType represents invalid function type.
+	DefinitionInvalidFunctionType = errors.InternalServerError.Build("Nirvana:Service:DefinitionInvalidFunctionType", "${type} is not function in [${method}]${path}")
+	// DefinitionNoConsumer represents no consumer error.
+	DefinitionNoConsumer = errors.InternalServerError.Build("Nirvana:Service:DefinitionNoConsumer", "no consumer for content type ${type} in [${method}]${path}")
+	// DefinitionNoProducer represents no producer error.
+	DefinitionNoProducer = errors.InternalServerError.Build("Nirvana:Service:DefinitionNoProducer", "no producer for content type ${type} in [${method}]${path}")
+	// DefinitionConflict represents conflict error.
+	DefinitionConflict = errors.InternalServerError.Build("Nirvana:Service:DefinitionConflict", "consumer-producer pair ${key}:${value} conflicts in [http.${method}]${path}")
+	// DefinitionUnmatchedParameters represents parameters unmatch.
+	DefinitionUnmatchedParameters = errors.InternalServerError.Build(
+		"Nirvana:Service:DefinitionUnmatchedParameters",
+		"function ${function} has ${count} parameters but want ${desired} in ${path}, you can define it with descriptor->definition[]->parameters[]",
+	)
+	// DefinitionUnmatchedResults represents results unmatch.
+	DefinitionUnmatchedResults = errors.InternalServerError.Build(
+		"Nirvana:Service:DefinitionUnmatchedResults",
+		"function ${function} has ${count} results but want ${desired} in ${path}, you can define it with descriptor->definition[]->results[]",
+	)
+	// NoDestinationHandler represents no DestinationHandler error.
+	NoDestinationHandler = errors.InternalServerError.Build(
+		"Nirvana:Service:NoDestinationHandler",
+		"no destination handler for destination ${destination}, you can define it with descriptor->definition[]->results[]->destination",
+	)
+	// InvalidOperatorInType represents invalid operator error.
+	InvalidOperatorInType = errors.InternalServerError.Build("Nirvana:Service:InvalidOperatorInType", "the type ${type} is not compatible to the in type of the ${index} operator")
+	// InvalidOperatorOutType represents invalid operator error.
+	InvalidOperatorOutType = errors.InternalServerError.Build("Nirvana:Service:InvalidOperatorOutType", "the out type of the ${index} operator is not compatible to the type ${type}")
 )
 
 var (

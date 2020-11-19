@@ -42,6 +42,7 @@ type HTTPCtx struct {
 	path      string
 }
 
+// NewHTTPContext generates the http context from ResponseWriter and Request.
 func NewHTTPContext(resp http.ResponseWriter, request *http.Request) *HTTPCtx {
 	ctx := &HTTPCtx{}
 	ctx.Context = request.Context()

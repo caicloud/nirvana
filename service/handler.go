@@ -158,6 +158,7 @@ func (h *ErrorDestinationHandler) Handle(ctx context.Context, producers []Produc
 	return false, WriteError(ctx, producers, value)
 }
 
+// WriteError writes error data to context.
 func WriteError(ctx context.Context, producers []Producer, err interface{}) error {
 	httpCtx := HTTPContextFrom(ctx)
 	ats, e := AcceptTypes(httpCtx.Request())

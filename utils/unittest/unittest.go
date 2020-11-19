@@ -24,8 +24,8 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/caicloud/nirvana"
 	"github.com/caicloud/nirvana/service"
+	builderutil "github.com/caicloud/nirvana/service/builder"
 )
 
 // ResponseWriter mocks http.ResponseWriter and records response for testing
@@ -72,7 +72,7 @@ func (r *responseWriter) Bytes() []byte {
 
 // NewTestService creates a service.Service for testing.
 func NewTestService(apiStyle string, desc ...interface{}) (service.Service, error) {
-	builder := nirvana.NewBuilder(apiStyle)
+	builder := builderutil.New(apiStyle)
 	builder.SetModifier(service.FirstContextParameter())
 	builder.AddFilter(service.RedirectTrailingSlash(), service.FillLeadingSlash(), service.ParseRequestForm())
 	if err := builder.AddDescriptor(desc...); err != nil {
@@ -85,7 +85,7 @@ func NewTestService(apiStyle string, desc ...interface{}) (service.Service, erro
 // filters. If modifier or filters is nil, default option will be used.
 func NewTestServiceWithConfig(apiStyle string, desc []interface{}, modifier service.DefinitionModifier,
 	filters []service.Filter) (service.Service, error) {
-	builder := nirvana.NewBuilder(apiStyle)
+	builder := builderutil.New(apiStyle)
 	if modifier == nil {
 		modifier = service.FirstContextParameter()
 	}
