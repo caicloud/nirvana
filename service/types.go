@@ -39,8 +39,6 @@ type Builder interface {
 	AddFilter(filters ...Filter)
 	// AddDescriptor adds descriptors to router.
 	AddDescriptor(descriptors ...interface{}) error
-	// Middlewares returns all router middlewares.
-	Middlewares() map[string][]definition.Middleware
 	// Definitions returns all definitions. If a modifier exists, it will be executed.
 	Definitions() map[string][]definition.Definition
 	// Build builds a service to handle request.

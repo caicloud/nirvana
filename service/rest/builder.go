@@ -177,19 +177,6 @@ func (b *builder) copyDefinition(d *definition.Definition, consumes []string, pr
 	return newOne
 }
 
-// Middlewares returns all router middlewares.
-func (b *builder) Middlewares() map[string][]definition.Middleware {
-	result := make(map[string][]definition.Middleware)
-	for path, bd := range b.bindings {
-		if len(bd.middlewares) > 0 {
-			middlewares := make([]definition.Middleware, len(bd.middlewares))
-			copy(middlewares, bd.middlewares)
-			result[path] = middlewares
-		}
-	}
-	return result
-}
-
 // Definitions returns all definitions. If a modifier exists, it will be executed.
 // All results are copied from original definitions. Modifications can not affect
 // original data.
