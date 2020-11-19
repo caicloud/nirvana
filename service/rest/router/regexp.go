@@ -21,6 +21,8 @@ import (
 	"reflect"
 	"regexp"
 	"strings"
+
+	"github.com/caicloud/nirvana/service/executor"
 )
 
 // index contains the key and it's index of the submatches.
@@ -58,7 +60,7 @@ func (n *regexpNode) Kind() RouteKind {
 // The container can save key-value pair from the path.
 // If the router is the leaf node to match the path, it will return
 // the first executor which Inspect() returns true.
-func (n *regexpNode) Match(ctx context.Context, c Container, path string) (Executor, error) {
+func (n *regexpNode) Match(ctx context.Context, c Container, path string) (executor.MiddlewareExecutor, error) {
 	// Match self
 	index := strings.IndexByte(path, '/')
 	if index < 0 {
@@ -70,15 +72,15 @@ func (n *regexpNode) Match(ctx context.Context, c Container, path string) (Execu
 		return nil, RouterNotFound.Error()
 	}
 	// Match progeny
-	var executor Executor
+	var e executor.MiddlewareExecutor
 	var err error
 	if index < len(path) {
-		executor, err = n.children.Match(ctx, c, path[index:])
+		e, err = n.children.Match(ctx, c, path[index:])
 		if err == nil {
-			executor, err = n.handler.pack(executor)
+			e, err = n.handler.pack(e)
 		}
 	} else {
-		executor, err = n.unionExecutor(ctx)
+		e, err = n.unionExecutor(ctx)
 	}
 
 	if err != nil {
@@ -90,7 +92,7 @@ func (n *regexpNode) Match(ctx context.Context, c Container, path string) (Execu
 	for _, i := range n.indices {
 		c.Set(i.Key, result[i.Pos])
 	}
-	return executor, nil
+	return e, nil
 }
 
 // Merge merges r to the current router. The type of r should be same
@@ -135,25 +137,25 @@ func (n *fullMatchRegexpNode) Kind() RouteKind {
 // The container can save key-value pair from the path.
 // If the router is the leaf node to match the path, it will return
 // the first executor which Inspect() returns true.
-func (n *fullMatchRegexpNode) Match(ctx context.Context, c Container, path string) (Executor, error) {
+func (n *fullMatchRegexpNode) Match(ctx context.Context, c Container, path string) (executor.MiddlewareExecutor, error) {
 	index := strings.IndexByte(path, '/')
-	var executor Executor
+	var e executor.MiddlewareExecutor
 	var err error
 	if index > 0 {
-		executor, err = n.children.Match(ctx, c, path[index:])
+		e, err = n.children.Match(ctx, c, path[index:])
 		if err == nil {
-			executor, err = n.handler.pack(executor)
+			e, err = n.handler.pack(e)
 		}
 	} else {
 		index = len(path)
-		executor, err = n.unionExecutor(ctx)
+		e, err = n.unionExecutor(ctx)
 	}
 	if err != nil {
 		// Unmatched
 		return nil, err
 	}
 	c.Set(n.key, path[:index])
-	return executor, nil
+	return e, nil
 }
 
 // Merge merges r to the current router. The type of r should be same

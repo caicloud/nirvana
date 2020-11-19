@@ -59,7 +59,7 @@ func (i *apiDocsInstaller) Install(builder service.Builder, cfg *nirvana.Config)
 			files[filename] = data
 		}
 
-		apiDescriptor := make([]definition.Descriptor, 0, len(files)+1)
+		apiDescriptor := make([]interface{}, 0, len(files)+1)
 		versions := make([]string, 0, len(files))
 		for v, data := range files {
 			versions = append(versions, v)

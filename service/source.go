@@ -65,7 +65,7 @@ func assignable(defaultValue interface{}, target reflect.Type) error {
 	}
 	value := reflect.ValueOf(defaultValue)
 	if !value.Type().AssignableTo(target) {
-		return unassignableType.Error(value.Type(), target)
+		return UnassignableType.Error(value.Type(), target)
 	}
 	return nil
 }
@@ -73,7 +73,7 @@ func assignable(defaultValue interface{}, target reflect.Type) error {
 func convertible(target reflect.Type) error {
 	c := ConverterFor(target)
 	if c == nil {
-		return noConverter.Error(target)
+		return NoConverter.Error(target)
 	}
 	return nil
 }
@@ -245,7 +245,7 @@ func (g *FileParameterGenerator) Validate(name string, defaultValue interface{},
 		return err
 	}
 	if !reflect.TypeOf((*multipart.File)(nil)).Elem().AssignableTo(target) {
-		return unassignableType.Error("multipart.File", target)
+		return UnassignableType.Error("multipart.File", target)
 	}
 	return nil
 }
@@ -365,7 +365,7 @@ func (g *PrefabParameterGenerator) Validate(name string, defaultValue interface{
 		return noPrefab.Error(name)
 	}
 	if !prefab.Type().AssignableTo(target) {
-		return unassignableType.Error(prefab.Type(), target)
+		return UnassignableType.Error(prefab.Type(), target)
 	}
 	return nil
 }
@@ -409,7 +409,7 @@ func (g *AutoParameterGenerator) Validate(name string, defaultValue interface{},
 		}
 		generator := ParameterGeneratorFor(source)
 		if generator == nil {
-			return noParameterGenerator.Error(source)
+			return NoParameterGenerator.Error(source)
 		}
 
 		var value interface{}
@@ -459,7 +459,7 @@ func (g *AutoParameterGenerator) generate(ctx context.Context, vc ValueContainer
 		}
 		generator := ParameterGeneratorFor(source)
 		if generator == nil {
-			return noParameterGenerator.Error(source)
+			return NoParameterGenerator.Error(source)
 		}
 		ins, err := generator.Generate(ctx, vc, consumers, name, field.Type)
 		if err != nil {

@@ -23,10 +23,10 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/caicloud/nirvana/definition"
 	"github.com/caicloud/nirvana/errors"
 	"github.com/caicloud/nirvana/log"
 	"github.com/caicloud/nirvana/service"
+	builderutil "github.com/caicloud/nirvana/service/builder"
 
 	// This blank import will make it in the dependencies of projects using Nirvana
 	// for API docs generation.
@@ -52,6 +52,8 @@ type Server interface {
 
 // Config describes configuration of server.
 type Config struct {
+	// apiStyle makes nirvana serve as REST or RPC style, default is REST.
+	apiStyle string
 	// tls cert file
 	certFile string
 	// tls ket file
@@ -63,7 +65,7 @@ type Config struct {
 	// logger is used to output info inside framework.
 	logger log.Logger
 	// descriptors contains all APIs.
-	descriptors []definition.Descriptor
+	descriptors []interface{}
 	// filters is http filters.
 	filters []service.Filter
 	// modifiers is definition modifiers
@@ -175,6 +177,7 @@ func NewDefaultConfig() *Config {
 // modifiers for specific scenario, please use NewDefaultConfig().
 func NewConfig() *Config {
 	return &Config{
+		apiStyle:  builderutil.APIStyleREST,
 		port:      8080,
 		logger:    &log.SilentLogger{},
 		configSet: make(map[string]interface{}),
@@ -214,7 +217,7 @@ func (s *server) Builder() (builder service.Builder, cleaner func() error, err e
 	if s.builder != nil {
 		return s.builder, s.cleaner, nil
 	}
-	builder = service.NewBuilder()
+	builder = builderutil.New(s.config.apiStyle)
 	builder.SetLogger(s.config.logger)
 	builder.AddFilter(s.config.filters...)
 	builder.SetModifier(s.config.modifiers.Combine())
@@ -328,6 +331,14 @@ func RegisterConfigInstaller(ci ConfigInstaller) {
 	installers[ci.Name()] = ci
 }
 
+// APIStyle returns a configurer to set api style into config.
+func APIStyle(apiStyle string) Configurer {
+	return func(c *Config) error {
+		c.apiStyle = apiStyle
+		return nil
+	}
+}
+
 // IP returns a configurer to set ip into config.
 func IP(ip string) Configurer {
 	return func(c *Config) error {
@@ -366,7 +377,7 @@ func Logger(logger log.Logger) Configurer {
 }
 
 // Descriptor returns a configurer to add descriptors into config.
-func Descriptor(descriptors ...definition.Descriptor) Configurer {
+func Descriptor(descriptors ...interface{}) Configurer {
 	return func(c *Config) error {
 		c.descriptors = append(c.descriptors, descriptors...)
 		return nil

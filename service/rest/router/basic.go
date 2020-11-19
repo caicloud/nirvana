@@ -20,24 +20,27 @@ import (
 	"context"
 	"reflect"
 	"sort"
+
+	"github.com/caicloud/nirvana/definition"
+	"github.com/caicloud/nirvana/service/executor"
 )
 
 // handler contains middlewares and executor.
 type handler struct {
-	middlewares []Middleware
+	middlewares []definition.Middleware
 	inspector   Inspector
 }
 
 // AddMiddleware adds middleware to the router node.
 // If the router matches a path, all middlewares in the router
 // will be executed by the returned executor.
-func (h *handler) AddMiddleware(ms ...Middleware) {
+func (h *handler) AddMiddleware(ms ...definition.Middleware) {
 	h.middlewares = append(h.middlewares, ms...)
 }
 
 // Middlewares returns all middlewares of the router.
 // Don't modify the returned values.
-func (h *handler) Middlewares() []Middleware {
+func (h *handler) Middlewares() []definition.Middleware {
 	return h.middlewares
 }
 
@@ -66,18 +69,18 @@ func (h *handler) Merge(o *handler) error {
 }
 
 // pack packs middlewares with the executor.
-func (h *handler) pack(e Executor) (Executor, error) {
+func (h *handler) pack(e executor.MiddlewareExecutor) (executor.MiddlewareExecutor, error) {
 	if e == nil {
 		return nil, NoExecutor.Error()
 	}
 	if len(h.middlewares) <= 0 {
 		return e, nil
 	}
-	return newMiddlewareExecutor(h.middlewares, e), nil
+	return executor.NewMiddlewareExecutor(h.middlewares, e), nil
 }
 
 // unionExecutor packs middlewares and own executor.
-func (h *handler) unionExecutor(ctx context.Context) (Executor, error) {
+func (h *handler) unionExecutor(ctx context.Context) (executor.MiddlewareExecutor, error) {
 	if h.inspector == nil {
 		return nil, NoInspector.Error()
 	}
@@ -132,7 +135,7 @@ func (p *children) findStringRouter(char byte) Router {
 // The container can save key-value pair from the path.
 // If the router is the leaf node to match the path, it will return
 // the first executor which Inspect() returns true.
-func (p *children) Match(ctx context.Context, c Container, path string) (Executor, error) {
+func (p *children) Match(ctx context.Context, c Container, path string) (executor.MiddlewareExecutor, error) {
 	if len(path) <= 0 {
 		return nil, RouterNotFound.Error()
 	}
@@ -152,8 +155,8 @@ func (p *children) Match(ctx context.Context, c Container, path string) (Executo
 	// Match string routers
 	if len(p.stringRouters) > 0 {
 		if router := p.findStringRouter(path[0]); router != nil {
-			if executor, err := router.Match(ctx, c, path); err == nil {
-				return executor, nil
+			if e, err := router.Match(ctx, c, path); err == nil {
+				return e, nil
 			} else if !RouterNotFound.Derived(err) &&
 				!NoInspector.Derived(err) &&
 				!NoExecutor.Derived(err) {
@@ -164,8 +167,8 @@ func (p *children) Match(ctx context.Context, c Container, path string) (Executo
 
 	// Match regexp routers
 	for _, regexp := range p.regexpRouters {
-		if executor, err := regexp.Match(ctx, c, path); err == nil {
-			return executor, nil
+		if e, err := regexp.Match(ctx, c, path); err == nil {
+			return e, nil
 		} else if !RouterNotFound.Derived(err) &&
 			!NoInspector.Derived(err) &&
 			!NoExecutor.Derived(err) {
@@ -175,8 +178,8 @@ func (p *children) Match(ctx context.Context, c Container, path string) (Executo
 
 	// Match path router
 	if p.pathRouter != nil {
-		if executor, err := p.pathRouter.Match(ctx, c, path); err == nil {
-			return executor, nil
+		if e, err := p.pathRouter.Match(ctx, c, path); err == nil {
+			return e, nil
 		} else if !RouterNotFound.Derived(err) &&
 			!NoInspector.Derived(err) &&
 			!NoExecutor.Derived(err) {

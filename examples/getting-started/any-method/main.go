@@ -41,8 +41,8 @@ func main() {
 		log.Fatal(err)
 	}
 
-	descriptors := []definition.Descriptor{
-		{
+	descriptors := []interface{}{
+		definition.Descriptor{
 			Path:        "/",
 			Description: "hello API",
 			Definitions: []definition.Definition{
@@ -57,7 +57,7 @@ func main() {
 				},
 			},
 		},
-		{
+		definition.Descriptor{
 			Path:        "/proxy",
 			Description: "proxy API",
 			Definitions: []definition.Definition{
