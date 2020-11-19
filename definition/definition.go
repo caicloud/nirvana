@@ -224,14 +224,14 @@ type Definition struct {
 	Tags []string
 	// ErrorProduces is used to generate data for error. If this field is empty,
 	// it means that this field equals to Produces.
-	// In some cases, succeessful data and error data should be generated in
+	// In some cases, successful data and error data should be generated in
 	// different ways.
 	ErrorProduces []string
 	// Function is a function handler. It must be func type.
 	Function interface{}
 	// Parameters describes function parameters.
 	Parameters []Parameter
-	// Results describes function retrun values.
+	// Results describes function return values.
 	Results []Result
 	// Summary is a one-line brief description of this definition.
 	Summary string
