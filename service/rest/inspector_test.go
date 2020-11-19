@@ -22,7 +22,6 @@ import (
 
 	"github.com/caicloud/nirvana/definition"
 	"github.com/caicloud/nirvana/errors"
-	"github.com/caicloud/nirvana/log"
 	"github.com/caicloud/nirvana/service"
 	"github.com/caicloud/nirvana/service/executor"
 )
@@ -33,7 +32,7 @@ type definitionMap struct {
 }
 
 func TestAddDefinition(t *testing.T) {
-	inspector := newInspector("/test", &log.SilentLogger{})
+	inspector := newInspector("/test")
 	units := []definitionMap{
 		{
 			definition.Definition{
@@ -158,7 +157,7 @@ func TestAddDefinition(t *testing.T) {
 				Function: func(a int) {
 				},
 			},
-			service.UnassignableType,
+			executor.InvalidParameter,
 		},
 		{
 			definition.Definition{
@@ -175,7 +174,7 @@ func TestAddDefinition(t *testing.T) {
 				Function: func(a []*int) {
 				},
 			},
-			service.NoConverter,
+			executor.InvalidParameter,
 		},
 		{
 			definition.Definition{
@@ -197,7 +196,7 @@ func TestAddDefinition(t *testing.T) {
 				Function: func(a []int) {
 				},
 			},
-			executor.InvalidOperatorOutType,
+			executor.InvalidOperatorsForParameter,
 		},
 		{
 			definition.Definition{
@@ -222,7 +221,7 @@ func TestAddDefinition(t *testing.T) {
 				Function: func(a []int) {
 				},
 			},
-			executor.InvalidOperatorInType,
+			executor.InvalidOperatorsForParameter,
 		},
 		{
 			definition.Definition{
@@ -273,7 +272,7 @@ func TestAddDefinition(t *testing.T) {
 					return 0
 				},
 			},
-			executor.InvalidOperatorInType,
+			executor.InvalidOperatorsForResult,
 		},
 		{
 			definition.Definition{

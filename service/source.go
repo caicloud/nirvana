@@ -65,7 +65,7 @@ func assignable(defaultValue interface{}, target reflect.Type) error {
 	}
 	value := reflect.ValueOf(defaultValue)
 	if !value.Type().AssignableTo(target) {
-		return UnassignableType.Error(value.Type(), target)
+		return unassignableType.Error(value.Type(), target)
 	}
 	return nil
 }
@@ -73,7 +73,7 @@ func assignable(defaultValue interface{}, target reflect.Type) error {
 func convertible(target reflect.Type) error {
 	c := ConverterFor(target)
 	if c == nil {
-		return NoConverter.Error(target)
+		return noConverter.Error(target)
 	}
 	return nil
 }
@@ -245,7 +245,7 @@ func (g *FileParameterGenerator) Validate(name string, defaultValue interface{},
 		return err
 	}
 	if !reflect.TypeOf((*multipart.File)(nil)).Elem().AssignableTo(target) {
-		return UnassignableType.Error("multipart.File", target)
+		return unassignableType.Error("multipart.File", target)
 	}
 	return nil
 }
@@ -365,7 +365,7 @@ func (g *PrefabParameterGenerator) Validate(name string, defaultValue interface{
 		return noPrefab.Error(name)
 	}
 	if !prefab.Type().AssignableTo(target) {
-		return UnassignableType.Error(prefab.Type(), target)
+		return unassignableType.Error(prefab.Type(), target)
 	}
 	return nil
 }
