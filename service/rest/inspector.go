@@ -20,21 +20,18 @@ import (
 	"context"
 
 	"github.com/caicloud/nirvana/definition"
-	"github.com/caicloud/nirvana/log"
 	"github.com/caicloud/nirvana/service"
 	"github.com/caicloud/nirvana/service/executor"
 )
 
 type inspector struct {
 	path      string
-	logger    log.Logger
 	executors map[string][]executor.Executor
 }
 
-func newInspector(path string, logger log.Logger) *inspector {
+func newInspector(path string) *inspector {
 	return &inspector{
 		path:      path,
-		logger:    logger,
 		executors: make(map[string][]executor.Executor),
 	}
 }
@@ -49,7 +46,7 @@ func (i *inspector) addDefinition(d definition.Definition) error {
 	if method == "" {
 		return executor.DefinitionNoMethod.Error(d.Method, i.path)
 	}
-	c, err := executor.DefinitionToExecutor(i.logger, i.path, 0, d)
+	c, err := executor.DefinitionToExecutor(i.path, d, 0)
 	if err != nil {
 		return err
 	}

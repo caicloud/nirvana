@@ -163,12 +163,12 @@ func (b *builder) Build() (service.Service, error) {
 	}
 
 	var err error
-	for p, bd := range b.bindings {
-		b.logger.V(log.LevelDebug).Infof("Path: %s, Consumes: %v, Produces: %v", p, bd.definition.Consumes, bd.definition.Produces)
+	for path, bd := range b.bindings {
+		b.logger.V(log.LevelDebug).Infof("Path: %s, Consumes: %v, Produces: %v", path, bd.definition.Consumes, bd.definition.Produces)
 		if b.modifier != nil {
 			b.modifier(&bd.definition)
 		}
-		bd.executor, err = executor.DefinitionToExecutor(b.logger, p, http.StatusOK, bd.definition)
+		bd.executor, err = executor.DefinitionToExecutor(path, bd.definition, http.StatusOK)
 		if err != nil {
 			return nil, err
 		}

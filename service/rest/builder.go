@@ -218,7 +218,7 @@ func (b *builder) Build() (service.Service, error) {
 			if len(path) > 1 && strings.HasSuffix(path, "/") {
 				b.logger.Warningf("If RedirectTrailingSlash filter is enabled, following %d definition(s) would not be executed", len(bd.definitions))
 			}
-			inspector := newInspector(path, b.logger)
+			inspector := newInspector(path)
 			for _, d := range bd.definitions {
 				b.logger.V(log.LevelDebug).Infof("  Method: %s Consumes: %v Produces: %v",
 					d.Method, d.Consumes, d.Produces)

@@ -54,12 +54,18 @@ var (
 		"Nirvana:Service:NoDestinationHandler",
 		"no destination handler for destination ${destination}, you can define it with descriptor->definition[]->results[]->destination",
 	)
-	// InvalidOperatorInType represents invalid operator error.
-	InvalidOperatorInType = errors.InternalServerError.Build("Nirvana:Service:InvalidOperatorInType", "the type ${type} is not compatible to the in type of the ${index} operator")
-	// InvalidOperatorOutType represents invalid operator error.
-	InvalidOperatorOutType = errors.InternalServerError.Build("Nirvana:Service:InvalidOperatorOutType", "the out type of the ${index} operator is not compatible to the type ${type}")
+	// InvalidParameter represents invalid parameter error.
+	InvalidParameter = errors.InternalServerError.Build("Nirvana:Service:InvalidParameter", "can't validate ${order} parameter of function ${name}: ${err}")
+	// InvalidResult represents invalid parameter error.
+	InvalidResult = errors.InternalServerError.Build("Nirvana:Service:InvalidResult", "can't validate ${order} result of function ${name}: ${err}")
+	// InvalidOperatorsForParameter represents invalid operators error.
+	InvalidOperatorsForParameter = errors.InternalServerError.Build("Nirvana:Service:InvalidOperatorsForParameter", "can't validate operators for ${order} parameter of function ${name}: ${err}")
+	// InvalidOperatorsForResult represents invalid operators error.
+	InvalidOperatorsForResult = errors.InternalServerError.Build("Nirvana:Service:InvalidOperatorsForResult", "can't validate operators for ${order} result of function ${name}: ${err}")
 )
 
 var (
-	requiredField = errors.InternalServerError.Build("Nirvana:Service:RequiredField", "required field ${field} in ${source} but got empty")
+	requiredField          = errors.InternalServerError.Build("Nirvana:Service:RequiredField", "required field ${field} in ${source} but got empty")
+	invalidOperatorInType  = errors.InternalServerError.Build("Nirvana:Service:invalidOperatorInType", "the type ${type} is not compatible to the in type of the ${index} operator")
+	invalidOperatorOutType = errors.InternalServerError.Build("Nirvana:Service:invalidOperatorOutType", "the out type of the ${index} operator is not compatible to the type ${type}")
 )

@@ -101,10 +101,6 @@ var (
 	InvalidService = errors.InternalServerError.Build("Nirvana:Service:NoResponse", "no response")
 	// NoContext means can't find http context.
 	NoContext = errors.InternalServerError.Build("Nirvana:Service:NoContext", "can't find http context, you should define `ctx context.Context` as the first parameter of your handler function")
-	// UnassignableType represents unassignable type error.
-	UnassignableType = errors.InternalServerError.Build("Nirvana:Service:UnassignableType", "type ${typeA} can't assign to ${typeB}")
-	// NoConverter represents no converter for type error.
-	NoConverter = errors.InternalServerError.Build("Nirvana:Service:UnassignableType", "no converter for type ${type}")
 	// NoParameterGenerator represents no parameter generator error.
 	NoParameterGenerator = errors.InternalServerError.Build("Nirvana:Service:NoParameterGenerator", "no parameter generator for source ${source}")
 )
@@ -126,4 +122,6 @@ var (
 	noName                 = errors.InternalServerError.Build("Nirvana:Service:noName", "${source} must have a name")
 	invalidTypeForConsumer = errors.InternalServerError.Build("Nirvana:Service:invalidTypeForConsumer", "consumer ${content} can't consume data for type ${type}")
 	invalidTypeForProducer = errors.InternalServerError.Build("Nirvana:Service:invalidTypeForProducer", "producer ${content} can't produce data for type ${type}")
+	unassignableType       = errors.InternalServerError.Build("Nirvana:Service:unassignableType", "type ${typeA} can't assign to ${typeB}")
+	noConverter            = errors.InternalServerError.Build("Nirvana:Service:unassignableType", "no converter for type ${type}")
 )
