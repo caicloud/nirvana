@@ -30,11 +30,17 @@ type vc struct{}
 
 const testKey = "test"
 
-func (v *vc) Path(key string) (string, bool) {
+func (v *vc) Set(key, value string) {}
+
+func (v *vc) Get(key string) (string, bool) {
 	if key == testKey {
 		return "path", true
 	}
 	return "", false
+}
+
+func (v *vc) Path(key string) (string, bool) {
+	return v.Get(key)
 }
 
 func (v *vc) Query(key string) ([]string, bool) {

@@ -22,29 +22,16 @@ import (
 	"reflect"
 	"regexp"
 	"strings"
+
+	"github.com/caicloud/nirvana/definition"
+	"github.com/caicloud/nirvana/service/executor"
 )
-
-// RoutingChain contains the call chain of middlewares and executor.
-type RoutingChain interface {
-	// Continue continues to execute the next middleware or executor.
-	Continue(context.Context) error
-}
-
-// Middleware describes the form of middlewares. If you want to
-// carry on, call RoutingChain.Continue() and pass the context.
-type Middleware func(context.Context, RoutingChain) error
 
 // Inspector can select an executor to execute.
 type Inspector interface {
 	// Inspect finds a valid executor to execute target context.
 	// It returns an error if it can't find a valid executor.
-	Inspect(context.Context) (Executor, error)
-}
-
-// Executor executs with a context.
-type Executor interface {
-	// Execute executes with context.
-	Execute(context.Context) error
+	Inspect(context.Context) (executor.MiddlewareExecutor, error)
 }
 
 // RouteKind is kind of routers.
@@ -80,14 +67,14 @@ type Router interface {
 	// The container can save key-value pair from the path.
 	// If the router is the leaf node to match the path, it will return
 	// the first executor which Inspect() returns true.
-	Match(ctx context.Context, c Container, path string) (Executor, error)
+	Match(ctx context.Context, c Container, path string) (executor.MiddlewareExecutor, error)
 	// AddMiddleware adds middleware to the router node.
 	// If the router matches a path, all middlewares in the router
 	// will be executed by the returned executor.
-	AddMiddleware(ms ...Middleware)
+	AddMiddleware(ms ...definition.Middleware)
 	// Middlewares returns all middlewares of the router.
 	// Don't modify the returned values.
-	Middlewares() []Middleware
+	Middlewares() []definition.Middleware
 	// SetInspector sets inspector to the router node.
 	SetInspector(inspector Inspector)
 	// Inspector gets inspector from the router node.

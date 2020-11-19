@@ -32,6 +32,7 @@ import (
 	"github.com/caicloud/nirvana/definition"
 	"github.com/caicloud/nirvana/log"
 	"github.com/caicloud/nirvana/service"
+	"github.com/caicloud/nirvana/service/rest"
 )
 
 const tenantHeader = "X-Tenant"
@@ -64,7 +65,7 @@ func mustURL(rawURL string) *url.URL {
 }
 
 func buildService(middleware definition.Middleware) (service.Service, error) {
-	builder := service.NewBuilder()
+	builder := rest.NewBuilder()
 	builder.SetModifier(service.FirstContextParameter())
 	if err := builder.AddDescriptor(
 		definition.Descriptor{

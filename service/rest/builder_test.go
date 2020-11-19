@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package service
+package rest
 
 import (
 	"bytes"
@@ -28,6 +28,7 @@ import (
 
 	"github.com/caicloud/nirvana/definition"
 	"github.com/caicloud/nirvana/errors"
+	"github.com/caicloud/nirvana/service"
 )
 
 type responseWriter struct {
@@ -102,7 +103,7 @@ type Application struct {
 }
 
 func Handle(ctx context.Context, userAgent string, target1 int, target2 bool, app *Application) (*Application, error) {
-	path := HTTPContextFrom(ctx).RoutePath()
+	path := service.HTTPContextFrom(ctx).RoutePath()
 	if path != "/api/v1/{target1}/{target2}" {
 		return nil, fmt.Errorf("http abstract path is not correct: %s", path)
 	}
@@ -130,8 +131,8 @@ func TestServer(t *testing.T) {
 		ContentLength: int64(len(data)),
 	}
 	builder := NewBuilder()
-	builder.SetModifier(FirstContextParameter())
-	builder.AddFilter(RedirectTrailingSlash(), FillLeadingSlash(), ParseRequestForm())
+	builder.SetModifier(service.FirstContextParameter())
+	builder.AddFilter(service.RedirectTrailingSlash(), service.FillLeadingSlash(), service.ParseRequestForm())
 	err := builder.AddDescriptor(desc)
 	if err != nil {
 		t.Fatal(err)
@@ -225,7 +226,7 @@ func TestChildrenPath(t *testing.T) {
 		},
 	}
 	builder := NewBuilder()
-	builder.SetModifier(FirstContextParameter())
+	builder.SetModifier(service.FirstContextParameter())
 	err := builder.AddDescriptor(childrenDesc)
 	if err != nil {
 		t.Fatal(err)
@@ -292,7 +293,7 @@ func TestHomePath(t *testing.T) {
 		},
 	}
 	builder := NewBuilder()
-	builder.SetModifier(FirstContextParameter())
+	builder.SetModifier(service.FirstContextParameter())
 	err := builder.AddDescriptor(homeDesc)
 	if err != nil {
 		t.Fatal(err)
@@ -387,7 +388,7 @@ func TestDefaultParams(t *testing.T) {
 		},
 	}
 	builder := NewBuilder()
-	builder.SetModifier(FirstContextParameter())
+	builder.SetModifier(service.FirstContextParameter())
 	err := builder.AddDescriptor(defaultParamsDesc)
 	if err != nil {
 		t.Fatal(err)
@@ -502,8 +503,8 @@ func BenchmarkServer(b *testing.B) {
 		ContentLength: int64(len(data)),
 	}
 	builder := NewBuilder()
-	builder.SetModifier(FirstContextParameter())
-	builder.AddFilter(RedirectTrailingSlash(), FillLeadingSlash(), ParseRequestForm())
+	builder.SetModifier(service.FirstContextParameter())
+	builder.AddFilter(service.RedirectTrailingSlash(), service.FillLeadingSlash(), service.ParseRequestForm())
 	err := builder.AddDescriptor(desc)
 	if err != nil {
 		b.Fatal(err)

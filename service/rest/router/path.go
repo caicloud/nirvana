@@ -19,6 +19,8 @@ package router
 import (
 	"context"
 	"reflect"
+
+	"github.com/caicloud/nirvana/service/executor"
 )
 
 // pathNode matches all rest path.
@@ -43,7 +45,7 @@ func (n *pathNode) Kind() RouteKind {
 // The container can save key-value pair from the path.
 // If the router is the leaf node to match the path, it will return
 // the first executor which Inspect() returns true.
-func (n *pathNode) Match(ctx context.Context, c Container, path string) (Executor, error) {
+func (n *pathNode) Match(ctx context.Context, c Container, path string) (executor.MiddlewareExecutor, error) {
 	c.Set(n.key, path)
 	return n.handler.unionExecutor(ctx)
 }

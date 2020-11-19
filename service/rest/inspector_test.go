@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package service
+package rest
 
 import (
 	"context"
@@ -23,6 +23,8 @@ import (
 	"github.com/caicloud/nirvana/definition"
 	"github.com/caicloud/nirvana/errors"
 	"github.com/caicloud/nirvana/log"
+	"github.com/caicloud/nirvana/service"
+	"github.com/caicloud/nirvana/service/executor"
 )
 
 type definitionMap struct {
@@ -37,20 +39,20 @@ func TestAddDefinition(t *testing.T) {
 			definition.Definition{
 				Method: definition.Method(""),
 			},
-			definitionNoMethod,
+			executor.DefinitionNoMethod,
 		},
 		{
 			definition.Definition{
 				Method: definition.Get,
 			},
-			definitionNoConsumes,
+			executor.DefinitionNoConsumes,
 		},
 		{
 			definition.Definition{
 				Method:   definition.Get,
 				Consumes: []string{definition.MIMENone},
 			},
-			definitionNoProduces,
+			executor.DefinitionNoProduces,
 		},
 		{
 			definition.Definition{
@@ -58,7 +60,7 @@ func TestAddDefinition(t *testing.T) {
 				Consumes: []string{definition.MIMENone},
 				Produces: []string{definition.MIMEJSON},
 			},
-			definitionNoErrorProduces,
+			executor.DefinitionNoErrorProduces,
 		},
 
 		{
@@ -68,7 +70,7 @@ func TestAddDefinition(t *testing.T) {
 				Produces:      []string{definition.MIMEJSON},
 				ErrorProduces: []string{definition.MIMEJSON},
 			},
-			definitionNoFunction,
+			executor.DefinitionNoFunction,
 		},
 		{
 			definition.Definition{
@@ -78,7 +80,7 @@ func TestAddDefinition(t *testing.T) {
 				ErrorProduces: []string{definition.MIMEJSON},
 				Function:      1,
 			},
-			definitionInvalidFunctionType,
+			executor.DefinitionInvalidFunctionType,
 		},
 		{
 			definition.Definition{
@@ -89,7 +91,7 @@ func TestAddDefinition(t *testing.T) {
 				Function: func() {
 				},
 			},
-			definitionNoConsumer,
+			executor.DefinitionNoConsumer,
 		},
 		{
 			definition.Definition{
@@ -100,7 +102,7 @@ func TestAddDefinition(t *testing.T) {
 				Function: func() {
 				},
 			},
-			definitionNoProducer,
+			executor.DefinitionNoProducer,
 		},
 		{
 			definition.Definition{
@@ -111,7 +113,7 @@ func TestAddDefinition(t *testing.T) {
 				Function: func() {
 				},
 			},
-			definitionNoProducer,
+			executor.DefinitionNoProducer,
 		},
 		{
 			definition.Definition{
@@ -122,7 +124,7 @@ func TestAddDefinition(t *testing.T) {
 				Function: func(ctx context.Context) {
 				},
 			},
-			definitionUnmatchedParameters,
+			executor.DefinitionUnmatchedParameters,
 		},
 		{
 			definition.Definition{
@@ -138,7 +140,7 @@ func TestAddDefinition(t *testing.T) {
 				Function: func(a int) {
 				},
 			},
-			noParameterGenerator,
+			service.NoParameterGenerator,
 		},
 		{
 			definition.Definition{
@@ -156,7 +158,7 @@ func TestAddDefinition(t *testing.T) {
 				Function: func(a int) {
 				},
 			},
-			unassignableType,
+			service.UnassignableType,
 		},
 		{
 			definition.Definition{
@@ -173,7 +175,7 @@ func TestAddDefinition(t *testing.T) {
 				Function: func(a []*int) {
 				},
 			},
-			noConverter,
+			service.NoConverter,
 		},
 		{
 			definition.Definition{
@@ -195,7 +197,7 @@ func TestAddDefinition(t *testing.T) {
 				Function: func(a []int) {
 				},
 			},
-			invalidOperatorOutType,
+			executor.InvalidOperatorOutType,
 		},
 		{
 			definition.Definition{
@@ -220,7 +222,7 @@ func TestAddDefinition(t *testing.T) {
 				Function: func(a []int) {
 				},
 			},
-			invalidOperatorInType,
+			executor.InvalidOperatorInType,
 		},
 		{
 			definition.Definition{
@@ -232,7 +234,7 @@ func TestAddDefinition(t *testing.T) {
 					return 0
 				},
 			},
-			definitionUnmatchedResults,
+			executor.DefinitionUnmatchedResults,
 		},
 		{
 			definition.Definition{
@@ -249,7 +251,7 @@ func TestAddDefinition(t *testing.T) {
 					return 0
 				},
 			},
-			noDestinationHandler,
+			executor.NoDestinationHandler,
 		},
 		{
 			definition.Definition{
@@ -271,7 +273,7 @@ func TestAddDefinition(t *testing.T) {
 					return 0
 				},
 			},
-			invalidOperatorInType,
+			executor.InvalidOperatorInType,
 		},
 		{
 			definition.Definition{
@@ -293,7 +295,7 @@ func TestAddDefinition(t *testing.T) {
 				Function: func() {
 				},
 			},
-			definitionConflict,
+			executor.DefinitionConflict,
 		},
 	}
 

@@ -14,41 +14,18 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package service
+package rest
 
 import (
-	"context"
+	"fmt"
 	"net/http"
 	"strings"
 
 	"github.com/caicloud/nirvana/definition"
 	"github.com/caicloud/nirvana/log"
-	"github.com/caicloud/nirvana/service/router"
+	"github.com/caicloud/nirvana/service"
+	"github.com/caicloud/nirvana/service/rest/router"
 )
-
-// Builder builds service.
-type Builder interface {
-	// Logger returns logger of builder.
-	Logger() log.Logger
-	// SetLogger sets logger to server.
-	SetLogger(logger log.Logger)
-	// Modifier returns modifier of builder.
-	Modifier() DefinitionModifier
-	// SetModifier sets definition modifier.
-	SetModifier(m DefinitionModifier)
-	// Filters returns all request filters.
-	Filters() []Filter
-	// AddFilter add filters to filter requests.
-	AddFilter(filters ...Filter)
-	// AddDescriptor adds descriptors to router.
-	AddDescriptor(descriptors ...definition.Descriptor) error
-	// Middlewares returns all router middlewares.
-	Middlewares() map[string][]definition.Middleware
-	// Definitions returns all definitions. If a modifier exists, it will be executed.
-	Definitions() map[string][]definition.Definition
-	// Build builds a service to handle request.
-	Build() (Service, error)
-}
 
 type binding struct {
 	middlewares []definition.Middleware
@@ -57,13 +34,13 @@ type binding struct {
 
 type builder struct {
 	bindings map[string]*binding
-	modifier DefinitionModifier
-	filters  []Filter
+	modifier service.DefinitionModifier
+	filters  []service.Filter
 	logger   log.Logger
 }
 
 // NewBuilder creates a service builder.
-func NewBuilder() Builder {
+func NewBuilder() service.Builder {
 	return &builder{
 		bindings: make(map[string]*binding),
 		logger:   &log.SilentLogger{},
@@ -71,14 +48,14 @@ func NewBuilder() Builder {
 }
 
 // Filters returns all request filters.
-func (b *builder) Filters() []Filter {
-	result := make([]Filter, len(b.filters))
+func (b *builder) Filters() []service.Filter {
+	result := make([]service.Filter, len(b.filters))
 	copy(result, b.filters)
 	return result
 }
 
 // AddFilter add filters to filter requests.
-func (b *builder) AddFilter(filters ...Filter) {
+func (b *builder) AddFilter(filters ...service.Filter) {
 	b.filters = append(b.filters, filters...)
 }
 
@@ -97,19 +74,23 @@ func (b *builder) SetLogger(logger log.Logger) {
 }
 
 // Modifier returns modifier of builder.
-func (b *builder) Modifier() DefinitionModifier {
+func (b *builder) Modifier() service.DefinitionModifier {
 	return b.modifier
 }
 
 // SetModifier sets definition modifier.
-func (b *builder) SetModifier(m DefinitionModifier) {
+func (b *builder) SetModifier(m service.DefinitionModifier) {
 	b.modifier = m
 }
 
 // AddDescriptor adds descriptors to router.
-func (b *builder) AddDescriptor(descriptors ...definition.Descriptor) error {
+func (b *builder) AddDescriptor(descriptors ...interface{}) error {
 	for _, descriptor := range descriptors {
-		b.addDescriptor("", nil, nil, nil, descriptor)
+		d, ok := descriptor.(definition.Descriptor)
+		if !ok {
+			return fmt.Errorf("not a Descriptor")
+		}
+		b.addDescriptor("", nil, nil, nil, d)
 	}
 	return nil
 }
@@ -231,7 +212,7 @@ func (b *builder) Definitions() map[string][]definition.Definition {
 }
 
 // Build builds a service to handle request.
-func (b *builder) Build() (Service, error) {
+func (b *builder) Build() (service.Service, error) {
 	if len(b.bindings) <= 0 {
 		return nil, noRouter.Error()
 	}
@@ -265,10 +246,7 @@ func (b *builder) Build() (Service, error) {
 			leaf.SetInspector(inspector)
 		}
 		for _, m := range bd.middlewares {
-			m := m
-			leaf.AddMiddleware(func(ctx context.Context, chain router.RoutingChain) error {
-				return m(ctx, chain)
-			})
+			leaf.AddMiddleware(m)
 		}
 		if root == nil {
 			root = top
@@ -276,65 +254,44 @@ func (b *builder) Build() (Service, error) {
 			return nil, err
 		}
 	}
-	s := &service{
+	s := &restService{
 		root:      root,
 		filters:   b.filters,
 		logger:    b.logger,
-		producers: AllProducers(),
+		producers: service.AllProducers(),
 	}
 	return s, nil
 }
 
-// Service handles HTTP requests.
-//
-// Workflow:
-//            Service.ServeHTTP()
-//          ----------------------
-//          ↓                    ↑
-// |-----Filters------|          ↑
-//          ↓                    ↑
-// |---Router Match---|          ↑
-//          ↓                    ↑
-// |-------------Middlewares------------|
-//          ↓                    ↑
-// |-------------Executor---------------|
-//          ↓                    ↑
-// |-ParameterGenerators-|-DestinationHandlers-|
-//          ↓                    ↑
-// |------------User Function-----------|
-type Service interface {
-	http.Handler
-}
-
-type service struct {
+type restService struct {
 	root      router.Router
-	filters   []Filter
+	filters   []service.Filter
 	logger    log.Logger
-	producers []Producer
+	producers []service.Producer
 }
 
-func (s *service) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
+func (s *restService) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 	for _, f := range s.filters {
 		if !f(resp, req) {
 			return
 		}
 	}
-	ctx := newHTTPContext(resp, req)
+	ctx := service.NewHTTPContext(resp, req)
 
-	executor, err := s.root.Match(ctx, &ctx.container, req.URL.EscapedPath())
+	executor, err := s.root.Match(ctx, ctx.ValueContainer(), req.URL.EscapedPath())
 	if err != nil {
-		if err := writeError(ctx, s.producers, err); err != nil {
+		if err := service.WriteError(ctx, s.producers, err); err != nil {
 			s.logger.Error(err)
 		}
 		return
 	}
 	err = executor.Execute(ctx)
-	if err == nil && ctx.response.HeaderWritable() {
-		err = invalidService.Error()
+	if err == nil && ctx.ResponseWriter().HeaderWritable() {
+		err = service.InvalidService.Error()
 	}
 	if err != nil {
-		if ctx.response.HeaderWritable() {
-			if err := writeError(ctx, s.producers, err); err != nil {
+		if ctx.ResponseWriter().HeaderWritable() {
+			if err := service.WriteError(ctx, s.producers, err); err != nil {
 				s.logger.Error(err)
 			}
 		} else {

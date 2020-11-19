@@ -22,6 +22,7 @@ import (
 
 	"github.com/caicloud/nirvana/definition"
 	"github.com/caicloud/nirvana/service"
+	"github.com/caicloud/nirvana/service/builder"
 )
 
 // Parameter describes a function parameter.
@@ -97,11 +98,16 @@ type Definition struct {
 }
 
 // NewDefinition creates openapi.Definition from definition.Definition.
-func NewDefinition(tc *TypeContainer, d *definition.Definition) (*Definition, error) {
+func NewDefinition(tc *TypeContainer, d *definition.Definition, apiStyle string) (*Definition, error) {
+	code := service.HTTPCodeFor(d.Method)
+	if apiStyle == builder.APIStyleRPC {
+		code = http.StatusOK
+	}
+
 	cd := &Definition{
 		Method:        d.Method,
 		HTTPMethod:    service.HTTPMethodFor(d.Method),
-		HTTPCode:      service.HTTPCodeFor(d.Method),
+		HTTPCode:      code,
 		Summary:       d.Summary,
 		Description:   d.Description,
 		Tags:          d.Tags,
@@ -164,10 +170,10 @@ func NewDefinition(tc *TypeContainer, d *definition.Definition) (*Definition, er
 }
 
 // NewDefinitions creates a list of definitions.
-func NewDefinitions(tc *TypeContainer, definitions []definition.Definition) ([]Definition, error) {
+func NewDefinitions(tc *TypeContainer, definitions []definition.Definition, apiStyle string) ([]Definition, error) {
 	result := make([]Definition, len(definitions))
 	for i, d := range definitions {
-		cd, err := NewDefinition(tc, &d)
+		cd, err := NewDefinition(tc, &d, apiStyle)
 		if err != nil {
 			return nil, err
 		}
@@ -177,10 +183,10 @@ func NewDefinitions(tc *TypeContainer, definitions []definition.Definition) ([]D
 }
 
 // NewPathDefinitions creates a list of definitions with path.
-func NewPathDefinitions(tc *TypeContainer, definitions map[string][]definition.Definition) (map[string][]Definition, error) {
+func NewPathDefinitions(tc *TypeContainer, definitions map[string][]definition.Definition, apiStyle string) (map[string][]Definition, error) {
 	result := make(map[string][]Definition)
 	for path, defs := range definitions {
-		cds, err := NewDefinitions(tc, defs)
+		cds, err := NewDefinitions(tc, defs, apiStyle)
 		if err != nil {
 			return nil, err
 		}
