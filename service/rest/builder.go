@@ -254,7 +254,7 @@ func (b *builder) Build() (service.Service, error) {
 			return nil, err
 		}
 	}
-	s := &restService{
+	s := &server{
 		root:      root,
 		filters:   b.filters,
 		logger:    b.logger,
@@ -263,14 +263,14 @@ func (b *builder) Build() (service.Service, error) {
 	return s, nil
 }
 
-type restService struct {
+type server struct {
 	root      router.Router
 	filters   []service.Filter
 	logger    log.Logger
 	producers []service.Producer
 }
 
-func (s *restService) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
+func (s *server) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 	for _, f := range s.filters {
 		if !f(resp, req) {
 			return

@@ -18,7 +18,8 @@ package definition
 
 // RPCDescriptor describes a descriptor for API definition in RPC style.
 type RPCDescriptor struct {
-	Prefix string
+	// Path describes url path prefix for all RPCActions, default: "/".
+	Path string
 	// Description describes the usage of the path.
 	Description string
 	// Middlewares contains path middlewares.
@@ -34,9 +35,12 @@ type RPCDescriptor struct {
 	// and child definitions can produce.
 	// It will override parent descriptor's produces.
 	Produces []string
-	Actions  []RPCAction
+	// Actions contain actions in this descriptor. These actions will inherit the Middlewares, Tags, Consumes, Produces
+	// of the descriptor if values in the action are not specified.
+	Actions []RPCAction
 }
 
+// RPCAction defines an API handler in RPC style.
 type RPCAction struct {
 	// Version defines the version this API belongs to.
 	// Need to use time format, eg: 2020-10-10
