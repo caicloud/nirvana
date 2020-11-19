@@ -27,7 +27,7 @@ import (
 	"mime"
 	"mime/multipart"
 	"net/http"
-	"net/url"
+	neturl "net/url"
 	"reflect"
 	"strings"
 	"sync"
@@ -58,17 +58,22 @@ func (p *path) Path(values map[string]string) (string, error) {
 		if !ok {
 			return "", noPathParameter.Error(key, p.path)
 		}
-		segments[index] = url.PathEscape(value)
+		segments[index] = neturl.PathEscape(value)
 	}
 	return strings.Join(segments, ""), nil
 }
 
+type parsedURL struct {
+	path    *path
+	queries map[string][]string
+}
+
 // Client implements builder pattern for http client.
 type Client struct {
-	endpoint string
-	config   *Config
-	lock     sync.RWMutex
-	paths    map[string]*path
+	endpoint       string
+	config         *Config
+	lock           sync.RWMutex
+	parsedURLCache map[string]parsedURL
 }
 
 // NewClient creates a client.
@@ -78,33 +83,42 @@ func NewClient(cfg *Config) (*Client, error) {
 		return nil, err
 	}
 	client := &Client{
-		endpoint: fmt.Sprintf("%s://%s/", cfg.Scheme, strings.TrimRight(cfg.Host, "/\\")),
-		config:   cfg,
-		paths:    map[string]*path{},
+		endpoint:       fmt.Sprintf("%s://%s/", cfg.Scheme, strings.TrimRight(cfg.Host, "/\\")),
+		config:         cfg,
+		parsedURLCache: make(map[string]parsedURL),
 	}
 	return client, nil
 }
 
-func (c *Client) parseURL(url string) (*path, error) {
+func (c *Client) parseURL(rawurl string) (parsedURL, error) {
 	c.lock.RLock()
-	p, ok := c.paths[url]
+	p, ok := c.parsedURLCache[rawurl]
 	c.lock.RUnlock()
 	if ok {
 		return p, nil
 	}
 	c.lock.Lock()
 	defer c.lock.Unlock()
-	p, ok = c.paths[url]
+	p, ok = c.parsedURLCache[rawurl]
 	if ok {
 		return p, nil
 	}
-	segments, err := router.Split(url)
+
+	url, err := neturl.Parse(rawurl)
 	if err != nil {
-		return nil, invalidPath.Error(url, err.Error())
+		return parsedURL{}, invalidPath.Error(url, err.Error())
 	}
-	p = &path{
-		path:  url,
-		names: map[string]int{},
+
+	segments, err := router.Split(url.Path)
+	if err != nil {
+		return parsedURL{}, invalidPath.Error(url, err.Error())
+	}
+	p = parsedURL{
+		path: &path{
+			path:  url.Path,
+			names: map[string]int{},
+		},
+		queries: url.Query(),
 	}
 	for i, segment := range segments {
 		if strings.HasPrefix(segment, "{") {
@@ -114,30 +128,30 @@ func (c *Client) parseURL(url string) (*path, error) {
 			if index > 0 {
 				segment = segment[:index]
 			}
-			if _, ok := p.names[segment]; ok {
-				return nil, duplicatedPathParameter.Error(segment, p.path)
+			if _, ok := p.path.names[segment]; ok {
+				return parsedURL{}, duplicatedPathParameter.Error(segment, p.path)
 			}
-			p.names[segment] = i
+			p.path.names[segment] = i
 		}
-		p.segments = append(p.segments, segment)
+		p.path.segments = append(p.path.segments, segment)
 	}
-	c.paths[url] = p
+	c.parsedURLCache[rawurl] = p
 	return p, nil
 }
 
 // Request creates an request with specific method and url path.
 // The code is only for checking if status code of response is right.
 func (c *Client) Request(method string, code int, url string) *Request {
-	path, err := c.parseURL(url)
+	parsedURL, err := c.parseURL(url)
 	req := &Request{
 		err:      err,
 		method:   method,
 		code:     code,
 		endpoint: c.endpoint,
-		path:     path,
+		path:     parsedURL.path,
 		client:   c.config.Executor,
 		paths:    map[string]string{},
-		queries:  map[string][]string{},
+		queries:  parsedURL.queries,
 		headers:  map[string][]string{},
 		forms:    map[string][]string{},
 		files:    map[string]interface{}{},
@@ -260,7 +274,7 @@ func (r *Request) request(ctx context.Context) (*http.Request, error) {
 		return nil, err
 	}
 	path := r.endpoint + strings.TrimLeft(urlPath, "/")
-	urlVal := url.Values(r.queries)
+	urlVal := neturl.Values(r.queries)
 	if len(urlVal) > 0 {
 		path += "?" + urlVal.Encode()
 	}
@@ -324,7 +338,7 @@ func (r *Request) request(ctx context.Context) (*http.Request, error) {
 		} else if len(r.forms) > 0 {
 			// Write form data to buffer.
 			contentType = definition.MIMEURLEncoded
-			formVal := url.Values(r.forms)
+			formVal := neturl.Values(r.forms)
 			_, err := buf.WriteString(formVal.Encode())
 			if err != nil {
 				return nil, unwritableForms.Error(r.path.String(), err.Error())
