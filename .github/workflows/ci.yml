@@ -1,0 +1,40 @@
+name: ci
+
+on: [pull_request]
+
+jobs:
+  ci:
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    strategy:
+      matrix:
+        go: ["1.13"]
+        os: [ubuntu-latest, macOS-latest]
+    name: Go ${{ matrix.go }} in ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-go@v2
+        with:
+          go-version: ${{ matrix.go }}
+
+      - name: Environment
+        run: |
+          go version
+          go env
+      - name: Install tools
+        env:
+          GO111MODULE: on
+        run: |
+          go get github.com/golangci/golangci-lint/cmd/golangci-lint@v1.32.2
+          golangci-lint --version
+          go get github.com/mattn/goveralls
+      - name: Lint
+        run: |
+          hack/verify_boilerplate.py
+          golangci-lint run ./... -v
+      - name: Test
+        run: go test -race -covermode atomic -coverprofile=covprofile ./...
+      - name: Send coverage
+        env:
+          COVERALLS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: goveralls -coverprofile=covprofile -service=github
