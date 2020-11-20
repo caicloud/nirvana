@@ -86,8 +86,8 @@ func (b *builder) SetModifier(m service.DefinitionModifier) {
 	b.modifier = m
 }
 
-func genRPCPath(prefix, version, action string) string {
-	return fmt.Sprintf("%s?Version=%s&Action=%s", prefix, version, action)
+func genRPCPath(path, version, action string) string {
+	return fmt.Sprintf("%s?Version=%s&Action=%s", path, version, action)
 }
 
 // AddDescriptor adds descriptors to router.
@@ -209,6 +209,7 @@ func (s *server) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	ctx.SetRoutePath(path)
 	err := executor.NewMiddlewareExecutor(e.middlewares, e.executor).Execute(ctx)
 	if err == nil && ctx.ResponseWriter().HeaderWritable() {
 		err = service.InvalidService.Error()
