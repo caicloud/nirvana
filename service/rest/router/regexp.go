@@ -69,7 +69,7 @@ func (n *regexpNode) Match(ctx context.Context, c Container, path string) (execu
 	segment := path[:index]
 	result := n.regexp.FindStringSubmatch(segment)
 	if result == nil {
-		return nil, RouterNotFound.Error()
+		return nil, routerNotFound.Error()
 	}
 	// Match progeny
 	var e executor.MiddlewareExecutor
@@ -100,10 +100,10 @@ func (n *regexpNode) Match(ctx context.Context, c Container, path string) (execu
 func (n *regexpNode) Merge(r Router) (Router, error) {
 	node, ok := r.(*regexpNode)
 	if !ok {
-		return nil, UnknownRouterType.Error(r.Kind(), reflect.TypeOf(r).String())
+		return nil, unknownRouterType.Error(r.Kind(), reflect.TypeOf(r).String())
 	}
 	if n.exp != node.exp {
-		return nil, UnmatchedRouterRegexp.Error(n.exp, node.exp)
+		return nil, unmatchedRouterRegexp.Error(n.exp, node.exp)
 	}
 	if err := n.handler.Merge(&node.handler); err != nil {
 		return nil, err
@@ -163,10 +163,10 @@ func (n *fullMatchRegexpNode) Match(ctx context.Context, c Container, path strin
 func (n *fullMatchRegexpNode) Merge(r Router) (Router, error) {
 	node, ok := r.(*fullMatchRegexpNode)
 	if !ok {
-		return nil, UnknownRouterType.Error(r.Kind(), reflect.TypeOf(r).String())
+		return nil, unknownRouterType.Error(r.Kind(), reflect.TypeOf(r).String())
 	}
 	if n.key != node.key {
-		return nil, UnmatchedRouterKey.Error(n.key, node.key)
+		return nil, unmatchedRouterKey.Error(n.key, node.key)
 	}
 	if err := n.handler.Merge(&node.handler); err != nil {
 		return nil, err
