@@ -30,6 +30,7 @@ import (
 	"strconv"
 	"text/template"
 
+	builderutil "github.com/caicloud/nirvana/service/builder"
 	"github.com/caicloud/nirvana/utils/api"
 )
 
@@ -59,6 +60,8 @@ func (b *APIBuilder) Build() (*api.Definitions, error) {
 	descriptors := make([]function, 0)
 	modifiers := make([]function, 0)
 
+	apiStyle := builderutil.APIStyleREST
+
 	for _, pkg := range analyzer.Paths() {
 		groups := analyzer.PackageComments(pkg)
 		for _, group := range groups {
@@ -82,6 +85,10 @@ func (b *APIBuilder) Build() (*api.Definitions, error) {
 						}
 						modifiers = append(modifiers, *f)
 					}
+					style := tag.Get("style")
+					if style != "" {
+						apiStyle = style
+					}
 				}
 			}
 		}
@@ -89,7 +96,7 @@ func (b *APIBuilder) Build() (*api.Definitions, error) {
 	if len(descriptors) <= 0 {
 		return nil, fmt.Errorf("can't find descriptors from %v", b.paths)
 	}
-	return b.runMain(descriptors, modifiers, b.root, b.paths)
+	return b.runMain(descriptors, modifiers, b.root, b.paths, apiStyle)
 }
 
 type function struct {
@@ -134,7 +141,7 @@ func getFunction(analyzer *api.Analyzer, pkg, name string) (*function, error) {
 	return f, nil
 }
 
-func (b *APIBuilder) runMain(descriptors, modifiers []function, root string, paths []string) (*api.Definitions, error) {
+func (b *APIBuilder) runMain(descriptors, modifiers []function, root string, paths []string, apiStyle string) (*api.Definitions, error) {
 	tempDir, err := ioutil.TempDir(root, "nirvana-generated")
 	if err != nil {
 		return nil, err
@@ -144,7 +151,7 @@ func (b *APIBuilder) runMain(descriptors, modifiers []function, root string, pat
 		err := os.RemoveAll(tempDir)
 		_ = err
 	}()
-	data, err := b.file(descriptors, modifiers, root, paths)
+	data, err := b.file(descriptors, modifiers, root, paths, apiStyle)
 	if err != nil {
 		return nil, err
 	}
@@ -166,7 +173,7 @@ func (b *APIBuilder) runMain(descriptors, modifiers []function, root string, pat
 	return definitions, nil
 }
 
-func (b *APIBuilder) file(descriptors, modifiers []function, root string, paths []string) ([]byte, error) {
+func (b *APIBuilder) file(descriptors, modifiers []function, root string, paths []string, apiStyle string) ([]byte, error) {
 	const tpl = `
 package main
 
@@ -196,7 +203,7 @@ func main() {
 	{{ range $i,$d := .descriptors }}
 	container.AddDescriptor(d{{ $i }}.{{ $d.Name }}(){{ if $d.Array }}...{{ end }})
 	{{ end }}
-	definitions, err := container.Generate()
+	definitions, err := container.Generate({{ .apiStyle }})
 	if definitions == nil {
 		log.Fatal(err)
 	}
@@ -217,6 +224,7 @@ func main() {
 		"descriptors": descriptors,
 		"root":        strconv.Quote(root),
 		"paths":       paths,
+		"apiStyle":    strconv.Quote(apiStyle),
 	}); err != nil {
 		return nil, err
 	}

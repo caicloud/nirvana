@@ -22,29 +22,16 @@ import (
 	"reflect"
 	"regexp"
 	"strings"
+
+	"github.com/caicloud/nirvana/definition"
+	"github.com/caicloud/nirvana/service/executor"
 )
-
-// RoutingChain contains the call chain of middlewares and executor.
-type RoutingChain interface {
-	// Continue continues to execute the next middleware or executor.
-	Continue(context.Context) error
-}
-
-// Middleware describes the form of middlewares. If you want to
-// carry on, call RoutingChain.Continue() and pass the context.
-type Middleware func(context.Context, RoutingChain) error
 
 // Inspector can select an executor to execute.
 type Inspector interface {
 	// Inspect finds a valid executor to execute target context.
 	// It returns an error if it can't find a valid executor.
-	Inspect(context.Context) (Executor, error)
-}
-
-// Executor executs with a context.
-type Executor interface {
-	// Execute executes with context.
-	Execute(context.Context) error
+	Inspect(context.Context) (executor.MiddlewareExecutor, error)
 }
 
 // RouteKind is kind of routers.
@@ -80,14 +67,14 @@ type Router interface {
 	// The container can save key-value pair from the path.
 	// If the router is the leaf node to match the path, it will return
 	// the first executor which Inspect() returns true.
-	Match(ctx context.Context, c Container, path string) (Executor, error)
+	Match(ctx context.Context, c Container, path string) (executor.MiddlewareExecutor, error)
 	// AddMiddleware adds middleware to the router node.
 	// If the router matches a path, all middlewares in the router
 	// will be executed by the returned executor.
-	AddMiddleware(ms ...Middleware)
+	AddMiddleware(ms ...definition.Middleware)
 	// Middlewares returns all middlewares of the router.
 	// Don't modify the returned values.
-	Middlewares() []Middleware
+	Middlewares() []definition.Middleware
 	// SetInspector sets inspector to the router node.
 	SetInspector(inspector Inspector)
 	// Inspector gets inspector from the router node.
@@ -124,7 +111,7 @@ func Parse(path string) (Router, Router, error) {
 		return nil, nil, err
 	}
 	if len(paths) <= 0 {
-		return nil, nil, InvalidPath.Error()
+		return nil, nil, invalidPath.Error()
 	}
 	segments, err := reorganize(paths)
 	if err != nil {
@@ -152,7 +139,7 @@ func Parse(path string) (Router, Router, error) {
 					return nil, nil, err
 				}
 			} else {
-				return nil, nil, InvalidParentRouter.Error(reflect.TypeOf(parent).String())
+				return nil, nil, invalidParentRouter.Error(reflect.TypeOf(parent).String())
 			}
 		}
 		parent = router
@@ -179,7 +166,7 @@ func segmentToRouter(seg *segment) (Router, error) {
 		}
 		r, err := regexp.Compile("^" + seg.match + "$")
 		if err != nil {
-			return nil, InvalidRegexp.Error(seg.match)
+			return nil, invalidRegexp.Error(seg.match)
 		}
 		node.regexp = r
 		names := r.SubexpNames()
@@ -191,7 +178,7 @@ func segmentToRouter(seg *segment) (Router, error) {
 			}
 		}
 		if j != len(seg.keys) {
-			return nil, UnmatchedSegmentKeys.Error(seg)
+			return nil, unmatchedSegmentKeys.Error(seg)
 		}
 		return node, nil
 
@@ -200,7 +187,7 @@ func segmentToRouter(seg *segment) (Router, error) {
 			key: seg.keys[0],
 		}, nil
 	}
-	return nil, UnknownSegment.Error(seg)
+	return nil, unknownSegment.Error(seg)
 }
 
 // Split splits string segments and regexp segments.
@@ -232,7 +219,7 @@ func Split(path string) ([]string, error) {
 		}
 	}
 	if braceCounter > 0 {
-		return nil, UnmatchedPathBrace.Error()
+		return nil, unmatchedPathBrace.Error()
 	}
 	if lastElementPos < len(path) {
 		result = append(result, path[lastElementPos:])
@@ -285,7 +272,7 @@ func reorganize(paths []string) ([]*segment, error) {
 			}
 			if seg.Tail() {
 				if i != len(paths)-1 {
-					return nil, InvalidPathKey.Error(seg.key)
+					return nil, invalidPathKey.Error(seg.key)
 				}
 				if target != nil {
 					segments = append(segments, target)
@@ -318,7 +305,7 @@ type expSegment struct {
 // parseExpSegment parses a regexp segment to ExpSegment.
 func parseExpSegment(exp string) (*expSegment, error) {
 	if !strings.HasPrefix(exp, "{") || !strings.HasSuffix(exp, "}") {
-		return nil, InvalidRegexp.Error(exp)
+		return nil, invalidRegexp.Error(exp)
 	}
 	exp = exp[1 : len(exp)-1]
 	pos := strings.Index(exp, ":")

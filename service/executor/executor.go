@@ -1,5 +1,5 @@
 /*
-Copyright 2017 Caicloud Authors
+Copyright 2020 Caicloud Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package service
+package executor
 
 import (
 	"context"
@@ -27,54 +27,51 @@ import (
 	"sort"
 
 	"github.com/caicloud/nirvana/definition"
-	"github.com/caicloud/nirvana/log"
-	"github.com/caicloud/nirvana/service/router"
+	"github.com/caicloud/nirvana/service"
 )
 
-type inspector struct {
-	path      string
-	logger    log.Logger
-	executors map[string][]*executor
+// Executor executes with a context.
+type Executor interface {
+	MiddlewareExecutor
+
+	ContentTypeMap() map[string][]string
+	Acceptable(string) bool
+	Producible([]string) bool
 }
 
-func newInspector(path string, logger log.Logger) *inspector {
-	return &inspector{
-		path:      path,
-		logger:    logger,
-		executors: map[string][]*executor{},
-	}
-}
-
-func (i *inspector) addDefinition(d definition.Definition) error {
+// DefinitionToExecutor generates a Executor for the Definition.
+func DefinitionToExecutor(urlPath string, d definition.Definition, customCode int) (Executor, error) {
 	var method string
 	if d.Method == definition.Any {
 		method = string(definition.Any)
 	} else {
-		method = HTTPMethodFor(d.Method)
+		method = service.HTTPMethodFor(d.Method)
 	}
 	if method == "" {
-		return definitionNoMethod.Error(d.Method, i.path)
+		return nil, DefinitionNoMethod.Error(d.Method, urlPath)
 	}
 	if len(d.Consumes) <= 0 {
-		return definitionNoConsumes.Error(d.Method, i.path)
+		return nil, DefinitionNoConsumes.Error(d.Method, urlPath)
 	}
 	if len(d.Produces) <= 0 {
-		return definitionNoProduces.Error(d.Method, i.path)
+		return nil, DefinitionNoProduces.Error(d.Method, urlPath)
 	}
 	if len(d.ErrorProduces) <= 0 {
-		return definitionNoErrorProduces.Error(d.Method, i.path)
+		return nil, DefinitionNoErrorProduces.Error(d.Method, urlPath)
 	}
 	if d.Function == nil {
-		return definitionNoFunction.Error(d.Method, i.path)
+		return nil, DefinitionNoFunction.Error(d.Method, urlPath)
 	}
 	value := reflect.ValueOf(d.Function)
 	if value.Kind() != reflect.Func {
-		return definitionInvalidFunctionType.Error(value.Type(), d.Method, i.path)
+		return nil, DefinitionInvalidFunctionType.Error(value.Type(), d.Method, urlPath)
+	}
+	if customCode == 0 {
+		customCode = service.HTTPCodeFor(d.Method)
 	}
 	c := &executor{
-		logger:   i.logger,
 		method:   method,
-		code:     HTTPCodeFor(d.Method),
+		code:     customCode,
 		function: value,
 	}
 	consumeAll := false
@@ -84,16 +81,16 @@ func (i *inspector) addDefinition(d definition.Definition) error {
 			consumeAll = true
 			continue
 		}
-		if consumer := ConsumerFor(ct); consumer != nil {
+		if consumer := service.ConsumerFor(ct); consumer != nil {
 			c.consumers = append(c.consumers, consumer)
 			consumes[consumer.ContentType()] = true
 		} else {
-			return definitionNoConsumer.Error(ct, d.Method, i.path)
+			return nil, DefinitionNoConsumer.Error(ct, d.Method, urlPath)
 		}
 	}
 	if consumeAll {
 		// Add remaining consumers to executor.
-		for _, consumer := range AllConsumers() {
+		for _, consumer := range service.AllConsumers() {
 			if !consumes[consumer.ContentType()] {
 				c.consumers = append(c.consumers, consumer)
 			}
@@ -106,16 +103,16 @@ func (i *inspector) addDefinition(d definition.Definition) error {
 			produceAll = true
 			continue
 		}
-		if producer := ProducerFor(ct); producer != nil {
+		if producer := service.ProducerFor(ct); producer != nil {
 			c.producers = append(c.producers, producer)
 			produces[producer.ContentType()] = true
 		} else {
-			return definitionNoProducer.Error(ct, d.Method, i.path)
+			return nil, DefinitionNoProducer.Error(ct, d.Method, urlPath)
 		}
 	}
 	if produceAll {
 		// Add remaining producers to executor.
-		for _, producer := range AllProducers() {
+		for _, producer := range service.AllProducers() {
 			if !produces[producer.ContentType()] {
 				c.producers = append(c.producers, producer)
 			}
@@ -128,16 +125,16 @@ func (i *inspector) addDefinition(d definition.Definition) error {
 			errorProduceAll = true
 			continue
 		}
-		if producer := ProducerFor(ct); producer != nil {
+		if producer := service.ProducerFor(ct); producer != nil {
 			c.errorProducers = append(c.errorProducers, producer)
 			errorProduces[producer.ContentType()] = true
 		} else {
-			return definitionNoProducer.Error(ct, d.Method, i.path)
+			return nil, DefinitionNoProducer.Error(ct, d.Method, urlPath)
 		}
 	}
 	if errorProduceAll {
 		// Add remaining producers to executor.
-		for _, producer := range AllProducers() {
+		for _, producer := range service.AllProducers() {
 			if !errorProduces[producer.ContentType()] {
 				c.errorProducers = append(c.errorProducers, producer)
 			}
@@ -151,57 +148,28 @@ func (i *inspector) addDefinition(d definition.Definition) error {
 	// 2. Anonymous function: api.glob..func1(create.go#30)
 	//    Anonymous function names are generated by go. Don't explore their meaning.
 	funcName := fmt.Sprintf("%s(%s#%d)", path.Base(f.Name()), path.Base(file), line)
-	ps, err := i.generateParameters(funcName, value.Type(), d.Parameters)
+	ps, err := generateParameters(urlPath, funcName, value.Type(), d.Parameters)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	c.parameters = ps
-	rs, err := i.generateResults(funcName, value.Type(), d.Results)
+	rs, err := generateResults(urlPath, funcName, value.Type(), d.Results)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	c.results = rs
-	if err := i.conflictCheck(c); err != nil {
-		return err
-	}
-	i.executors[method] = append(i.executors[method], c)
-	return nil
+	return c, nil
 }
 
-func (i *inspector) conflictCheck(c *executor) error {
-	cs := i.executors[c.method]
-	if len(cs) <= 0 {
-		return nil
-	}
-	ctMap := map[string]bool{}
-	for _, extant := range cs {
-		result := extant.ctMap()
-		for k, vs := range result {
-			for _, v := range vs {
-				ctMap[k+":"+v] = true
-			}
-		}
-	}
-	cMap := c.ctMap()
-	for k, vs := range cMap {
-		for _, v := range vs {
-			if ctMap[k+":"+v] {
-				return definitionConflict.Error(k, v, c.method, i.path)
-			}
-		}
-	}
-	return nil
-}
-
-func (i *inspector) generateParameters(funcName string, typ reflect.Type, ps []definition.Parameter) ([]parameter, error) {
+func generateParameters(path, funcName string, typ reflect.Type, ps []definition.Parameter) ([]parameter, error) {
 	if typ.NumIn() != len(ps) {
-		return nil, definitionUnmatchedParameters.Error(funcName, typ.NumIn(), len(ps), i.path)
+		return nil, DefinitionUnmatchedParameters.Error(funcName, typ.NumIn(), len(ps), path)
 	}
 	parameters := make([]parameter, 0, len(ps))
 	for index, p := range ps {
-		generator := ParameterGeneratorFor(p.Source)
+		generator := service.ParameterGeneratorFor(p.Source)
 		if generator == nil {
-			return nil, noParameterGenerator.Error(p.Source)
+			return nil, service.NoParameterGenerator.Error(p.Source)
 		}
 
 		param := parameter{
@@ -218,13 +186,11 @@ func (i *inspector) generateParameters(funcName string, typ reflect.Type, ps []d
 		}
 		if err := generator.Validate(param.name, param.defaultValue, param.targetType); err != nil {
 			// Order from 0 is odd. So index+1.
-			i.logger.Errorf("Can't validate %s parameter of function %s: %s", order(index+1), funcName, err.Error())
-			return nil, err
+			return nil, InvalidParameter.Error(order(index+1), funcName, err.Error())
 		}
 		if len(param.operators) > 0 {
-			if err := i.validateOperators(param.targetType, typ.In(index), param.operators); err != nil {
-				i.logger.Errorf("Can't validate operators for %s parameter of function %s: %s", order(index+1), funcName, err.Error())
-				return nil, err
+			if err := validateOperators(param.targetType, typ.In(index), param.operators); err != nil {
+				return nil, InvalidOperatorsForParameter.Error(order(index+1), funcName, err.Error())
 			}
 		}
 		parameters = append(parameters, param)
@@ -232,15 +198,15 @@ func (i *inspector) generateParameters(funcName string, typ reflect.Type, ps []d
 	return parameters, nil
 }
 
-func (i *inspector) generateResults(funcName string, typ reflect.Type, rs []definition.Result) ([]result, error) {
+func generateResults(path, funcName string, typ reflect.Type, rs []definition.Result) ([]result, error) {
 	if typ.NumOut() != len(rs) {
-		return nil, definitionUnmatchedResults.Error(funcName, typ.NumOut(), len(rs), i.path)
+		return nil, DefinitionUnmatchedResults.Error(funcName, typ.NumOut(), len(rs), path)
 	}
 	results := make([]result, 0, len(rs))
 	for index, r := range rs {
-		handler := DestinationHandlerFor(r.Destination)
+		handler := service.DestinationHandlerFor(r.Destination)
 		if handler == nil {
-			return nil, noDestinationHandler.Error(r.Destination)
+			return nil, NoDestinationHandler.Error(r.Destination)
 		}
 		result := result{
 			index:     index,
@@ -250,22 +216,19 @@ func (i *inspector) generateResults(funcName string, typ reflect.Type, rs []defi
 		outType := typ.Out(index)
 		if len(result.operators) > 0 {
 			LastOperatorOutType := result.operators[len(result.operators)-1].Out()
-			if err := i.validateOperators(outType, LastOperatorOutType, result.operators); err != nil {
-				i.logger.Errorf("Can't validate operators for %s result of function %s: %s", order(index+1), funcName, err.Error())
-				return nil, err
+			if err := validateOperators(outType, LastOperatorOutType, result.operators); err != nil {
+				return nil, InvalidOperatorsForResult.Error(order(index+1), funcName, err.Error())
 			}
 			outType = LastOperatorOutType
 		}
 		if err := handler.Validate(outType); err != nil {
 			// Order from 0 is odd. So index+1.
-			i.logger.Errorf("Can't validate %s result of function %s: %s", order(index+1), funcName, err.Error())
-			return nil, err
+			return nil, InvalidResult.Error(order(index+1), funcName, err.Error())
 		}
 		results = append(results, result)
 	}
 	sort.Sort(resultsSorter(results))
 	return results, nil
-
 }
 
 // validateOperators checks if the chain is valid:
@@ -273,7 +236,7 @@ func (i *inspector) generateResults(funcName string, typ reflect.Type, rs []defi
 //   operators[0].Out() -> operators[1].In()
 //   ...
 //   operators[N].Out() -> out
-func (i *inspector) validateOperators(in, out reflect.Type, operators []definition.Operator) error {
+func validateOperators(in, out reflect.Type, operators []definition.Operator) error {
 	if len(operators) <= 0 {
 		return nil
 	}
@@ -294,6 +257,32 @@ func (i *inspector) validateOperators(in, out reflect.Type, operators []definiti
 	return nil
 }
 
+type executor struct {
+	method         string
+	code           int
+	consumers      []service.Consumer
+	producers      []service.Producer
+	errorProducers []service.Producer
+	parameters     []parameter
+	results        []result
+	function       reflect.Value
+}
+
+type parameter struct {
+	name         string
+	targetType   reflect.Type
+	defaultValue interface{}
+	generator    service.ParameterGenerator
+	operators    []definition.Operator
+	optional     bool
+}
+
+type result struct {
+	index     int
+	handler   service.DestinationHandler
+	operators []definition.Operator
+}
+
 type resultsSorter []result
 
 // Len is the number of elements in the collection.
@@ -312,113 +301,7 @@ func (s resultsSorter) Swap(i, j int) {
 	s[i], s[j] = s[j], s[i]
 }
 
-// Inspect finds a valid executor to execute target context.
-func (i *inspector) Inspect(ctx context.Context) (router.Executor, error) {
-	httpCtx := HTTPContextFrom(ctx)
-	req := httpCtx.Request()
-	if req == nil {
-		return nil, noContext.Error()
-	}
-	executors := make([]*executor, 0)
-	if cs, ok := i.executors[req.Method]; ok && len(cs) > 0 {
-		executors = append(executors, cs...)
-	}
-	if cs, ok := i.executors[string(definition.Any)]; ok && len(cs) > 0 {
-		executors = append(executors, cs...)
-	}
-	if len(executors) <= 0 {
-		return nil, noExecutorForMethod.Error()
-	}
-	ct, err := ContentType(req)
-	if err != nil {
-		return nil, err
-	}
-	accepted := 0
-	for i, c := range executors {
-		if c.acceptable(ct) {
-			if accepted != i {
-				executors[accepted] = c
-			}
-			accepted++
-		}
-	}
-	if accepted <= 0 {
-		return nil, noExecutorForContentType.Error()
-	}
-	ats, err := AcceptTypes(req)
-	if err != nil {
-		return nil, err
-	}
-	executors = executors[:accepted]
-	var target *executor
-	for _, c := range executors {
-		if c.producible(ats) {
-			target = c
-			break
-		}
-	}
-	if target == nil {
-		for _, at := range ats {
-			if at == definition.MIMEAll {
-				target = executors[0]
-			}
-		}
-	}
-	if target == nil {
-		return nil, noExecutorToProduce.Error()
-	}
-	httpCtx.setRoutePath(i.path)
-	return target, nil
-}
-
-type executor struct {
-	logger         log.Logger
-	method         string
-	code           int
-	consumers      []Consumer
-	producers      []Producer
-	errorProducers []Producer
-	parameters     []parameter
-	results        []result
-	function       reflect.Value
-}
-
-type parameter struct {
-	name         string
-	targetType   reflect.Type
-	defaultValue interface{}
-	generator    ParameterGenerator
-	operators    []definition.Operator
-	optional     bool
-}
-
-type result struct {
-	index     int
-	handler   DestinationHandler
-	operators []definition.Operator
-}
-
-func (e *executor) ctMap() map[string][]string {
-	result := map[string][]string{}
-	for _, c := range e.consumers {
-		for _, p := range e.producers {
-			ct := c.ContentType()
-			result[ct] = append(result[ct], p.ContentType())
-		}
-	}
-	return result
-}
-
-func (e *executor) acceptable(ct string) bool {
-	for _, c := range e.consumers {
-		if c.ContentType() == ct {
-			return true
-		}
-	}
-	return false
-}
-
-func (e *executor) check(producers []Producer, ats []string) bool {
+func (e *executor) check(producers []service.Producer, ats []string) bool {
 	for _, at := range ats {
 		for _, c := range producers {
 			if c.ContentType() == at {
@@ -429,21 +312,41 @@ func (e *executor) check(producers []Producer, ats []string) bool {
 	return false
 }
 
-func (e *executor) producible(ats []string) bool {
+func (e *executor) Acceptable(ct string) bool {
+	for _, c := range e.consumers {
+		if c.ContentType() == ct {
+			return true
+		}
+	}
+	return false
+}
+
+func (e *executor) Producible(ats []string) bool {
 	return e.check(e.producers, ats) && e.check(e.errorProducers, ats)
+}
+
+func (e *executor) ContentTypeMap() map[string][]string {
+	result := map[string][]string{}
+	for _, c := range e.consumers {
+		for _, p := range e.producers {
+			ct := c.ContentType()
+			result[ct] = append(result[ct], p.ContentType())
+		}
+	}
+	return result
 }
 
 // Execute executes with context.
 func (e *executor) Execute(ctx context.Context) (err error) {
-	c := HTTPContextFrom(ctx)
+	c := service.HTTPContextFrom(ctx)
 	if c == nil {
-		return noContext.Error()
+		return service.NoContext.Error()
 	}
 	paramValues := make([]reflect.Value, 0, len(e.parameters))
 	for _, p := range e.parameters {
 		result, err := p.generator.Generate(ctx, c.ValueContainer(), e.consumers, p.name, p.targetType)
 		if err != nil {
-			return writeError(ctx, e.errorProducers, err)
+			return service.WriteError(ctx, e.errorProducers, err)
 		}
 		if result == nil {
 			if p.defaultValue != nil {
@@ -455,12 +358,12 @@ func (e *executor) Execute(ctx context.Context) (err error) {
 		for _, operator := range p.operators {
 			result, err = operator.Operate(ctx, p.name, result)
 			if err != nil {
-				return writeError(ctx, e.errorProducers, err)
+				return service.WriteError(ctx, e.errorProducers, err)
 			}
 		}
 
 		if result == nil && !p.optional {
-			return writeError(ctx, e.errorProducers, requiredField.Error(p.name, p.generator.Source()))
+			return service.WriteError(ctx, e.errorProducers, requiredField.Error(p.name, p.generator.Source()))
 		}
 
 		if closer, ok := result.(io.Closer); ok {

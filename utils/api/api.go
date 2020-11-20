@@ -20,8 +20,8 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/caicloud/nirvana/definition"
 	"github.com/caicloud/nirvana/service"
+	builderutil "github.com/caicloud/nirvana/service/builder"
 	"github.com/caicloud/nirvana/utils/project"
 )
 
@@ -106,7 +106,7 @@ func (d *Definitions) fillTypes(types map[TypeName]*Type, name TypeName) {
 // Container contains informations to generate APIs.
 type Container struct {
 	modifiers     service.DefinitionModifiers
-	descriptors   []definition.Descriptor
+	descriptors   []interface{}
 	typeContainer *TypeContainer
 	analyzer      *Analyzer
 }
@@ -129,19 +129,19 @@ func (ac *Container) AddModifier(modifiers ...service.DefinitionModifier) {
 }
 
 // AddDescriptor add descriptors to container.
-func (ac *Container) AddDescriptor(descriptors ...definition.Descriptor) {
+func (ac *Container) AddDescriptor(descriptors ...interface{}) {
 	ac.descriptors = append(ac.descriptors, descriptors...)
 }
 
 // Generate generates API definitions.
-func (ac *Container) Generate() (*Definitions, error) {
-	builder := service.NewBuilder()
+func (ac *Container) Generate(apiStyle string) (*Definitions, error) {
+	builder := builderutil.New(apiStyle)
 	builder.SetModifier(ac.modifiers.Combine())
 	if err := builder.AddDescriptor(ac.descriptors...); err != nil {
 		return nil, err
 	}
 	definitions := builder.Definitions()
-	result, err := NewPathDefinitions(ac.typeContainer, definitions)
+	result, err := NewPathDefinitions(ac.typeContainer, definitions, apiStyle)
 	if err != nil {
 		return nil, err
 	}

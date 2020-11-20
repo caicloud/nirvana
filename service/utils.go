@@ -95,68 +95,33 @@ func MetaForContentType(ctype string) map[string]string {
 }
 
 // Internal error factories:
-var noExecutorForMethod = errors.MethodNotAllowed.Build("Nirvana:Service:NoExecutorForMethod", "method not allowed")
-var noExecutorForContentType = errors.UnsupportedMediaType.Build("Nirvana:Service:NoExecutorForContentType", "unsupported media type")
-var noExecutorToProduce = errors.NotAcceptable.Build("Nirvana:Service:NoExecutorToProduce", "not acceptable")
-var invalidContentType = errors.BadRequest.Build("Nirvana:Service:InvalidContentType", "invalid content type ${type}")
-var invalidConversion = errors.BadRequest.Build("Nirvana:Service:InvalidConversion", "can't convert ${data} to ${type}")
 
-var noRouter = errors.InternalServerError.Build("Nirvana:Service:NoRouter", "no router to build service")
-var invalidService = errors.InternalServerError.Build("Nirvana:Service:NoResponse", "no response")
-var invalidConsumer = errors.InternalServerError.Build("Nirvana:Service:InvalidConsumer", "${type} is invalid for consumer")
-var invalidProducer = errors.InternalServerError.Build("Nirvana:Service:InvalidProducer", "${type} is invalid for producer")
-var noConnectionHijacker = errors.InternalServerError.Build("Nirvana:Service:NoConnectionHijacker",
-	"underlying http.ResponseWriter does not implement http.Hijacker")
-var definitionNoMethod = errors.InternalServerError.Build("Nirvana:Service:DefinitionNoMethod", "no http method in [${method}]${path}")
-var definitionNoConsumes = errors.InternalServerError.Build("Nirvana:Service:DefinitionNoConsumes", "no content type to consume in [${method}]${path}")
-var definitionNoProduces = errors.InternalServerError.Build("Nirvana:Service:DefinitionNoProduces", "no content type to produce in [${method}]${path}")
-var definitionNoErrorProduces = errors.InternalServerError.Build("Nirvana:Service:DefinitionNoErrorProduces",
-	"no content type to produce error in [${method}]${path}")
-var definitionNoFunction = errors.InternalServerError.Build("Nirvana:Service:DefinitionNoFunction", "no function in [${method}]${path}")
-var definitionInvalidFunctionType = errors.InternalServerError.Build("Nirvana:Service:DefinitionInvalidFunctionType",
-	"${type} is not function in [${method}]${path}")
+var (
+	// InvalidService represents no response error.
+	InvalidService = errors.InternalServerError.Build("Nirvana:Service:NoResponse", "no response")
+	// NoContext means can't find http context.
+	NoContext = errors.InternalServerError.Build("Nirvana:Service:NoContext", "can't find http context, you should define `ctx context.Context` as the first parameter of your handler function")
+	// NoParameterGenerator represents no parameter generator error.
+	NoParameterGenerator = errors.InternalServerError.Build("Nirvana:Service:NoParameterGenerator", "no parameter generator for source ${source}")
+)
 
-var definitionNoConsumer = errors.InternalServerError.Build("Nirvana:Service:DefinitionNoConsumer",
-	"no consumer for content type ${type} in [${method}]${path}")
-
-var definitionNoProducer = errors.InternalServerError.Build("Nirvana:Service:DefinitionNoProducer",
-	"no producer for content type ${type} in [${method}]${path}")
-
-var definitionConflict = errors.InternalServerError.Build("Nirvana:Service:DefinitionConflict",
-	"consumer-producer pair ${key}:${value} conflicts in [http.${method}]${path}")
-
-var definitionUnmatchedParameters = errors.InternalServerError.Build("Nirvana:Service:DefinitionUnmatchedParameters",
-	"function ${function} has ${count} parameters but want ${desired} in ${path}, "+
-		"you can define it with descriptor->definition[]->parameters[]")
-
-var definitionUnmatchedResults = errors.InternalServerError.Build("Nirvana:Service:DefinitionUnmatchedResults",
-	"function ${function} has ${count} results but want ${desired} in ${path}, "+
-		"you can define it with descriptor->definition[]->results[]")
-
-var noDestinationHandler = errors.InternalServerError.Build("Nirvana:Service:NoDestinationHandler", "no destination handler for destination ${destination}, "+
-	"you can define it with descriptor->definition[]->results[]->destination")
-
-var noContext = errors.InternalServerError.Build("Nirvana:Service:NoContext", "can't find http context, "+
-	"you should define `ctx context.Context` as the first parameter of your handler function")
-
-var requiredField = errors.InternalServerError.Build("Nirvana:Service:RequiredField", "required field ${field} in ${source} but got empty")
-var invalidMetaType = errors.InternalServerError.Build("Nirvana:Service:InvalidMetaType", "can't recognize meta for type ${type}")
-var noProducerToWrite = errors.NotAcceptable.Build("Nirvana:Service:NoProducerToWrite", "can't find producer for accept types ${types}")
-var invalidMethod = errors.InternalServerError.Build("Nirvana:Service:InvalidMethod", "http method ${method} is invalid")
-var invalidStatusCode = errors.InternalServerError.Build("Nirvana:Service:InvalidStatusCode", "http status code must be in [100,599]")
-var unassignableType = errors.InternalServerError.Build("Nirvana:Service:UnassignableType", "type ${typeA} can't assign to ${typeB}")
-var noConverter = errors.InternalServerError.Build("Nirvana:Service:UnassignableType", "no converter for type ${type}")
-var invalidBodyType = errors.InternalServerError.Build("Nirvana:Service:InvalidBodyType", "${type} is not a valid type for body")
-var noPrefab = errors.InternalServerError.Build("Nirvana:Service:NoPrefab", "no prefab named ${name}")
-var invalidAutoParameter = errors.InternalServerError.Build("Nirvana:Service:InvalidAutoParameter", "${type} is not a struct or a pointer to struct")
-var noParameterGenerator = errors.InternalServerError.Build("Nirvana:Service:NoParameterGenerator", "no parameter generator for source ${source}")
-var invalidFieldTag = errors.InternalServerError.Build("Nirvana:Service:InvalidFieldTag", "filed tag ${tag} is invalid")
-var noName = errors.InternalServerError.Build("Nirvana:Service:NoName", "${source} must have a name")
-var invalidTypeForConsumer = errors.InternalServerError.Build("Nirvana:Service:InvalidTypeForConsumer",
-	"consumer ${content} can't consume data for type ${type}")
-var invalidTypeForProducer = errors.InternalServerError.Build("Nirvana:Service:InvalidTypeForProducer",
-	"producer ${content} can't produce data for type ${type}")
-var invalidOperatorInType = errors.InternalServerError.Build("Nirvana:Service:InvalidOperatorInType",
-	"the type ${type} is not compatible to the in type of the ${index} operator")
-var invalidOperatorOutType = errors.InternalServerError.Build("Nirvana:Service:InvalidOperatorOutType",
-	"the out type of the ${index} operator is not compatible to the type ${type}")
+var (
+	invalidContentType     = errors.BadRequest.Build("Nirvana:Service:InvalidContentType", "invalid content type ${type}")
+	invalidConversion      = errors.BadRequest.Build("Nirvana:Service:InvalidConversion", "can't convert ${data} to ${type}")
+	invalidConsumer        = errors.InternalServerError.Build("Nirvana:Service:invalidConsumer", "${type} is invalid for consumer")
+	invalidProducer        = errors.InternalServerError.Build("Nirvana:Service:invalidProducer", "${type} is invalid for producer")
+	noConnectionHijacker   = errors.InternalServerError.Build("Nirvana:Service:noConnectionHijacker", "underlying http.ResponseWriter does not implement http.Hijacker")
+	invalidMetaType        = errors.InternalServerError.Build("Nirvana:Service:invalidMetaType", "can't recognize meta for type ${type}")
+	noProducerToWrite      = errors.NotAcceptable.Build("Nirvana:Service:noProducerToWrite", "can't find producer for accept types ${types}")
+	invalidMethod          = errors.InternalServerError.Build("Nirvana:Service:invalidMethod", "http method ${method} is invalid")
+	invalidStatusCode      = errors.InternalServerError.Build("Nirvana:Service:invalidStatusCode", "http status code must be in [100,599]")
+	invalidBodyType        = errors.InternalServerError.Build("Nirvana:Service:invalidBodyType", "${type} is not a valid type for body")
+	noPrefab               = errors.InternalServerError.Build("Nirvana:Service:noPrefab", "no prefab named ${name}")
+	invalidAutoParameter   = errors.InternalServerError.Build("Nirvana:Service:invalidAutoParameter", "${type} is not a struct or a pointer to struct")
+	invalidFieldTag        = errors.InternalServerError.Build("Nirvana:Service:invalidFieldTag", "filed tag ${tag} is invalid")
+	noName                 = errors.InternalServerError.Build("Nirvana:Service:noName", "${source} must have a name")
+	invalidTypeForConsumer = errors.InternalServerError.Build("Nirvana:Service:invalidTypeForConsumer", "consumer ${content} can't consume data for type ${type}")
+	invalidTypeForProducer = errors.InternalServerError.Build("Nirvana:Service:invalidTypeForProducer", "producer ${content} can't produce data for type ${type}")
+	unassignableType       = errors.InternalServerError.Build("Nirvana:Service:unassignableType", "type ${typeA} can't assign to ${typeB}")
+	noConverter            = errors.InternalServerError.Build("Nirvana:Service:unassignableType", "no converter for type ${type}")
+)
