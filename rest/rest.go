@@ -34,7 +34,7 @@ import (
 
 	"github.com/caicloud/nirvana/definition"
 	"github.com/caicloud/nirvana/errors"
-	"github.com/caicloud/nirvana/service/router"
+	"github.com/caicloud/nirvana/service/rest/router"
 )
 
 type path struct {

@@ -38,8 +38,8 @@ func Upload(ctx context.Context, file multipart.File) (string, error) {
 }
 
 func main() {
-	descriptors := []definition.Descriptor{
-		{
+	descriptors := []interface{}{
+		definition.Descriptor{
 			Path:        "/required",
 			Description: "Upload API",
 			Definitions: []definition.Definition{
@@ -58,7 +58,7 @@ func main() {
 				},
 			},
 		},
-		{
+		definition.Descriptor{
 			Path:        "/optional",
 			Description: "Upload API",
 			Definitions: []definition.Definition{

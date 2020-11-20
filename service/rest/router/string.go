@@ -20,6 +20,8 @@ import (
 	"context"
 	"reflect"
 	"strings"
+
+	"github.com/caicloud/nirvana/service/executor"
 )
 
 // stringNode describes a string router node.
@@ -45,18 +47,18 @@ func (n *stringNode) Kind() RouteKind {
 // The container can save key-value pair from the path.
 // If the router is the leaf node to match the path, it will return
 // the first executor which Inspect() returns true.
-func (n *stringNode) Match(ctx context.Context, c Container, path string) (Executor, error) {
+func (n *stringNode) Match(ctx context.Context, c Container, path string) (executor.MiddlewareExecutor, error) {
 	if n.prefix != "" && !strings.HasPrefix(path, n.prefix) {
 		// No match
-		return nil, RouterNotFound.Error()
+		return nil, routerNotFound.Error()
 	}
 	if len(n.prefix) < len(path) {
 		// Match prefix
-		executor, err := n.children.Match(ctx, c, path[len(n.prefix):])
+		e, err := n.children.Match(ctx, c, path[len(n.prefix):])
 		if err != nil {
 			return nil, err
 		}
-		return n.handler.pack(executor)
+		return n.handler.pack(e)
 	}
 	// Match self
 	return n.handler.unionExecutor(ctx)
@@ -67,7 +69,7 @@ func (n *stringNode) Match(ctx context.Context, c Container, path string) (Execu
 func (n *stringNode) Merge(r Router) (Router, error) {
 	node, ok := r.(*stringNode)
 	if !ok {
-		return nil, UnknownRouterType.Error(r.Kind(), reflect.TypeOf(r).String())
+		return nil, unknownRouterType.Error(r.Kind(), reflect.TypeOf(r).String())
 	}
 	commonPrefix := 0
 	for commonPrefix < len(n.prefix) && commonPrefix < len(node.prefix) {
@@ -77,7 +79,7 @@ func (n *stringNode) Merge(r Router) (Router, error) {
 		commonPrefix++
 	}
 	if commonPrefix <= 0 {
-		return nil, NoCommonPrefix.Error()
+		return nil, noCommonPrefix.Error()
 	}
 	switch {
 	case commonPrefix == len(n.prefix) && commonPrefix == len(node.prefix):
@@ -93,20 +95,20 @@ func (n *stringNode) Merge(r Router) (Router, error) {
 			return nil, err
 		}
 	case commonPrefix == len(node.prefix):
-		copy := *n
-		copy.prefix = copy.prefix[commonPrefix:]
+		copyN := *n
+		copyN.prefix = copyN.prefix[commonPrefix:]
 		*n = *node
-		if err := n.addRouter(&copy); err != nil {
+		if err := n.addRouter(&copyN); err != nil {
 			return nil, err
 		}
 	default:
-		copy := *n
-		copy.prefix = copy.prefix[commonPrefix:]
+		copyN := *n
+		copyN.prefix = copyN.prefix[commonPrefix:]
 		node.prefix = node.prefix[commonPrefix:]
 		n.handler = handler{}
 		n.children = children{}
 		n.prefix = n.prefix[:commonPrefix]
-		if err := n.addRouter(&copy); err != nil {
+		if err := n.addRouter(&copyN); err != nil {
 			return nil, err
 		}
 		if err := n.addRouter(node); err != nil {

@@ -409,7 +409,7 @@ func (g *AutoParameterGenerator) Validate(name string, defaultValue interface{},
 		}
 		generator := ParameterGeneratorFor(source)
 		if generator == nil {
-			return noParameterGenerator.Error(source)
+			return NoParameterGenerator.Error(source)
 		}
 
 		var value interface{}
@@ -459,7 +459,7 @@ func (g *AutoParameterGenerator) generate(ctx context.Context, vc ValueContainer
 		}
 		generator := ParameterGeneratorFor(source)
 		if generator == nil {
-			return noParameterGenerator.Error(source)
+			return NoParameterGenerator.Error(source)
 		}
 		ins, err := generator.Generate(ctx, vc, consumers, name, field.Type)
 		if err != nil {

@@ -22,7 +22,9 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/caicloud/nirvana/definition"
 	"github.com/caicloud/nirvana/errors"
+	"github.com/caicloud/nirvana/service/executor"
 )
 
 var (
@@ -80,12 +82,12 @@ func TestReorganize(t *testing.T) {
 		{
 			[]string{"/segments/", "{segment:[a-z]{1,2}}", ".log", "{temp", "sss/paths/", "{path:*}"},
 			nil,
-			InvalidRegexp,
+			invalidRegexp,
 		},
 		{
 			[]string{"/segments/", "{segment:[a-z]{1,2}}", ".log", "{temp}", "{path:*}", "sss/paths/"},
 			nil,
-			InvalidPathKey,
+			invalidPathKey,
 		},
 		{
 			[]string{"/segments/", "{segment:[a-z]{1,2}}", ".log", "{temp}", "{path:*}"},
@@ -144,22 +146,22 @@ func TestParse(t *testing.T) {
 		{
 			path: "/segments/{{cmd}/{segment:[a-z]{1,2}}.log{temp}sss/paths/{path:*}",
 			tab:  nil,
-			err:  UnmatchedPathBrace,
+			err:  unmatchedPathBrace,
 		},
 		{
 			path: "",
 			tab:  nil,
-			err:  InvalidPath,
+			err:  invalidPath,
 		},
 		{
 			path: "/segments/{cmd}/{segment:[a-z]{1,2}}.log{temp}sss/paths/{path:*}/why",
 			tab:  nil,
-			err:  InvalidPathKey,
+			err:  invalidPathKey,
 		},
 		{
 			path: "/segments/{cmd}/{segment:[a-z]{1,2}}.log{temp{why}}sss/paths/{path:*}",
 			tab:  nil,
-			err:  InvalidRegexp,
+			err:  invalidRegexp,
 		},
 	}
 
@@ -276,7 +278,7 @@ func TestPathNodeMerge(t *testing.T) {
 			root = router
 		} else {
 			if _, err := root.Merge(router); err != nil {
-				if !UnmatchedRouterKey.Derived(err) {
+				if !unmatchedRouterKey.Derived(err) {
 					t.Fatal(err)
 				}
 			} else {
@@ -303,7 +305,7 @@ func TestCommonPrefixMergeError(t *testing.T) {
 			root = router
 		} else {
 			_, err = root.Merge(router)
-			errorCompare(t, err, NoCommonPrefix)
+			errorCompare(t, err, noCommonPrefix)
 		}
 	}
 }
@@ -325,7 +327,7 @@ func TestRegexpMergeError(t *testing.T) {
 			root = router
 		} else {
 			_, err = root.Merge(router)
-			errorCompare(t, err, UnmatchedRouterKey)
+			errorCompare(t, err, unmatchedRouterKey)
 		}
 	}
 }
@@ -393,7 +395,7 @@ func testMatch(t *testing.T, router Router, right []TestData, wrong []TestData) 
 
 func TestMiddleWare(t *testing.T) {
 	rds := []TestRouterData{
-		{"/api/v2", []*TestExecutor{{"GET", 202}, {"DELETE", 203}}, []Middleware{func(ctx context.Context, c RoutingChain) error {
+		{"/api/v2", []*TestExecutor{{"GET", 202}, {"DELETE", 203}}, []definition.Middleware{func(ctx context.Context, c definition.Chain) error {
 			resultptr := ctx.Value(contextKey("Result")).(*int)
 			*resultptr++
 			c.Continue(context.WithValue(ctx, contextKey("Result"), resultptr))
@@ -619,7 +621,7 @@ type TestData struct {
 type TestRouterData struct {
 	Path       string
 	Executor   []*TestExecutor
-	Middleware []Middleware
+	Middleware []definition.Middleware
 }
 
 type TestValueContainer struct {
@@ -647,7 +649,7 @@ type TestExecutor struct {
 	Result int
 }
 
-func (te *TestExecutor) Inspect(c context.Context) (Executor, error) {
+func (te *TestExecutor) Inspect(c context.Context) (executor.MiddlewareExecutor, error) {
 	ins := c.Value(contextKey("Type"))
 	if typ, ok := ins.(string); ok && typ == te.Type {
 		return te, nil
@@ -667,7 +669,7 @@ func (te *TestExecutor) Execute(c context.Context) error {
 
 type TestInspector []*TestExecutor
 
-func (ti TestInspector) Inspect(c context.Context) (Executor, error) {
+func (ti TestInspector) Inspect(c context.Context) (executor.MiddlewareExecutor, error) {
 	for _, e := range ti {
 		target, err := e.Inspect(c)
 		if err != errUnmatched {

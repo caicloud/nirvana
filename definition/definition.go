@@ -224,14 +224,14 @@ type Definition struct {
 	Tags []string
 	// ErrorProduces is used to generate data for error. If this field is empty,
 	// it means that this field equals to Produces.
-	// In some cases, succeessful data and error data should be generated in
+	// In some cases, successful data and error data should be generated in
 	// different ways.
 	ErrorProduces []string
 	// Function is a function handler. It must be func type.
 	Function interface{}
 	// Parameters describes function parameters.
 	Parameters []Parameter
-	// Results describes function retrun values.
+	// Results describes function return values.
 	Results []Result
 	// Summary is a one-line brief description of this definition.
 	Summary string
@@ -239,32 +239,4 @@ type Definition struct {
 	Description string
 	// Examples contains many examples for the API handler.
 	Examples []Example
-}
-
-// Descriptor describes a descriptor for API definitions.
-type Descriptor struct {
-	// Path is the url path. It will inherit parent's path.
-	//
-	// If parent path is "/api/v1", current is "/some",
-	// It means current definitions handles "/api/v1/some".
-	Path string
-	// Consumes indicates content types that current definitions
-	// and child definitions can consume.
-	// It will override parent descriptor's consumes.
-	Consumes []string
-	// Produces indicates content types that current definitions
-	// and child definitions can produce.
-	// It will override parent descriptor's produces.
-	Produces []string
-	// Tags indicates tags of current definitions and child definitions.
-	// It will override parent descriptor's tags.
-	Tags []string
-	// Middlewares contains path middlewares.
-	Middlewares []Middleware
-	// Definitions contains definitions for current path.
-	Definitions []Definition
-	// Children is used to place sub-descriptors.
-	Children []Descriptor
-	// Description describes the usage of the path.
-	Description string
 }

@@ -155,10 +155,11 @@ func (h *ErrorDestinationHandler) Handle(ctx context.Context, producers []Produc
 	if value == nil {
 		return true, nil
 	}
-	return false, writeError(ctx, producers, value)
+	return false, WriteError(ctx, producers, value)
 }
 
-func writeError(ctx context.Context, producers []Producer, err interface{}) error {
+// WriteError writes error data to context.
+func WriteError(ctx context.Context, producers []Producer, err interface{}) error {
 	httpCtx := HTTPContextFrom(ctx)
 	ats, e := AcceptTypes(httpCtx.Request())
 	if e != nil {

@@ -1,5 +1,5 @@
 /*
-Copyright 2017 Caicloud Authors
+Copyright 2020 Caicloud Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,22 +14,32 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package router
+package executor
 
-import "context"
+import (
+	"context"
+
+	"github.com/caicloud/nirvana/definition"
+)
+
+// MiddlewareExecutor executes with a context.
+type MiddlewareExecutor interface {
+	// Execute executes with context.
+	Execute(context.Context) error
+}
 
 // middlewareExecutor is a combination of middlewares and executor.
 type middlewareExecutor struct {
 	// Middlewares contains all middlewares for the executor.
-	middlewares []Middleware
+	middlewares []definition.Middleware
 	// Index is used to record the count of executed middleware.
 	index int
 	// Executor executes after middlewares.
-	executor Executor
+	executor MiddlewareExecutor
 }
 
-// newMiddlewareExecutor creates a new executor with middlewares.
-func newMiddlewareExecutor(ms []Middleware, e Executor) Executor {
+// NewMiddlewareExecutor creates a new executor with middlewares.
+func NewMiddlewareExecutor(ms []definition.Middleware, e MiddlewareExecutor) MiddlewareExecutor {
 	return &middlewareExecutor{ms, 0, e}
 }
 

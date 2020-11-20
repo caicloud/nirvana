@@ -29,21 +29,22 @@ import (
 
 var (
 	// contextKeyUnderlyingHTTPContext is a key for context.
-	// It's unique and point to httpCtx.
+	// It's unique and point to HTTPCtx.
 	contextKeyUnderlyingHTTPContext interface{} = new(byte)
 )
 
-// httpCtx contains a http.Request and a http.ResponseWriter for a request.
+// HTTPCtx contains a http.Request and a http.ResponseWriter for a request.
 // It goes through the life cycle of a request.
-type httpCtx struct {
+type HTTPCtx struct {
 	context.Context
 	container container
 	response  response
 	path      string
 }
 
-func newHTTPContext(resp http.ResponseWriter, request *http.Request) *httpCtx {
-	ctx := &httpCtx{}
+// NewHTTPContext generates the http context from ResponseWriter and Request.
+func NewHTTPContext(resp http.ResponseWriter, request *http.Request) *HTTPCtx {
+	ctx := &HTTPCtx{}
 	ctx.Context = request.Context()
 	ctx.container.request = request
 	ctx.container.params = make([]param, 0, 5)
@@ -52,7 +53,7 @@ func newHTTPContext(resp http.ResponseWriter, request *http.Request) *httpCtx {
 }
 
 // Value returns itself when key is contextKeyUnderlyingHTTPContext.
-func (c *httpCtx) Value(key interface{}) interface{} {
+func (c *HTTPCtx) Value(key interface{}) interface{} {
 	if key == contextKeyUnderlyingHTTPContext {
 		return c
 	}
@@ -61,6 +62,10 @@ func (c *httpCtx) Value(key interface{}) interface{} {
 
 // ValueContainer contains values from a request.
 type ValueContainer interface {
+	// Set sets path parameter key-value pairs.
+	Set(key, value string)
+	// Get gets path value.
+	Get(key string) (string, bool)
 	// Path returns path value by key.
 	Path(key string) (string, bool)
 	// Query returns value from query string.
@@ -185,7 +190,7 @@ type response struct {
 	respBody       []byte
 }
 
-// For http.HTTPResponseWriter and HTTPResponseInfo
+// Header For http.HTTPResponseWriter and HTTPResponseInfo
 func (c *response) Header() http.Header {
 	return c.writer.Header()
 }
@@ -267,7 +272,7 @@ type HTTPContext interface {
 	ResponseWriter() ResponseWriter
 	ValueContainer() ValueContainer
 	RoutePath() string
-	setRoutePath(path string)
+	SetRoutePath(path string)
 }
 
 // HTTPContextFrom get http context from context.
@@ -276,33 +281,33 @@ func HTTPContextFrom(ctx context.Context) HTTPContext {
 	if value == nil {
 		return nil
 	}
-	if c, ok := value.(*httpCtx); ok {
+	if c, ok := value.(*HTTPCtx); ok {
 		return c
 	}
 	return nil
 }
 
 // Request gets http.Request.
-func (c *httpCtx) Request() *http.Request {
+func (c *HTTPCtx) Request() *http.Request {
 	return c.container.request
 }
 
 // ResponseWriter gets ResponseWriter.
-func (c *httpCtx) ResponseWriter() ResponseWriter {
+func (c *HTTPCtx) ResponseWriter() ResponseWriter {
 	return &c.response
 }
 
 // ValueContainer gets ValueContainer.
-func (c *httpCtx) ValueContainer() ValueContainer {
+func (c *HTTPCtx) ValueContainer() ValueContainer {
 	return &c.container
 }
 
 // RoutePath is the abstract path which matches request URL.
-func (c *httpCtx) RoutePath() string {
+func (c *HTTPCtx) RoutePath() string {
 	return c.path
 }
 
-// setRoutePath sets the abstract path which matches request URL.
-func (c *httpCtx) setRoutePath(path string) {
+// SetRoutePath sets the abstract path which matches request URL.
+func (c *HTTPCtx) SetRoutePath(path string) {
 	c.path = path
 }

@@ -24,9 +24,9 @@ import (
 	"time"
 
 	"github.com/caicloud/nirvana"
-	"github.com/caicloud/nirvana/definition"
 	"github.com/caicloud/nirvana/errors"
 	"github.com/caicloud/nirvana/utils/printer"
+
 	"github.com/spf13/cast"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -110,7 +110,7 @@ type NirvanaCommand interface {
 	// `desc` describes the field.
 	Add(pointer interface{}, key string, shortFlag string, desc string) NirvanaCommand
 	// Execute runs nirvana server.
-	Execute(descriptors ...definition.Descriptor) error
+	Execute(descriptors ...interface{}) error
 	// ExecuteWithConfig runs nirvana server from a custom config.
 	ExecuteWithConfig(cfg *nirvana.Config) error
 	// Command returns a command for command.
@@ -263,7 +263,7 @@ func (s *command) Add(pointer interface{}, key string, shortFlag string, desc st
 }
 
 // Execute runs nirvana server.
-func (s *command) Execute(descriptors ...definition.Descriptor) error {
+func (s *command) Execute(descriptors ...interface{}) error {
 	cfg := nirvana.NewDefaultConfig()
 	if len(descriptors) > 0 {
 		cfg.Configure(nirvana.Descriptor(descriptors...))
