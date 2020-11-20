@@ -1,15 +1,13 @@
 name: ci
-
 on: [pull_request]
-
 jobs:
   ci:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 10
     strategy:
       matrix:
-        go: ["1.13"]
-        os: [ubuntu-latest, macOS-latest]
+        go: ["1.13", "1.14", "1.15"]
+        os: [ubuntu-latest]
     name: Go ${{ matrix.go }} in ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
