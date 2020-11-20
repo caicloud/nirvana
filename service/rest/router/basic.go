@@ -60,7 +60,7 @@ func (h *handler) Merge(o *handler) error {
 	h.AddMiddleware(o.middlewares...)
 	if h.inspector != nil {
 		if o.inspector != nil {
-			return ConflictInspectors.Error()
+			return conflictInspectors.Error()
 		}
 	} else {
 		h.inspector = o.inspector
@@ -71,7 +71,7 @@ func (h *handler) Merge(o *handler) error {
 // pack packs middlewares with the executor.
 func (h *handler) pack(e executor.MiddlewareExecutor) (executor.MiddlewareExecutor, error) {
 	if e == nil {
-		return nil, NoExecutor.Error()
+		return nil, noExecutor.Error()
 	}
 	if len(h.middlewares) <= 0 {
 		return e, nil
@@ -82,7 +82,7 @@ func (h *handler) pack(e executor.MiddlewareExecutor) (executor.MiddlewareExecut
 // unionExecutor packs middlewares and own executor.
 func (h *handler) unionExecutor(ctx context.Context) (executor.MiddlewareExecutor, error) {
 	if h.inspector == nil {
-		return nil, NoInspector.Error()
+		return nil, noInspector.Error()
 	}
 	e, err := h.inspector.Inspect(ctx)
 	if err != nil {
@@ -137,29 +137,29 @@ func (p *children) findStringRouter(char byte) Router {
 // the first executor which Inspect() returns true.
 func (p *children) Match(ctx context.Context, c Container, path string) (executor.MiddlewareExecutor, error) {
 	if len(path) <= 0 {
-		return nil, RouterNotFound.Error()
+		return nil, routerNotFound.Error()
 	}
 
 	// Two routers may match same path:
 	//   /path/{id} without inspector
 	//   /path/{name} with inspector
 	// When match `/path/some`, the first router won't match it and
-	// returns NoInspector. The the second router can match the path.
+	// returns noInspector. The the second router can match the path.
 	// If the second router can't generate an executor, an error is
 	// returned by inspector. In this case, resultError should be the
 	// assigned with the error from second router.
 	// If there are multiple routers match a path, the error is from
 	// the last matched router.
-	resultError := RouterNotFound.Error()
+	resultError := routerNotFound.Error()
 
 	// Match string routers
 	if len(p.stringRouters) > 0 {
 		if router := p.findStringRouter(path[0]); router != nil {
 			if e, err := router.Match(ctx, c, path); err == nil {
 				return e, nil
-			} else if !RouterNotFound.Derived(err) &&
-				!NoInspector.Derived(err) &&
-				!NoExecutor.Derived(err) {
+			} else if !routerNotFound.Derived(err) &&
+				!noInspector.Derived(err) &&
+				!noExecutor.Derived(err) {
 				resultError = err
 			}
 		}
@@ -169,9 +169,9 @@ func (p *children) Match(ctx context.Context, c Container, path string) (executo
 	for _, regexp := range p.regexpRouters {
 		if e, err := regexp.Match(ctx, c, path); err == nil {
 			return e, nil
-		} else if !RouterNotFound.Derived(err) &&
-			!NoInspector.Derived(err) &&
-			!NoExecutor.Derived(err) {
+		} else if !routerNotFound.Derived(err) &&
+			!noInspector.Derived(err) &&
+			!noExecutor.Derived(err) {
 			resultError = err
 		}
 	}
@@ -180,9 +180,9 @@ func (p *children) Match(ctx context.Context, c Container, path string) (executo
 	if p.pathRouter != nil {
 		if e, err := p.pathRouter.Match(ctx, c, path); err == nil {
 			return e, nil
-		} else if !RouterNotFound.Derived(err) &&
-			!NoInspector.Derived(err) &&
-			!NoExecutor.Derived(err) {
+		} else if !routerNotFound.Derived(err) &&
+			!noInspector.Derived(err) &&
+			!noExecutor.Derived(err) {
 			resultError = err
 		}
 	}
@@ -195,11 +195,11 @@ func (p *children) addRouter(router Router) error {
 	case String:
 		target := router.Target()
 		if len(target) <= 0 {
-			return EmptyRouterTarget.Error(router.Kind())
+			return emptyRouterTarget.Error(router.Kind())
 		}
 		r, ok := router.(*stringNode)
 		if !ok {
-			return UnknownRouterType.Error(router.Kind(), reflect.TypeOf(router).String())
+			return unknownRouterType.Error(router.Kind(), reflect.TypeOf(router).String())
 		}
 		c := target[0]
 		sr := p.findStringRouter(c)
@@ -246,7 +246,7 @@ func (p *children) addRouter(router Router) error {
 			p.pathRouter = router
 		}
 	default:
-		return UnknownRouterType.Error(router.Kind(), reflect.TypeOf(router).String())
+		return unknownRouterType.Error(router.Kind(), reflect.TypeOf(router).String())
 	}
 	return nil
 }

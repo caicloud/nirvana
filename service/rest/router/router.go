@@ -111,7 +111,7 @@ func Parse(path string) (Router, Router, error) {
 		return nil, nil, err
 	}
 	if len(paths) <= 0 {
-		return nil, nil, InvalidPath.Error()
+		return nil, nil, invalidPath.Error()
 	}
 	segments, err := reorganize(paths)
 	if err != nil {
@@ -139,7 +139,7 @@ func Parse(path string) (Router, Router, error) {
 					return nil, nil, err
 				}
 			} else {
-				return nil, nil, InvalidParentRouter.Error(reflect.TypeOf(parent).String())
+				return nil, nil, invalidParentRouter.Error(reflect.TypeOf(parent).String())
 			}
 		}
 		parent = router
@@ -166,7 +166,7 @@ func segmentToRouter(seg *segment) (Router, error) {
 		}
 		r, err := regexp.Compile("^" + seg.match + "$")
 		if err != nil {
-			return nil, InvalidRegexp.Error(seg.match)
+			return nil, invalidRegexp.Error(seg.match)
 		}
 		node.regexp = r
 		names := r.SubexpNames()
@@ -178,7 +178,7 @@ func segmentToRouter(seg *segment) (Router, error) {
 			}
 		}
 		if j != len(seg.keys) {
-			return nil, UnmatchedSegmentKeys.Error(seg)
+			return nil, unmatchedSegmentKeys.Error(seg)
 		}
 		return node, nil
 
@@ -187,7 +187,7 @@ func segmentToRouter(seg *segment) (Router, error) {
 			key: seg.keys[0],
 		}, nil
 	}
-	return nil, UnknownSegment.Error(seg)
+	return nil, unknownSegment.Error(seg)
 }
 
 // Split splits string segments and regexp segments.
@@ -219,7 +219,7 @@ func Split(path string) ([]string, error) {
 		}
 	}
 	if braceCounter > 0 {
-		return nil, UnmatchedPathBrace.Error()
+		return nil, unmatchedPathBrace.Error()
 	}
 	if lastElementPos < len(path) {
 		result = append(result, path[lastElementPos:])
@@ -272,7 +272,7 @@ func reorganize(paths []string) ([]*segment, error) {
 			}
 			if seg.Tail() {
 				if i != len(paths)-1 {
-					return nil, InvalidPathKey.Error(seg.key)
+					return nil, invalidPathKey.Error(seg.key)
 				}
 				if target != nil {
 					segments = append(segments, target)
@@ -305,7 +305,7 @@ type expSegment struct {
 // parseExpSegment parses a regexp segment to ExpSegment.
 func parseExpSegment(exp string) (*expSegment, error) {
 	if !strings.HasPrefix(exp, "{") || !strings.HasSuffix(exp, "}") {
-		return nil, InvalidRegexp.Error(exp)
+		return nil, invalidRegexp.Error(exp)
 	}
 	exp = exp[1 : len(exp)-1]
 	pos := strings.Index(exp, ":")

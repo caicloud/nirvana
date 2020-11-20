@@ -50,7 +50,7 @@ func (n *stringNode) Kind() RouteKind {
 func (n *stringNode) Match(ctx context.Context, c Container, path string) (executor.MiddlewareExecutor, error) {
 	if n.prefix != "" && !strings.HasPrefix(path, n.prefix) {
 		// No match
-		return nil, RouterNotFound.Error()
+		return nil, routerNotFound.Error()
 	}
 	if len(n.prefix) < len(path) {
 		// Match prefix
@@ -69,7 +69,7 @@ func (n *stringNode) Match(ctx context.Context, c Container, path string) (execu
 func (n *stringNode) Merge(r Router) (Router, error) {
 	node, ok := r.(*stringNode)
 	if !ok {
-		return nil, UnknownRouterType.Error(r.Kind(), reflect.TypeOf(r).String())
+		return nil, unknownRouterType.Error(r.Kind(), reflect.TypeOf(r).String())
 	}
 	commonPrefix := 0
 	for commonPrefix < len(n.prefix) && commonPrefix < len(node.prefix) {
@@ -79,7 +79,7 @@ func (n *stringNode) Merge(r Router) (Router, error) {
 		commonPrefix++
 	}
 	if commonPrefix <= 0 {
-		return nil, NoCommonPrefix.Error()
+		return nil, noCommonPrefix.Error()
 	}
 	switch {
 	case commonPrefix == len(n.prefix) && commonPrefix == len(node.prefix):

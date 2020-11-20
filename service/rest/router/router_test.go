@@ -82,12 +82,12 @@ func TestReorganize(t *testing.T) {
 		{
 			[]string{"/segments/", "{segment:[a-z]{1,2}}", ".log", "{temp", "sss/paths/", "{path:*}"},
 			nil,
-			InvalidRegexp,
+			invalidRegexp,
 		},
 		{
 			[]string{"/segments/", "{segment:[a-z]{1,2}}", ".log", "{temp}", "{path:*}", "sss/paths/"},
 			nil,
-			InvalidPathKey,
+			invalidPathKey,
 		},
 		{
 			[]string{"/segments/", "{segment:[a-z]{1,2}}", ".log", "{temp}", "{path:*}"},
@@ -146,22 +146,22 @@ func TestParse(t *testing.T) {
 		{
 			path: "/segments/{{cmd}/{segment:[a-z]{1,2}}.log{temp}sss/paths/{path:*}",
 			tab:  nil,
-			err:  UnmatchedPathBrace,
+			err:  unmatchedPathBrace,
 		},
 		{
 			path: "",
 			tab:  nil,
-			err:  InvalidPath,
+			err:  invalidPath,
 		},
 		{
 			path: "/segments/{cmd}/{segment:[a-z]{1,2}}.log{temp}sss/paths/{path:*}/why",
 			tab:  nil,
-			err:  InvalidPathKey,
+			err:  invalidPathKey,
 		},
 		{
 			path: "/segments/{cmd}/{segment:[a-z]{1,2}}.log{temp{why}}sss/paths/{path:*}",
 			tab:  nil,
-			err:  InvalidRegexp,
+			err:  invalidRegexp,
 		},
 	}
 
@@ -278,7 +278,7 @@ func TestPathNodeMerge(t *testing.T) {
 			root = router
 		} else {
 			if _, err := root.Merge(router); err != nil {
-				if !UnmatchedRouterKey.Derived(err) {
+				if !unmatchedRouterKey.Derived(err) {
 					t.Fatal(err)
 				}
 			} else {
@@ -305,7 +305,7 @@ func TestCommonPrefixMergeError(t *testing.T) {
 			root = router
 		} else {
 			_, err = root.Merge(router)
-			errorCompare(t, err, NoCommonPrefix)
+			errorCompare(t, err, noCommonPrefix)
 		}
 	}
 }
@@ -327,7 +327,7 @@ func TestRegexpMergeError(t *testing.T) {
 			root = router
 		} else {
 			_, err = root.Merge(router)
-			errorCompare(t, err, UnmatchedRouterKey)
+			errorCompare(t, err, unmatchedRouterKey)
 		}
 	}
 }
