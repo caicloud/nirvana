@@ -34,7 +34,7 @@ var echo = definition.RPCDescriptor{
 	Produces:    []string{definition.MIMEJSON},
 	Actions: []definition.RPCAction{
 		{
-			Name:    "Echo",
+			Name:    "GetEcho",
 			Version: "2020-10-10",
 			Function: func(ctx context.Context, msg string) (string, error) {
 				return msg, nil
@@ -49,7 +49,7 @@ var echo = definition.RPCDescriptor{
 			Results: definition.DataErrorResults(""),
 		},
 		{
-			Name:    "Echo1",
+			Name:    "CreateEcho",
 			Version: "2020-10-10",
 			Function: func(ctx context.Context, msg string) (string, error) {
 				return msg, nil
@@ -71,7 +71,7 @@ var echo2 = definition.RPCDescriptor{
 	Description: "Echo API",
 	Actions: []definition.RPCAction{
 		{
-			Name:    "Echo2",
+			Name:    "DeleteEcho",
 			Version: "2020-10-10",
 			Function: func(ctx context.Context, msg string) (string, error) {
 				return msg, nil
