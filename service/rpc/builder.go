@@ -19,6 +19,7 @@ package rpc
 import (
 	"fmt"
 	"net/http"
+	"reflect"
 
 	"github.com/caicloud/nirvana/definition"
 	"github.com/caicloud/nirvana/log"
@@ -95,14 +96,14 @@ func (b *builder) AddDescriptor(descriptors ...interface{}) error {
 	for _, obj := range descriptors {
 		descriptor, ok := obj.(definition.RPCDescriptor)
 		if !ok {
-			return fmt.Errorf("not a Descriptor")
+			return fmt.Errorf("%s is not a definition.RPCDescriptor", reflect.TypeOf(obj).String())
 		}
-		p := descriptor.Path
-		if p == "" {
-			p = "/"
+		path := descriptor.Path
+		if path == "" {
+			path = "/"
 		}
 		for _, action := range descriptor.Actions {
-			b.bindings[genRPCPath(p, action.Version, action.Name)] = &binding{
+			b.bindings[genRPCPath(path, action.Version, action.Name)] = &binding{
 				middlewares: descriptor.Middlewares,
 				definition:  b.genDefinition(action, descriptor.Consumes, descriptor.Produces, descriptor.Tags),
 			}

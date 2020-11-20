@@ -19,6 +19,7 @@ package rest
 import (
 	"fmt"
 	"net/http"
+	"reflect"
 	"strings"
 
 	"github.com/caicloud/nirvana/definition"
@@ -85,12 +86,12 @@ func (b *builder) SetModifier(m service.DefinitionModifier) {
 
 // AddDescriptor adds descriptors to router.
 func (b *builder) AddDescriptor(descriptors ...interface{}) error {
-	for _, descriptor := range descriptors {
-		d, ok := descriptor.(definition.Descriptor)
+	for _, obj := range descriptors {
+		descriptor, ok := obj.(definition.Descriptor)
 		if !ok {
-			return fmt.Errorf("not a Descriptor")
+			return fmt.Errorf("%s is not a definition.Descriptor", reflect.TypeOf(obj).String())
 		}
-		b.addDescriptor("", nil, nil, nil, d)
+		b.addDescriptor("", nil, nil, nil, descriptor)
 	}
 	return nil
 }
