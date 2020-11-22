@@ -64,18 +64,32 @@ func (i *versionInstaller) Install(builder service.Builder, cfg *nirvana.Config)
 			Hash:        c.hash,
 			Description: c.description,
 		}
-		err = builder.AddDescriptor(definition.Descriptor{
-			Path:     c.path,
-			Consumes: []string{definition.MIMEAll},
-			Produces: []string{definition.MIMEAll},
-			Definitions: []definition.Definition{{
-				Method:  definition.Get,
-				Results: definition.DataErrorResults(""),
-				Function: func(ctx context.Context) (*version, error) {
-					return v, nil
-				},
-			}},
-		})
+		if builder.APIStyle() == service.APIStyleRPC {
+			err = builder.AddDescriptor(definition.RPCDescriptor{
+				Path:     c.path,
+				Consumes: []string{definition.MIMEAll},
+				Produces: []string{definition.MIMEAll},
+				Actions: []definition.RPCAction{{
+					Results: definition.DataErrorResults(""),
+					Function: func(ctx context.Context) (*version, error) {
+						return v, nil
+					},
+				}},
+			})
+		} else {
+			err = builder.AddDescriptor(definition.Descriptor{
+				Path:     c.path,
+				Consumes: []string{definition.MIMEAll},
+				Produces: []string{definition.MIMEAll},
+				Definitions: []definition.Definition{{
+					Method:  definition.Get,
+					Results: definition.DataErrorResults(""),
+					Function: func(ctx context.Context) (*version, error) {
+						return v, nil
+					},
+				}},
+			})
+		}
 	})
 	return err
 }

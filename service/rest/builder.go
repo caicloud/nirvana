@@ -199,6 +199,11 @@ func (b *builder) Definitions() map[string][]definition.Definition {
 	return result
 }
 
+// APIStyle returns the API style of this builder.
+func (b *builder) APIStyle() service.APIStyle {
+	return service.APIStyleREST
+}
+
 // Build builds a service to handle request.
 func (b *builder) Build() (service.Service, error) {
 	if len(b.bindings) <= 0 {

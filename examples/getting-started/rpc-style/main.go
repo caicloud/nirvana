@@ -23,8 +23,12 @@ import (
 	"github.com/caicloud/nirvana/config"
 	"github.com/caicloud/nirvana/definition"
 	"github.com/caicloud/nirvana/log"
+	"github.com/caicloud/nirvana/middlewares/metrics"
 	"github.com/caicloud/nirvana/middlewares/reqlog"
-	"github.com/caicloud/nirvana/service/builder"
+	"github.com/caicloud/nirvana/plugins/apidocs"
+	"github.com/caicloud/nirvana/plugins/healthcheck"
+	"github.com/caicloud/nirvana/plugins/profiling"
+	"github.com/caicloud/nirvana/service"
 )
 
 var echo = definition.RPCDescriptor{
@@ -94,8 +98,25 @@ func main() {
 	cmd := config.NewDefaultNirvanaCommand()
 	conf := nirvana.NewDefaultConfig()
 	conf.Configure(
-		nirvana.APIStyle(builder.APIStyleRPC),
-		nirvana.Descriptor(echo, echo2),
+		nirvana.APIStyle(service.APIStyleRPC),
+		nirvana.Descriptor(echo, echo2, metrics.RPCDescriptor("/metrics")),
+
+		profiling.Path("/debug/pprof"),
+		healthcheck.CheckerWithType(func(ctx context.Context, checkType string) error {
+			switch checkType {
+			case healthcheck.LivenessCheck:
+				return nil
+			case healthcheck.ReadinessCheck:
+				// add specific check logic here if needed
+				return nil
+			}
+			return nil
+		}),
+		// enable the API docs plugin
+		func(c *nirvana.Config) error {
+			plugin := &apidocs.Option{FilesPath: "apis", Path: "/docs"}
+			return plugin.Configure(c)
+		},
 	)
 	if err := cmd.ExecuteWithConfig(conf); err != nil {
 		log.Fatal(err)
