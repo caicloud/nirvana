@@ -22,7 +22,6 @@ import (
 
 	"github.com/caicloud/nirvana/definition"
 	"github.com/caicloud/nirvana/service"
-	"github.com/caicloud/nirvana/service/builder"
 )
 
 // Parameter describes a function parameter.
@@ -100,7 +99,7 @@ type Definition struct {
 // NewDefinition creates openapi.Definition from definition.Definition.
 func NewDefinition(tc *TypeContainer, d *definition.Definition, apiStyle string) (*Definition, error) {
 	code := service.HTTPCodeFor(d.Method)
-	if apiStyle == builder.APIStyleRPC {
+	if apiStyle == string(service.APIStyleRPC) {
 		code = http.StatusOK
 	}
 

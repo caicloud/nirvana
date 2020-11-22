@@ -22,12 +22,12 @@ import (
 	"testing"
 
 	"github.com/caicloud/nirvana/examples/api-basic/application"
-	"github.com/caicloud/nirvana/service/builder"
+	"github.com/caicloud/nirvana/service"
 	"github.com/caicloud/nirvana/utils/unittest"
 )
 
 func TestCreate(t *testing.T) {
-	s, err := unittest.NewTestService(builder.APIStyleREST, Descriptor())
+	s, err := unittest.NewTestService(service.APIStyleREST, Descriptor())
 	if err != nil {
 		t.Fatal(err)
 	}

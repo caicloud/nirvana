@@ -259,5 +259,4 @@ func SimpleDescriptor(method Method, path string, f interface{}) Descriptor {
 			},
 		},
 	}
-
 }

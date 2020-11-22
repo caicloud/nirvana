@@ -135,7 +135,7 @@ func (ac *Container) AddDescriptor(descriptors ...interface{}) {
 
 // Generate generates API definitions.
 func (ac *Container) Generate(apiStyle string) (*Definitions, error) {
-	builder := builderutil.New(apiStyle)
+	builder := builderutil.New(service.APIStyle(apiStyle))
 	builder.SetModifier(ac.modifiers.Combine())
 	if err := builder.AddDescriptor(ac.descriptors...); err != nil {
 		return nil, err

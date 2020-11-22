@@ -17,16 +17,14 @@ limitations under the License.
 package profiling
 
 import (
-	"fmt"
 	"html/template"
 	"log"
 	"net/http"
 	"net/http/pprof"
+	"path"
 	"path/filepath"
-	"runtime"
 	rpprof "runtime/pprof"
 	"sort"
-	"strconv"
 
 	"github.com/caicloud/nirvana"
 	"github.com/caicloud/nirvana/definition"
@@ -56,8 +54,14 @@ func (i *profilingInstaller) Name() string {
 func (i *profilingInstaller) Install(builder service.Builder, cfg *nirvana.Config) error {
 	var err error
 	wrapper(cfg, func(c *config) {
-		if err = builder.AddDescriptor(descriptor(c.path)); err != nil {
-			return
+		if builder.APIStyle() == service.APIStyleRPC {
+			if err = builder.AddDescriptor(rpcDescriptors(c.path)...); err != nil {
+				return
+			}
+		} else {
+			if err = builder.AddDescriptor(descriptor(c.path)); err != nil {
+				return
+			}
 		}
 	})
 	return err
@@ -156,29 +160,103 @@ func descriptor(path string) definition.Descriptor {
 				Definitions: []definition.Definition{{
 					Method: definition.Get,
 					Function: service.WrapHTTPHandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-						name := filepath.Base(r.URL.Path)
-						w.Header().Set("X-Content-Type-Options", "nosniff")
-						p := rpprof.Lookup(name)
-						if p == nil {
-							w.WriteHeader(http.StatusNotFound)
-							_, _ = w.Write([]byte("Unknown profile"))
-							return
-						}
-						gc, _ := strconv.Atoi(r.FormValue("gc"))
-						if name == "heap" && gc > 0 {
-							runtime.GC()
-						}
-						debug, _ := strconv.Atoi(r.FormValue("debug"))
-						if debug != 0 {
-							w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-						} else {
-							w.Header().Set("Content-Type", "application/octet-stream")
-							w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, name))
-						}
-						_ = p.WriteTo(w, debug)
+						pprof.Handler(filepath.Base(r.URL.Path)).ServeHTTP(w, r)
 					}),
 				}},
 			},
+		},
+	}
+}
+
+func rpcDescriptors(root string) []interface{} {
+	return []interface{}{
+		definition.RPCDescriptor{
+			Path:     root,
+			Consumes: []string{definition.MIMEAll},
+			Produces: []string{definition.MIMEAll},
+			Actions: []definition.RPCAction{{
+				Function: service.WrapHTTPHandlerFunc(index),
+			}},
+		},
+		definition.RPCDescriptor{
+			Path:     path.Join(root, "cmdline"),
+			Consumes: []string{definition.MIMEAll},
+			Produces: []string{definition.MIMEAll},
+			Actions: []definition.RPCAction{{
+				Function: service.WrapHTTPHandlerFunc(pprof.Cmdline),
+			}},
+		},
+		definition.RPCDescriptor{
+			Path:     path.Join(root, "profile"),
+			Consumes: []string{definition.MIMEAll},
+			Produces: []string{definition.MIMEAll},
+			Actions: []definition.RPCAction{{
+				Function: service.WrapHTTPHandlerFunc(pprof.Profile),
+			}},
+		},
+		definition.RPCDescriptor{
+			Path:     path.Join(root, "symbol"),
+			Consumes: []string{definition.MIMEAll},
+			Produces: []string{definition.MIMEAll},
+			Actions: []definition.RPCAction{{
+				Function: service.WrapHTTPHandlerFunc(pprof.Symbol),
+			}},
+		},
+		definition.RPCDescriptor{
+			Path:     path.Join(root, "trace"),
+			Consumes: []string{definition.MIMEAll},
+			Produces: []string{definition.MIMEAll},
+			Actions: []definition.RPCAction{{
+				Function: service.WrapHTTPHandlerFunc(pprof.Trace),
+			}},
+		},
+		definition.RPCDescriptor{
+			Path:     path.Join(root, "goroutine"),
+			Consumes: []string{definition.MIMEAll},
+			Produces: []string{definition.MIMEAll},
+			Actions: []definition.RPCAction{{
+				Function: service.WrapHTTPHandler(pprof.Handler("goroutine")),
+			}},
+		},
+		definition.RPCDescriptor{
+			Path:     path.Join(root, "threadcreate"),
+			Consumes: []string{definition.MIMEAll},
+			Produces: []string{definition.MIMEAll},
+			Actions: []definition.RPCAction{{
+				Function: service.WrapHTTPHandler(pprof.Handler("threadcreate")),
+			}},
+		},
+		definition.RPCDescriptor{
+			Path:     path.Join(root, "heap"),
+			Consumes: []string{definition.MIMEAll},
+			Produces: []string{definition.MIMEAll},
+			Actions: []definition.RPCAction{{
+				Function: service.WrapHTTPHandler(pprof.Handler("heap")),
+			}},
+		},
+		definition.RPCDescriptor{
+			Path:     path.Join(root, "allocs"),
+			Consumes: []string{definition.MIMEAll},
+			Produces: []string{definition.MIMEAll},
+			Actions: []definition.RPCAction{{
+				Function: service.WrapHTTPHandler(pprof.Handler("allocs")),
+			}},
+		},
+		definition.RPCDescriptor{
+			Path:     path.Join(root, "block"),
+			Consumes: []string{definition.MIMEAll},
+			Produces: []string{definition.MIMEAll},
+			Actions: []definition.RPCAction{{
+				Function: service.WrapHTTPHandler(pprof.Handler("block")),
+			}},
+		},
+		definition.RPCDescriptor{
+			Path:     path.Join(root, "mutex"),
+			Consumes: []string{definition.MIMEAll},
+			Produces: []string{definition.MIMEAll},
+			Actions: []definition.RPCAction{{
+				Function: service.WrapHTTPHandler(pprof.Handler("mutex")),
+			}},
 		},
 	}
 }

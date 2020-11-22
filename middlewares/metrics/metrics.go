@@ -69,3 +69,21 @@ func Descriptor(path string) definition.Descriptor {
 	}
 	return definition.SimpleDescriptor(definition.Get, path, service.WrapHTTPHandler(promhttp.Handler()))
 }
+
+// RPCDescriptor returns a rpc descriptor for the API; it must be configured to a server in order to serve the
+// metric API.
+func RPCDescriptor(path string) definition.RPCDescriptor {
+	if path == "" {
+		path = "/metrics"
+	}
+	return definition.RPCDescriptor{
+		Path: path,
+		Actions: []definition.RPCAction{
+			{
+				Function: service.WrapHTTPHandler(promhttp.Handler()),
+				Consumes: []string{definition.MIMEAll},
+				Produces: []string{definition.MIMEAll},
+			},
+		},
+	}
+}
