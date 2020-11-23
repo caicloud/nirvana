@@ -63,16 +63,21 @@ func (i *apiDocsInstaller) Install(builder service.Builder, cfg *nirvana.Config)
 		versions := make([]string, 0, len(files))
 		for v, data := range files {
 			versions = append(versions, v)
-			apiDescriptor = append(apiDescriptor, api.DescriptorForData(api.PathForVersion(c.path, v), data, definition.MIMEJSON))
+			if builder.APIStyle() == service.APIStyleRPC {
+				apiDescriptor = append(apiDescriptor, api.RPCDescriptorForData(api.PathForVersion(c.path, v), data, definition.MIMEJSON))
+			} else {
+				apiDescriptor = append(apiDescriptor, api.DescriptorForData(api.PathForVersion(c.path, v), data, definition.MIMEJSON))
+			}
 		}
 		data, err := api.GenSwaggerPageData(c.path, versions)
 		if err != nil {
 			return err
 		}
-		apiDescriptor = append(
-			apiDescriptor,
-			api.DescriptorForData(c.path, data, definition.MIMEHTML),
-		)
+		if builder.APIStyle() == service.APIStyleRPC {
+			apiDescriptor = append(apiDescriptor, api.RPCDescriptorForData(c.path, data, definition.MIMEHTML))
+		} else {
+			apiDescriptor = append(apiDescriptor, api.DescriptorForData(c.path, data, definition.MIMEHTML))
+		}
 		return builder.AddDescriptor(apiDescriptor...)
 	})
 }

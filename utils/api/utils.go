@@ -150,11 +150,27 @@ func DescriptorForData(path string, data []byte, contentType string) definition.
 				Method:   definition.Get,
 				Consumes: []string{definition.MIMENone},
 				Produces: []string{contentType},
-				Function: func(context.Context) ([]byte, error) {
-					return data, nil
+				Function: func(context.Context) []byte {
+					return data
 				},
-				Parameters: []definition.Parameter{},
-				Results:    definition.DataErrorResults(""),
+				Results: []definition.Result{definition.DataResultFor("")},
+			},
+		},
+	}
+}
+
+// RPCDescriptorForData generates a RPCDescriptor for API docs page.
+func RPCDescriptorForData(path string, data []byte, contentType string) definition.RPCDescriptor {
+	return definition.RPCDescriptor{
+		Path: path,
+		Actions: []definition.RPCAction{
+			{
+				Consumes: []string{definition.MIMENone},
+				Produces: []string{contentType},
+				Function: func(context.Context) []byte {
+					return data
+				},
+				Results: []definition.Result{definition.DataResultFor("")},
 			},
 		},
 	}

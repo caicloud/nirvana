@@ -23,6 +23,16 @@ import (
 	"github.com/caicloud/nirvana/log"
 )
 
+// APIStyle defines the API style type of the builder.
+type APIStyle string
+
+const (
+	// APIStyleREST represents the RESTful API style.
+	APIStyleREST APIStyle = "rest"
+	// APIStyleRPC represents the RPC API style.
+	APIStyleRPC APIStyle = "rpc"
+)
+
 // Builder builds service.
 type Builder interface {
 	// Logger returns logger of builder.
@@ -41,6 +51,8 @@ type Builder interface {
 	AddDescriptor(descriptors ...interface{}) error
 	// Definitions returns all definitions. If a modifier exists, it will be executed.
 	Definitions() map[string][]definition.Definition
+	// APIStyle returns the API style of this builder.
+	APIStyle() APIStyle
 	// Build builds a service to handle request.
 	Build() (Service, error)
 }

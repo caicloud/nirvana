@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"net/http"
 	"reflect"
+	"sort"
 
 	"github.com/caicloud/nirvana/definition"
 	"github.com/caicloud/nirvana/log"
@@ -88,6 +89,9 @@ func (b *builder) SetModifier(m service.DefinitionModifier) {
 }
 
 func genRPCPath(path, version, action string) string {
+	if version == "" && action == "" {
+		return path
+	}
 	return fmt.Sprintf("%s?Version=%s&Action=%s", path, version, action)
 }
 
@@ -157,14 +161,26 @@ func (b *builder) Definitions() map[string][]definition.Definition {
 	return result
 }
 
+// APIStyle returns the API style of this builder.
+func (b *builder) APIStyle() service.APIStyle {
+	return service.APIStyleRPC
+}
+
 // Build builds a service to handle request.
 func (b *builder) Build() (service.Service, error) {
 	if len(b.bindings) <= 0 {
 		return nil, fmt.Errorf("no router")
 	}
 
+	paths := make([]string, 0, len(b.bindings))
+	for path := range b.bindings {
+		paths = append(paths, path)
+	}
+	sort.Strings(paths)
+
 	var err error
-	for path, bd := range b.bindings {
+	for _, path := range paths {
+		bd := b.bindings[path]
 		b.logger.V(log.LevelDebug).Infof("Path: %s, Consumes: %v, Produces: %v", path, bd.definition.Consumes, bd.definition.Produces)
 		if b.modifier != nil {
 			b.modifier(&bd.definition)

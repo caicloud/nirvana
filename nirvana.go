@@ -53,7 +53,7 @@ type Server interface {
 // Config describes configuration of server.
 type Config struct {
 	// apiStyle makes nirvana serve as REST or RPC style, default is REST.
-	apiStyle string
+	apiStyle service.APIStyle
 	// tls cert file
 	certFile string
 	// tls ket file
@@ -177,7 +177,7 @@ func NewDefaultConfig() *Config {
 // modifiers for specific scenario, please use NewDefaultConfig().
 func NewConfig() *Config {
 	return &Config{
-		apiStyle:  builderutil.APIStyleREST,
+		apiStyle:  service.APIStyleREST,
 		port:      8080,
 		logger:    &log.SilentLogger{},
 		configSet: make(map[string]interface{}),
@@ -332,7 +332,7 @@ func RegisterConfigInstaller(ci ConfigInstaller) {
 }
 
 // APIStyle returns a configurer to set api style into config.
-func APIStyle(apiStyle string) Configurer {
+func APIStyle(apiStyle service.APIStyle) Configurer {
 	return func(c *Config) error {
 		c.apiStyle = apiStyle
 		return nil
