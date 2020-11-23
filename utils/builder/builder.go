@@ -30,7 +30,7 @@ import (
 	"strconv"
 	"text/template"
 
-	builderutil "github.com/caicloud/nirvana/service/builder"
+	"github.com/caicloud/nirvana/service"
 	"github.com/caicloud/nirvana/utils/api"
 )
 
@@ -60,7 +60,7 @@ func (b *APIBuilder) Build() (*api.Definitions, error) {
 	descriptors := make([]function, 0)
 	modifiers := make([]function, 0)
 
-	apiStyle := builderutil.APIStyleREST
+	apiStyle := string(service.APIStyleREST)
 
 	for _, pkg := range analyzer.Paths() {
 		groups := analyzer.PackageComments(pkg)

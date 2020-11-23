@@ -71,7 +71,7 @@ func (r *responseWriter) Bytes() []byte {
 }
 
 // NewTestService creates a service.Service for testing.
-func NewTestService(apiStyle string, desc ...interface{}) (service.Service, error) {
+func NewTestService(apiStyle service.APIStyle, desc ...interface{}) (service.Service, error) {
 	builder := builderutil.New(apiStyle)
 	builder.SetModifier(service.FirstContextParameter())
 	builder.AddFilter(service.RedirectTrailingSlash(), service.FillLeadingSlash(), service.ParseRequestForm())
@@ -83,7 +83,7 @@ func NewTestService(apiStyle string, desc ...interface{}) (service.Service, erro
 
 // NewTestServiceWithConfig creates a service.Service for testing with user specified modifier and
 // filters. If modifier or filters is nil, default option will be used.
-func NewTestServiceWithConfig(apiStyle string, desc []interface{}, modifier service.DefinitionModifier,
+func NewTestServiceWithConfig(apiStyle service.APIStyle, desc []interface{}, modifier service.DefinitionModifier,
 	filters []service.Filter) (service.Service, error) {
 	builder := builderutil.New(apiStyle)
 	if modifier == nil {

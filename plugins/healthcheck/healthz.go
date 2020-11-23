@@ -80,17 +80,30 @@ func (i *healthcheckInstaller) Install(builder service.Builder, cfg *nirvana.Con
 			function = c.checkerWithType
 		}
 
-		err = builder.AddDescriptor(definition.Descriptor{
-			Path:     c.path,
-			Consumes: []string{definition.MIMEAll},
-			Produces: []string{definition.MIMEAll},
-			Definitions: []definition.Definition{{
-				Method:     definition.Get,
-				Results:    []definition.Result{definition.ErrorResult()},
-				Parameters: parameters,
-				Function:   function,
-			}},
-		})
+		if builder.APIStyle() == service.APIStyleRPC {
+			err = builder.AddDescriptor(definition.RPCDescriptor{
+				Path:     c.path,
+				Consumes: []string{definition.MIMEAll},
+				Produces: []string{definition.MIMEAll},
+				Actions: []definition.RPCAction{{
+					Results:    []definition.Result{definition.ErrorResult()},
+					Parameters: parameters,
+					Function:   function,
+				}},
+			})
+		} else {
+			err = builder.AddDescriptor(definition.Descriptor{
+				Path:     c.path,
+				Consumes: []string{definition.MIMEAll},
+				Produces: []string{definition.MIMEAll},
+				Definitions: []definition.Definition{{
+					Method:     definition.Get,
+					Results:    []definition.Result{definition.ErrorResult()},
+					Parameters: parameters,
+					Function:   function,
+				}},
+			})
+		}
 	})
 	return err
 }
