@@ -97,9 +97,9 @@ type Definition struct {
 }
 
 // NewDefinition creates openapi.Definition from definition.Definition.
-func NewDefinition(tc *TypeContainer, d *definition.Definition, apiStyle string) (*Definition, error) {
+func NewDefinition(tc *TypeContainer, d *definition.Definition, apiStyle service.APIStyle) (*Definition, error) {
 	code := service.HTTPCodeFor(d.Method)
-	if apiStyle == string(service.APIStyleRPC) {
+	if apiStyle == service.APIStyleRPC {
 		code = http.StatusOK
 	}
 
@@ -169,7 +169,7 @@ func NewDefinition(tc *TypeContainer, d *definition.Definition, apiStyle string)
 }
 
 // NewDefinitions creates a list of definitions.
-func NewDefinitions(tc *TypeContainer, definitions []definition.Definition, apiStyle string) ([]Definition, error) {
+func NewDefinitions(tc *TypeContainer, definitions []definition.Definition, apiStyle service.APIStyle) ([]Definition, error) {
 	result := make([]Definition, len(definitions))
 	for i, d := range definitions {
 		cd, err := NewDefinition(tc, &d, apiStyle)
@@ -182,7 +182,7 @@ func NewDefinitions(tc *TypeContainer, definitions []definition.Definition, apiS
 }
 
 // NewPathDefinitions creates a list of definitions with path.
-func NewPathDefinitions(tc *TypeContainer, definitions map[string][]definition.Definition, apiStyle string) (map[string][]Definition, error) {
+func NewPathDefinitions(tc *TypeContainer, definitions map[string][]definition.Definition, apiStyle service.APIStyle) (map[string][]Definition, error) {
 	result := make(map[string][]Definition)
 	for path, defs := range definitions {
 		cds, err := NewDefinitions(tc, defs, apiStyle)
