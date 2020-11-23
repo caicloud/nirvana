@@ -141,7 +141,7 @@ func (ac *Container) Generate(apiStyle string) (*Definitions, error) {
 		return nil, err
 	}
 	definitions := builder.Definitions()
-	result, err := NewPathDefinitions(ac.typeContainer, definitions, apiStyle)
+	result, err := NewPathDefinitions(ac.typeContainer, definitions, service.APIStyle(apiStyle))
 	if err != nil {
 		return nil, err
 	}
