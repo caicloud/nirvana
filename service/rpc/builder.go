@@ -140,7 +140,7 @@ func (b *builder) genDefinition(action definition.RPCAction, consumes []string, 
 		Function:      action.Function,
 		Parameters:    action.Parameters,
 		Results:       action.Results,
-		Summary:       action.Summary,
+		Summary:       action.Name,
 		Description:   action.Description,
 		Examples:      action.Examples,
 	}
