@@ -19,7 +19,8 @@ package metrics
 import (
 	"github.com/caicloud/nirvana"
 	"github.com/caicloud/nirvana/definition"
-	"github.com/caicloud/nirvana/middlewares/metrics"
+	"github.com/caicloud/nirvana/metrics"
+	metricsmiddleware "github.com/caicloud/nirvana/middlewares/metrics"
 	"github.com/caicloud/nirvana/service"
 )
 
@@ -50,9 +51,9 @@ func (i *metricsInstaller) Install(builder service.Builder, cfg *nirvana.Config)
 
 		monitorMiddleware := definition.Descriptor{
 			Path:        "/",
-			Middlewares: []definition.Middleware{metrics.Namespace(c.namespace)},
+			Middlewares: []definition.Middleware{metricsmiddleware.Restful(&metrics.Options{NamespaceValue: c.namespace})},
 		}
-		err = builder.AddDescriptor(monitorMiddleware, metrics.Descriptor(c.path))
+		err = builder.AddDescriptor(monitorMiddleware, metricsmiddleware.Descriptor(c.path))
 	})
 	return err
 }
