@@ -21,7 +21,7 @@ github.com/go-playground/locales
 github.com/go-playground/locales/currency
 # github.com/go-playground/universal-translator v0.16.0
 github.com/go-playground/universal-translator
-# github.com/golang/protobuf v1.4.2
+# github.com/golang/protobuf v1.4.3
 github.com/golang/protobuf/proto
 github.com/golang/protobuf/ptypes
 github.com/golang/protobuf/ptypes/any
@@ -58,18 +58,20 @@ github.com/opentracing/opentracing-go/log
 github.com/pelletier/go-toml
 # github.com/pkg/errors v0.9.1
 github.com/pkg/errors
-# github.com/prometheus/client_golang v1.5.1
+# github.com/prometheus/client_golang v1.8.0
 github.com/prometheus/client_golang/prometheus
 github.com/prometheus/client_golang/prometheus/internal
 github.com/prometheus/client_golang/prometheus/promauto
 github.com/prometheus/client_golang/prometheus/promhttp
+github.com/prometheus/client_golang/prometheus/testutil
+github.com/prometheus/client_golang/prometheus/testutil/promlint
 # github.com/prometheus/client_model v0.2.0
 github.com/prometheus/client_model/go
-# github.com/prometheus/common v0.9.1
+# github.com/prometheus/common v0.14.0
 github.com/prometheus/common/expfmt
 github.com/prometheus/common/internal/bitbucket.org/ww/goautoneg
 github.com/prometheus/common/model
-# github.com/prometheus/procfs v0.0.8
+# github.com/prometheus/procfs v0.2.0
 github.com/prometheus/procfs
 github.com/prometheus/procfs/internal/fs
 github.com/prometheus/procfs/internal/util
@@ -111,7 +113,7 @@ github.com/uber/jaeger-lib/metrics
 go.uber.org/atomic
 # golang.org/x/net v0.0.0-20200707034311-ab3426394381
 golang.org/x/net/idna
-# golang.org/x/sys v0.0.0-20200622214017-ed371f2e16b4
+# golang.org/x/sys v0.0.0-20201015000850-e3ed0017c211
 golang.org/x/sys/internal/unsafeheader
 golang.org/x/sys/unix
 golang.org/x/sys/windows
@@ -121,7 +123,7 @@ golang.org/x/text/transform
 golang.org/x/text/unicode/bidi
 golang.org/x/text/unicode/norm
 golang.org/x/text/width
-# golang.org/x/tools v0.0.0-20191029041327-9cc4af7d6b2c
+# golang.org/x/tools v0.0.0-20200103221440-774c71fcf114
 golang.org/x/tools/go/gcexportdata
 golang.org/x/tools/go/internal/gcimporter
 golang.org/x/tools/go/internal/packagesdriver
@@ -129,7 +131,6 @@ golang.org/x/tools/go/packages
 golang.org/x/tools/internal/fastwalk
 golang.org/x/tools/internal/gopathwalk
 golang.org/x/tools/internal/semver
-golang.org/x/tools/internal/span
 # google.golang.org/protobuf v1.24.0
 google.golang.org/protobuf/encoding/prototext
 google.golang.org/protobuf/encoding/protowire
@@ -163,5 +164,5 @@ google.golang.org/protobuf/types/known/durationpb
 google.golang.org/protobuf/types/known/timestamppb
 # gopkg.in/go-playground/validator.v9 v9.17.1
 gopkg.in/go-playground/validator.v9
-# gopkg.in/yaml.v2 v2.2.8
+# gopkg.in/yaml.v2 v2.3.0
 gopkg.in/yaml.v2
