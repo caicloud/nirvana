@@ -46,6 +46,8 @@ type Options struct {
 
 const defaultNamespace = "nirvana"
 
+// DefaultOptions builds an Options object with default values; it is used automatically when a nil
+// Options is provided.
 func DefaultOptions() *Options {
 	return &Options{
 		NamespaceValue: defaultNamespace,
