@@ -27,7 +27,7 @@ import (
 	"github.com/caicloud/nirvana/service"
 )
 
-// Default returns a metric Middleware under the namespace "nirvana".
+// Default returns a metric Middleware under the namespace "nirvana" for restful descriptor.
 //
 // Once called, the namespace is set and can not be changed. Future attempt to build more Middleware
 // will result in ones with the same namespace as the first one.
@@ -35,28 +35,50 @@ import (
 // Unlike the metrics plugin which takes care of everything, you must call Descriptor() to build a
 // Descriptor and configure it to a server yourself.
 func Default() definition.Middleware {
-	metrics.Install("")
-	return func(ctx context.Context, next definition.Chain) error {
-		startTime := time.Now()
-		err := next.Continue(ctx)
-		metrics.RecordRequest(startTime, service.HTTPContextFrom(ctx))
-		return err
-	}
+	return Restful(nil)
 }
 
-// Namespace returns a metric Middleware under the given namespace.
+// Restful returns a metrics Middleware for Restful Descriptors built from the given options.
 //
 // Once called, the namespace is set and can not be changed. Future attempt to build more Middleware
 // will result in ones with the same namespace as the first one.
 //
 // Unlike the metrics plugin which takes care of everything, you must call Descriptor() to build a
 // Descriptor and configure it to a server yourself.
-func Namespace(namespace string) definition.Middleware {
-	metrics.Install(namespace)
+func Restful(options *metrics.Options) definition.Middleware {
+	metrics.Install(options)
 	return func(ctx context.Context, next definition.Chain) error {
 		startTime := time.Now()
 		err := next.Continue(ctx)
-		metrics.RecordRequest(startTime, service.HTTPContextFrom(ctx))
+		httpCtx := service.HTTPContextFrom(ctx)
+		resp := httpCtx.ResponseWriter()
+		metrics.RecordRestfulRequest(
+			httpCtx.RoutePath(), httpCtx.Request().Method,
+			resp.StatusCode(), resp.ContentLength(), time.Since(startTime),
+		)
+		return err
+	}
+}
+
+// RPC returns a metrics Middleware for RCP Descriptors built from the given options.
+//
+// Once called, the namespace is set and can not be changed. Future attempt to build more Middleware
+// will result in ones with the same namespace as the first one.
+//
+// Unlike the metrics plugin which takes care of everything, you must call Descriptor() to build a
+// Descriptor and configure it to a server yourself.
+func RPC(options *metrics.Options) definition.Middleware {
+	metrics.Install(options)
+	return func(ctx context.Context, next definition.Chain) error {
+		startTime := time.Now()
+		err := next.Continue(ctx)
+		httpCtx := service.HTTPContextFrom(ctx)
+		resp := httpCtx.ResponseWriter()
+		metrics.RecordRPCRequest(
+			httpCtx.Request().URL.Query().Get("Action"),
+			httpCtx.Request().URL.Query().Get("Version"),
+			resp.StatusCode(), resp.ContentLength(), time.Since(startTime),
+		)
 		return err
 	}
 }
