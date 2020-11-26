@@ -244,15 +244,29 @@ func (o *operatorRef) Operate(ctx context.Context, field string, object interfac
 	return nil, results[1].Interface().(error)
 }
 
-// SimpleDescriptor creates a simple descriptor for handler.
-// The descriptor consumes all content types and produces all
-// accept types.
+// SimpleDescriptor creates a simple REST descriptor for handler.
+// The descriptor consumes all content types and produces all accept types.
 func SimpleDescriptor(method Method, path string, f interface{}) Descriptor {
 	return Descriptor{
 		Path: path,
 		Definitions: []Definition{
 			{
 				Method:   method,
+				Function: f,
+				Consumes: []string{MIMEAll},
+				Produces: []string{MIMEAll},
+			},
+		},
+	}
+}
+
+// SimpleRPCDescriptor creates a simple RPC descriptor for handler.
+// The descriptor consumes all content types and produces all accept types.
+func SimpleRPCDescriptor(path string, f interface{}) RPCDescriptor {
+	return RPCDescriptor{
+		Path: path,
+		Actions: []RPCAction{
+			{
 				Function: f,
 				Consumes: []string{MIMEAll},
 				Produces: []string{MIMEAll},

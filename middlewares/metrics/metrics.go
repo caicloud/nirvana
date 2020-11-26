@@ -98,14 +98,5 @@ func RPCDescriptor(path string) definition.RPCDescriptor {
 	if path == "" {
 		path = "/metrics"
 	}
-	return definition.RPCDescriptor{
-		Path: path,
-		Actions: []definition.RPCAction{
-			{
-				Function: service.WrapHTTPHandler(promhttp.Handler()),
-				Consumes: []string{definition.MIMEAll},
-				Produces: []string{definition.MIMEAll},
-			},
-		},
-	}
+	return definition.SimpleRPCDescriptor(path, service.WrapHTTPHandler(promhttp.Handler()))
 }
