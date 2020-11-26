@@ -489,10 +489,10 @@ func (n *nameContainer) proposeName(name string, typ api.TypeName) string {
 		name += "_"
 	}
 	index := n.names[name]
+	n.names[name]++
 	if index > 0 {
 		name += strconv.Itoa(index)
 	}
-	n.names[name]++
 	return name
 }
 
