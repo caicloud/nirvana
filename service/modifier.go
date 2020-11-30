@@ -69,12 +69,15 @@ func ConsumeAllIfConsumesIsEmpty() DefinitionModifier {
 	}
 }
 
-// ProduceAllIfProducesIsEmpty adds definition.MIMEAll to consumes if consumes
-// is empty.
+// ProduceAllIfProducesIsEmpty adds definition.MIMEAll to produces and errorProduces if
+// they are empty.
 func ProduceAllIfProducesIsEmpty() DefinitionModifier {
 	return func(d *definition.Definition) {
-		if len(d.Produces) <= 0 {
+		if len(d.Produces) == 0 {
 			d.Produces = []string{definition.MIMEAll}
+		}
+		if len(d.ErrorProduces) == 0 {
+			d.ErrorProduces = []string{definition.MIMEAll}
 		}
 	}
 }
