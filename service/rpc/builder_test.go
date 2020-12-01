@@ -303,6 +303,33 @@ func TestDefinitions(t *testing.T) {
 	}
 }
 
+func TestDuplicatedRPCPath(t *testing.T) {
+	const version = "2020-10-10"
+	action := definition.RPCAction{
+		Name:    "GetFoo",
+		Version: version,
+		Function: func() (string, error) {
+			return "", nil
+		},
+		Results: definition.DataErrorResults(""),
+	}
+	desc := definition.RPCDescriptor{
+		Path:        "/",
+		Description: "Test",
+		Consumes:    []string{definition.MIMEAll},
+		Produces:    []string{definition.MIMEAll},
+		Actions:     []definition.RPCAction{action, action},
+	}
+	builder := NewBuilder()
+	err := builder.AddDescriptor(desc)
+	if err == nil {
+		t.Fatal("Unexpected success")
+	}
+	if !strings.Contains(err.Error(), "duplicated rpc path") {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+}
+
 func BenchmarkServer(b *testing.B) {
 	u, _ := url.Parse("/?Action=GetEcho&Version=2020-01-01&name=alice")
 
