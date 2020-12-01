@@ -107,7 +107,11 @@ func (b *builder) AddDescriptor(descriptors ...interface{}) error {
 			path = "/"
 		}
 		for _, action := range descriptor.Actions {
-			b.bindings[genRPCPath(path, action.Version, action.Name)] = &binding{
+			rpcPath := genRPCPath(path, action.Version, action.Name)
+			if _, ok := b.bindings[rpcPath]; ok {
+				return fmt.Errorf("duplicated rpc path: %s", rpcPath)
+			}
+			b.bindings[rpcPath] = &binding{
 				middlewares: descriptor.Middlewares,
 				definition:  b.genDefinition(action, descriptor.Consumes, descriptor.Produces, descriptor.Tags),
 			}
