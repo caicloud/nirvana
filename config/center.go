@@ -19,13 +19,17 @@ package config
 import (
 	"os"
 	"path/filepath"
+	"sync"
 	"time"
 
 	"github.com/spf13/cast"
 	"github.com/spf13/viper"
 )
 
-var v = viper.New()
+var (
+	v    = viper.New()
+	lock sync.RWMutex
+)
 
 func init() {
 	// Initialize config paths.
@@ -72,6 +76,8 @@ func IsSet(key string) bool {
 // Will be used instead of values obtained via
 // flags, config file, ENV, default, or key/value store.
 func Set(key string, value interface{}) {
+	lock.Lock()
+	defer lock.Unlock()
 	v.Set(key, value)
 }
 
