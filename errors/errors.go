@@ -111,6 +111,16 @@ func (e *err) Error() string {
 	return e.message.Message
 }
 
+// Reason returns the raw Reason string.
+func (e *err) Reason() string {
+	return string(e.message.Reason)
+}
+
+// Data returns the detailed error data.
+func (e *err) Data() map[string]string {
+	return e.message.Data
+}
+
 // factory is an error factory.
 type factory struct {
 	code   int
