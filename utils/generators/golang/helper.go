@@ -449,6 +449,10 @@ func (h *helper) Functions() ([]function, []string) {
 
 func (h *helper) enumFields(name api.TypeName, key string, fn func(key string, source string, field api.StructField)) {
 	typ := h.definitions.Types[name]
+	if typ.Kind == reflect.Ptr {
+		typ = h.definitions.Types[typ.Elem]
+	}
+
 	if typ.Kind == reflect.Struct {
 		if key != "" {
 			key += "."
