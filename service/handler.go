@@ -166,7 +166,7 @@ func WriteError(ctx context.Context, producers []Producer, err interface{}) erro
 		return e
 	}
 	if len(producers) <= 0 {
-		return noProducerToWrite.Error(ats)
+		return NoProducerToWrite.Error(ats)
 	}
 	code := http.StatusInternalServerError
 	var msg interface{}
@@ -180,7 +180,7 @@ func WriteError(ctx context.Context, producers []Producer, err interface{}) erro
 		msg = err
 	}
 
-	producer := chooseProducer(ats, producers)
+	producer := ChooseProducer(ats, producers)
 	if producer == nil {
 		// Choose the first producer
 		producer = producers[0]
@@ -203,11 +203,11 @@ func WriteData(ctx context.Context, producers []Producer, code int, data interfa
 		return err
 	}
 	if len(producers) <= 0 {
-		return noProducerToWrite.Error(ats)
+		return NoProducerToWrite.Error(ats)
 	}
-	producer := chooseProducer(ats, producers)
+	producer := ChooseProducer(ats, producers)
 	if producer == nil {
-		return noProducerToWrite.Error(ats)
+		return NoProducerToWrite.Error(ats)
 	}
 	resp := httpCtx.ResponseWriter()
 	if resp.HeaderWritable() {
@@ -221,7 +221,8 @@ func WriteData(ctx context.Context, producers []Producer, code int, data interfa
 	return producer.Produce(resp, data)
 }
 
-func chooseProducer(acceptTypes []string, producers []Producer) Producer {
+// ChooseProducer chooses the right producer.
+func ChooseProducer(acceptTypes []string, producers []Producer) Producer {
 	if len(acceptTypes) <= 0 || len(producers) <= 0 {
 		return nil
 	}
