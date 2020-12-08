@@ -103,6 +103,8 @@ var (
 	NoContext = errors.InternalServerError.Build("Nirvana:Service:NoContext", "can't find http context, you should define `ctx context.Context` as the first parameter of your handler function")
 	// NoParameterGenerator represents no parameter generator error.
 	NoParameterGenerator = errors.InternalServerError.Build("Nirvana:Service:NoParameterGenerator", "no parameter generator for source ${source}")
+	// NoProducerToWrite represents no producer to write error.
+	NoProducerToWrite = errors.NotAcceptable.Build("Nirvana:Service:noProducerToWrite", "can't find producer for accept types ${types}")
 )
 
 var (
@@ -112,7 +114,6 @@ var (
 	invalidProducer        = errors.InternalServerError.Build("Nirvana:Service:invalidProducer", "${type} is invalid for producer")
 	noConnectionHijacker   = errors.InternalServerError.Build("Nirvana:Service:noConnectionHijacker", "underlying http.ResponseWriter does not implement http.Hijacker")
 	invalidMetaType        = errors.InternalServerError.Build("Nirvana:Service:invalidMetaType", "can't recognize meta for type ${type}")
-	noProducerToWrite      = errors.NotAcceptable.Build("Nirvana:Service:noProducerToWrite", "can't find producer for accept types ${types}")
 	invalidMethod          = errors.InternalServerError.Build("Nirvana:Service:invalidMethod", "http method ${method} is invalid")
 	invalidStatusCode      = errors.InternalServerError.Build("Nirvana:Service:invalidStatusCode", "http status code must be in [100,599]")
 	invalidBodyType        = errors.InternalServerError.Build("Nirvana:Service:invalidBodyType", "${type} is not a valid type for body")
