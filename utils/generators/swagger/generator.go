@@ -583,10 +583,24 @@ func (g *Generator) enum(typ *api.Type) []spec.Parameter {
 	return results
 }
 
+func parseDestination(d definition.Destination) definition.Destination {
+	switch {
+	// for the custom Destination
+	case strings.Contains(string(d), string(definition.Meta)):
+		return definition.Meta
+	case strings.Contains(string(d), string(definition.Data)):
+		return definition.Data
+	case strings.Contains(string(d), string(definition.Error)):
+		return definition.Error
+	default:
+		return d
+	}
+}
+
 func (g *Generator) generateResponse(results []api.Result, examples []api.Example) *spec.Response {
 	response := &spec.Response{}
 	for _, result := range results {
-		switch g.destinationMapping[result.Destination] {
+		switch g.destinationMapping[parseDestination(result.Destination)] {
 		case "body":
 			response.Description = g.escapeNewline(result.Description)
 			schema := g.schemaForTypeName(result.Type)
@@ -609,6 +623,7 @@ func (g *Generator) generateResponse(results []api.Result, examples []api.Exampl
 	}
 	return response
 }
+
 func (g *Generator) escapeNewline(content string) string {
 	return strings.Replace(strings.TrimSpace(content), "\n", "<br/>", -1)
 }
