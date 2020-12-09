@@ -424,7 +424,7 @@ func (h *helper) Functions() ([]function, []string) {
 				fn.Parameters = append(fn.Parameters, p)
 			}
 			for _, result := range def.Results {
-				if result.Destination == definition.Error {
+				if strings.Contains(string(result.Destination), string(definition.Error)) {
 					// Ignore errors
 					continue
 				}
