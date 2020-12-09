@@ -234,6 +234,17 @@ func (r *Request) Meta(value *map[string]string) *Request {
 	return r
 }
 
+type topRPCResponse struct {
+	Result interface{} `json:"Result"`
+}
+
+// TOPRPCData sets TOP RPC style body result. The value must be a pointer.
+// For internal uses.
+func (r *Request) TOPRPCData(value interface{}) *Request {
+	r.data = &topRPCResponse{Result: value}
+	return r
+}
+
 // Data sets body result. value must be a pointer.
 func (r *Request) Data(value interface{}) *Request {
 	r.data = value
