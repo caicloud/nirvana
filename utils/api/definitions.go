@@ -18,6 +18,7 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/caicloud/nirvana/definition"
@@ -120,6 +121,12 @@ func NewDefinition(tc *TypeContainer, d *definition.Definition, apiStyle service
 		cd.HTTPCode = http.StatusOK
 	}
 	functionType := tc.Type(cd.Function)
+	if len(functionType.In) != len(d.Parameters) {
+		return nil, fmt.Errorf("the number of parameters and function args are not equal: len(params)=%d, len(funcArgs)=%d", len(d.Parameters), len(functionType.In))
+	}
+	if len(functionType.Out) != len(d.Results) {
+		return nil, fmt.Errorf("the number of results and function return values are not equal: len(results)=%d, len(funcVals)=%d", len(d.Results), len(functionType.Out))
+	}
 	for i, p := range d.Parameters {
 		param := Parameter{
 			Source:      p.Source,
@@ -174,7 +181,7 @@ func NewDefinitions(tc *TypeContainer, definitions []definition.Definition, apiS
 	for i, d := range definitions {
 		cd, err := NewDefinition(tc, &d, apiStyle)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("func=%s: %w", tc.NameOfInstance(d.Function), err)
 		}
 		result[i] = *cd
 	}
@@ -187,7 +194,7 @@ func NewPathDefinitions(tc *TypeContainer, definitions map[string][]definition.D
 	for path, defs := range definitions {
 		cds, err := NewDefinitions(tc, defs, apiStyle)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("definitions of path %s: %w", path, err)
 		}
 		result[path] = cds
 
