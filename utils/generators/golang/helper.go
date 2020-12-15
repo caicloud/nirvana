@@ -541,8 +541,15 @@ func newTypeNamer(rootPkg string, types map[api.TypeName]*api.Type) (*typeNamer,
 		comments: make(map[api.TypeName]string),
 		rootPkg:  rootPkg,
 	}
-	for tn := range n.types {
-		if _, err := n.parse(tn); err != nil {
+
+	typeNames := make([]string, 0, len(types))
+	for name := range types {
+		typeNames = append(typeNames, string(name))
+	}
+	sort.Strings(typeNames)
+
+	for _, tn := range typeNames {
+		if _, err := n.parse(api.TypeName(tn)); err != nil {
 			return nil, err
 		}
 	}
