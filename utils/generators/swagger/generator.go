@@ -433,6 +433,7 @@ func (g *Generator) operationFor(def *api.Definition) *spec.Operation {
 			operation.Produces = append(operation.Produces, p)
 		}
 	}
+	operation.ID = def.OperationID
 	operation.Summary = def.Summary
 	if operation.Summary == "" {
 		// Use function name as API summary.
