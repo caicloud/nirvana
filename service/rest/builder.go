@@ -131,6 +131,7 @@ func (b *builder) addDescriptor(prefix string, consumes []string, produces []str
 func (b *builder) copyDefinition(d *definition.Definition, consumes []string, produces []string, tags []string) *definition.Definition {
 	newOne := &definition.Definition{
 		Method:      d.Method,
+		OperationID: d.OperationID,
 		Summary:     d.Summary,
 		Function:    d.Function,
 		Description: d.Description,

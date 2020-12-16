@@ -101,6 +101,7 @@ func NewDefinition(tc *TypeContainer, d *definition.Definition, apiStyle service
 		Method:        d.Method,
 		HTTPMethod:    service.HTTPMethodFor(d.Method),
 		HTTPCode:      code,
+		OperationID:   d.OperationID,
 		Summary:       d.Summary,
 		Description:   d.Description,
 		Tags:          d.Tags,
