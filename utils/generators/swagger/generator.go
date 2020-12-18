@@ -552,14 +552,15 @@ func (g *Generator) enum(typ *api.Type) []spec.Parameter {
 		parameters := []spec.Parameter(nil)
 		if tag != "" {
 			source, name, apc, err := service.ParseAutoParameterTag(tag)
-			rawDefaultValue := apc.Get(service.AutoParameterConfigKeyDefaultValue)
+			rawDefaultValue, defaultExist := apc.Get(service.AutoParameterConfigKeyDefaultValue)
 			var defaultValue []byte
-			if c := converters[string(field.Type)]; rawDefaultValue != "" && c != nil {
+			if c := converters[string(field.Type)]; defaultExist && c != nil {
 				// we don't find a good way to handle the default value of non-basic types,
 				// so for now the default value of those types are always empty
 				v, _ := c(context.TODO(), []string{rawDefaultValue})
 				defaultValue, _ = json.Marshal(v)
 			}
+			_, optional := apc.Get(service.AutoParameterConfigKeyOptional)
 
 			if err == nil {
 				parameters = g.generateParameter(&api.Parameter{
@@ -568,6 +569,7 @@ func (g *Generator) enum(typ *api.Type) []spec.Parameter {
 					Description: g.escapeNewline(field.Comments),
 					Type:        field.Type,
 					Default:     defaultValue,
+					Optional:    optional,
 				})
 			}
 		} else {
