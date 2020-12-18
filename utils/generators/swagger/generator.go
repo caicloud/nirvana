@@ -569,7 +569,7 @@ func (g *Generator) enum(typ *api.Type) []spec.Parameter {
 					Description: g.escapeNewline(field.Comments),
 					Type:        field.Type,
 					Default:     defaultValue,
-					Optional:    optional,
+					Optional:    optional || defaultExist,
 				})
 			}
 		} else {
