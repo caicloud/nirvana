@@ -18,7 +18,6 @@ package service
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"mime/multipart"
 	"reflect"
@@ -413,8 +412,8 @@ func (g *AutoParameterGenerator) Validate(name string, defaultValue interface{},
 		}
 
 		var value interface{}
-		defaultValue := params.Get(AutoParameterConfigKeyDefaultValue)
-		if defaultValue != "" {
+		defaultValue, exist := params.Get(AutoParameterConfigKeyDefaultValue)
+		if exist {
 			if c := ConverterFor(field.Type); c != nil {
 				var err error
 				value, err = c(context.Background(), []string{defaultValue})
@@ -466,8 +465,8 @@ func (g *AutoParameterGenerator) generate(ctx context.Context, vc ValueContainer
 			return err
 		}
 
-		defaultValue := params.Get(AutoParameterConfigKeyDefaultValue)
-		if ins == nil && defaultValue != "" {
+		defaultValue, exist := params.Get(AutoParameterConfigKeyDefaultValue)
+		if ins == nil && exist {
 			if c := ConverterFor(field.Type); c != nil {
 				// After passing the validation phase, here will never return an error
 				ins, _ = c(ctx, []string{defaultValue}) // #nosec
@@ -508,13 +507,14 @@ type AutoParameterConfigKey string
 const (
 	// AutoParameterConfigKeyDefaultValue is the key of default value.
 	AutoParameterConfigKeyDefaultValue AutoParameterConfigKey = "default"
-	// AutoParameterConfigKeyAnonymous is the prefix of anonymous configs.
-	AutoParameterConfigKeyAnonymous AutoParameterConfigKey = " anonymous"
+	// AutoParameterConfigKeyOptional is the key of optional tag.
+	AutoParameterConfigKeyOptional AutoParameterConfigKey = "optional"
 )
 
 // Get gets value of a config key.
-func (f AutoParameterConfig) Get(key AutoParameterConfigKey) string {
-	return f[key]
+func (f AutoParameterConfig) Get(key AutoParameterConfigKey) (string, bool) {
+	s, ok := f[key]
+	return s, ok
 }
 
 // Set sets value for a config key.
@@ -540,16 +540,17 @@ func ParseAutoParameterTag(tag string) (source definition.Source, name string, a
 	}
 	if length >= 3 {
 		result := result[2:]
-		anonymous := 0
 		for _, param := range result {
 			index := strings.Index(param, "=")
 			key := ""
+			val := ""
 			if index > 0 {
 				key = strings.TrimSpace(param[:index])
+				val = strings.TrimSpace(param[index+1:])
 			} else {
-				key = fmt.Sprint(AutoParameterConfigKeyAnonymous, anonymous)
+				key = param
 			}
-			apc.Set(AutoParameterConfigKey(key), strings.TrimSpace(param[index+1:]))
+			apc.Set(AutoParameterConfigKey(key), val)
 		}
 	}
 	return
