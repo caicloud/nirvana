@@ -68,6 +68,15 @@ type parsedURL struct {
 	queries map[string][]string
 }
 
+func (u *parsedURL) deepCopyQueries() map[string][]string {
+	queries := make(map[string][]string)
+	for k, v := range u.queries {
+		queries[k] = make([]string, len(v))
+		copy(queries[k], v)
+	}
+	return queries
+}
+
 // Client implements builder pattern for http client.
 type Client struct {
 	endpoint       string
@@ -142,16 +151,22 @@ func (c *Client) parseURL(rawurl string) (parsedURL, error) {
 // Request creates an request with specific method and url path.
 // The code is only for checking if status code of response is right.
 func (c *Client) Request(method string, code int, url string) *Request {
+	var path *path
+	queries := make(map[string][]string)
 	parsedURL, err := c.parseURL(url)
+	if err == nil {
+		path = parsedURL.path
+		queries = parsedURL.deepCopyQueries()
+	}
 	req := &Request{
 		err:      err,
 		method:   method,
 		code:     code,
 		endpoint: c.endpoint,
-		path:     parsedURL.path,
+		path:     path,
 		client:   c.config.Executor,
 		paths:    map[string]string{},
-		queries:  parsedURL.queries,
+		queries:  queries,
 		headers:  map[string][]string{},
 		forms:    map[string][]string{},
 		files:    map[string]interface{}{},
