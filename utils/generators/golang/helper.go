@@ -433,6 +433,12 @@ func (h *helper) Functions() ([]function, []string) {
 					ProposedName: sigNames.proposeName("", result.Type),
 					Typ:          h.namer.Name(result.Type),
 				}
+
+				// name may be `int` `string` etc.
+				if token.Lookup(r.ProposedName).IsLiteral() || r.ProposedName == r.Typ {
+					r.ProposedName += "_"
+				}
+
 				typ := h.definitions.Types[result.Type]
 				types = append(types, typ)
 				if typ.Kind == reflect.Ptr {
