@@ -434,11 +434,6 @@ func (h *helper) Functions() ([]function, []string) {
 					Typ:          h.namer.Name(result.Type),
 				}
 
-				// name may be `int` `string` etc.
-				if token.Lookup(r.ProposedName).IsLiteral() || r.ProposedName == r.Typ {
-					r.ProposedName += "_"
-				}
-
 				typ := h.definitions.Types[result.Type]
 				types = append(types, typ)
 				if typ.Kind == reflect.Ptr {
@@ -483,7 +478,7 @@ type nameContainer struct {
 	namer *typeNamer
 }
 
-func (n *nameContainer) proposeName(name string, typ api.TypeName) string {
+func (n *nameContainer) proposeName(name string, typ api.TypeName, targetTypes ...string) string {
 	if name == "" {
 		name = n.deconstruct(typ)
 	}
@@ -491,14 +486,26 @@ func (n *nameContainer) proposeName(name string, typ api.TypeName) string {
 	if name == "" {
 		name = "temp"
 	}
+
+	// to lower case the first letter if it is uppercase.
 	if name[0] >= 'A' && name[0] <= 'Z' {
 		name = string(name[0]|0x20) + name[1:]
 	}
-	// name may be `type` etc.
-	if token.Lookup(name).IsKeyword() {
+	// name may be `type` `int` `string` etc.
+	if token.Lookup(name).IsKeyword() || token.Lookup(name).IsLiteral() {
 		name += "_"
 	}
+
+	// add '_' suffix if the name is conflict with the type name
+	for _, target := range targetTypes {
+		if name == target {
+			name += "_"
+			break
+		}
+	}
+
 	index := n.names[name]
+	// add index suffix if the name is duplicate.
 	n.names[name]++
 	if index > 0 {
 		name += strconv.Itoa(index)
