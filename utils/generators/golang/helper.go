@@ -429,10 +429,10 @@ func (h *helper) Functions() ([]function, []string) {
 					continue
 				}
 				r := functionResult{
-					Destination:  string(result.Destination),
-					ProposedName: sigNames.proposeName("", result.Type),
-					Typ:          h.namer.Name(result.Type),
+					Destination: string(result.Destination),
+					Typ:         h.namer.Name(result.Type),
 				}
+				r.ProposedName = sigNames.proposeName("", result.Type, r.Typ)
 
 				typ := h.definitions.Types[result.Type]
 				types = append(types, typ)
