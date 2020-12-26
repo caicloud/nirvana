@@ -311,7 +311,7 @@ func (h *helper) pkgs(typ *api.Type, extended bool) []string {
 			localType := fmt.Sprintf("%s.%s", typ.PkgPath, typ.Name)
 			for _, field := range typ.Fields {
 				// The name may be composed of pkgPath and name, when the strcut
-				// containes itself recursive, such as slice ptr map, the functions pkgs will be invoked infinitely,
+				// contains itself recursive, such as slice ptr map, the functions pkgs will be invoked infinitely,
 				// ignore it.
 				// TODO the format of the name is error, should correct it.
 				childType, ok := h.definitions.Types[field.Type]
@@ -321,7 +321,7 @@ func (h *helper) pkgs(typ *api.Type, extended bool) []string {
 				if strings.HasSuffix(childType.Name, localType) {
 					continue
 				}
-				pkgs = append(pkgs, h.pkgs(h.definitions.Types[field.Type], extended)...)
+				pkgs = append(pkgs, h.pkgs(childType, extended)...)
 			}
 			return pkgs
 		}
