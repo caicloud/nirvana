@@ -313,6 +313,7 @@ func (h *helper) pkgs(typ *api.Type, extended bool) []string {
 				// The name may be composed of pkgPath and name, when the strcut
 				// containes itself recursive, such as slice ptr map, the functions pkgs will be invoked infinitely,
 				// ignore it.
+				// TODO the format of the name is error, should correct it.
 				childType, ok := h.definitions.Types[field.Type]
 				if !ok {
 					continue
