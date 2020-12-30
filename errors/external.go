@@ -74,17 +74,38 @@ func (e *externalError) Error() string {
 	return e.message.Message
 }
 
+type topRPCErrorResponse struct {
+	ResponseMetadata struct {
+		Error struct {
+			Code    string            `json:"Code"`
+			Message string            `json:"Message"`
+			Data    map[string]string `json:"Data"`
+		} `json:"Error"`
+	} `json:"ResponseMetadata"`
+}
+
 // ParseError parse error from raw data.
 func ParseError(code int, dt DataType, data []byte) (ExternalError, error) {
 	e := &externalError{
 		code: code,
 	}
-	switch dt {
-	case DataTypeJSON:
-		return e, json.Unmarshal(data, &e.message)
-	case DataTypeXML:
-		return e, xml.Unmarshal(data, &e.message)
+	// Determine if the data is TOP RPC style and use the special processing method for this type of data
+	topData := topRPCErrorResponse{}
+	json.Unmarshal(data, &topData) // nolint
+	if topData.ResponseMetadata.Error.Code != "" {
+		e.message = message{
+			Reason:  Reason(topData.ResponseMetadata.Error.Code),
+			Message: topData.ResponseMetadata.Error.Message,
+			Data:    topData.ResponseMetadata.Error.Data,
+		}
+	} else {
+		switch dt {
+		case DataTypeJSON:
+			return e, json.Unmarshal(data, &e.message)
+		case DataTypeXML:
+			return e, xml.Unmarshal(data, &e.message)
+		}
+		e.message.Message = string(data)
 	}
-	e.message.Message = string(data)
 	return e, nil
 }
