@@ -194,9 +194,18 @@ type Request struct {
 	data            interface{}
 }
 
+func toString(value interface{}) string {
+	ret := value
+	v := reflect.ValueOf(value)
+	if v.Kind() == reflect.Ptr {
+		ret = v.Elem()
+	}
+	return fmt.Sprint(ret)
+}
+
 // Path sets path parameter.
 func (r *Request) Path(name string, value interface{}) *Request {
-	r.paths[name] = fmt.Sprint(value)
+	r.paths[name] = toString(value)
 	return r
 }
 
@@ -204,7 +213,7 @@ func (r *Request) Path(name string, value interface{}) *Request {
 func (r *Request) Query(name string, values ...interface{}) *Request {
 	m := r.queries
 	for _, value := range values {
-		m[name] = append(m[name], fmt.Sprint(value))
+		m[name] = append(m[name], toString(value))
 	}
 	return r
 }
@@ -213,7 +222,7 @@ func (r *Request) Query(name string, values ...interface{}) *Request {
 func (r *Request) Header(name string, values ...interface{}) *Request {
 	m := r.headers
 	for _, value := range values {
-		m[name] = append(m[name], fmt.Sprint(value))
+		m[name] = append(m[name], toString(value))
 	}
 	return r
 }
@@ -222,7 +231,7 @@ func (r *Request) Header(name string, values ...interface{}) *Request {
 func (r *Request) Form(name string, values ...interface{}) *Request {
 	m := r.forms
 	for _, value := range values {
-		m[name] = append(m[name], fmt.Sprint(value))
+		m[name] = append(m[name], toString(value))
 	}
 	return r
 }
