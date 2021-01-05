@@ -192,6 +192,7 @@ type Request struct {
 	bodyContentType string
 	meta            map[string]string
 	data            interface{}
+	requestHook     func(*http.Request) *http.Request
 }
 
 func toString(value interface{}) string {
@@ -275,6 +276,12 @@ func (r *Request) Data(value interface{}) *Request {
 	return r
 }
 
+// RequestHook sets requestHook. fn must be a function.
+func (r *Request) RequestHook(fn func(*http.Request) *http.Request) *Request {
+	r.requestHook = fn
+	return r
+}
+
 // Do executes the request.
 func (r *Request) Do(ctx context.Context) error {
 	r.once.Do(func() {
@@ -292,6 +299,9 @@ func (r *Request) do(ctx context.Context) error {
 	req, err := r.request(ctx)
 	if err != nil {
 		return err
+	}
+	if r.requestHook != nil {
+		req = r.requestHook(req)
 	}
 	resp, err := r.client.Do(req)
 	if err != nil {
