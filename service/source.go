@@ -252,7 +252,7 @@ func (g *FileParameterGenerator) Validate(name string, defaultValue interface{},
 // Generate generates an object by data from value container.
 func (g *FileParameterGenerator) Generate(ctx context.Context, vc ValueContainer, consumers []Consumer,
 	name string, target reflect.Type) (interface{}, error) {
-	file, ok := vc.File(name)
+	file, _, ok := vc.File(name)
 	if !ok {
 		return nil, nil
 	}
