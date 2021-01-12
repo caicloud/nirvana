@@ -242,23 +242,18 @@ func (g *Generator) schemaForType(typ *api.Type) *spec.Schema {
 	return g.copySchema(schema)
 }
 
-func (g *Generator) schemaForStruct(typ *api.Type) *spec.Schema {
-	typeName := typ.TypeName()
-	schema, ok := g.schemaMappings[typeName]
-	if ok {
-		return schema
-	}
-	// To prevent recursive struct.
-	key := strings.Replace(string(typeName), "/", "_", -1)
-	ref := spec.RefSchema("#/definitions/" + key)
-	ref.Title = typ.Name
-	g.schemaMappings[typeName] = ref
-
-	schema = &spec.Schema{}
-	schema.Title = ref.Title
+func (g *Generator) setSchemaForStruct(schema *spec.Schema, typ *api.Type) {
 	for _, field := range typ.Fields {
 		jsontag := strings.TrimSpace(field.Tag.Get("json"))
 		if jsontag == "-" {
+			continue
+		}
+		if jsontag == ",inline" {
+			fieldType, ok := g.apis.Types[field.Type]
+			if !ok {
+				continue
+			}
+			g.setSchemaForStruct(schema, fieldType)
 			continue
 		}
 		fieldSchema := g.schemaForTypeName(field.Type)
@@ -276,6 +271,23 @@ func (g *Generator) schemaForStruct(typ *api.Type) *spec.Schema {
 		fieldSchema.Description = g.escapeNewline(field.Comments)
 		schema.SetProperty(name, *fieldSchema)
 	}
+}
+
+func (g *Generator) schemaForStruct(typ *api.Type) *spec.Schema {
+	typeName := typ.TypeName()
+	schema, ok := g.schemaMappings[typeName]
+	if ok {
+		return schema
+	}
+	// To prevent recursive struct.
+	key := strings.Replace(string(typeName), "/", "_", -1)
+	ref := spec.RefSchema("#/definitions/" + key)
+	ref.Title = typ.Name
+	g.schemaMappings[typeName] = ref
+
+	schema = &spec.Schema{}
+	schema.Title = ref.Title
+	g.setSchemaForStruct(schema, typ)
 	g.schemas[key] = schema
 	return ref
 }
