@@ -28,7 +28,7 @@ import (
 var root = &cobra.Command{
 	Use:     "nirvana",
 	Short:   "Nirvana toolchains",
-	Version: "v0.3.0",
+	Version: "v0.4.0-alpha.1",
 }
 
 func main() {
