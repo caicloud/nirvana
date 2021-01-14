@@ -250,6 +250,10 @@ func (g *Generator) schemaForType(typ *api.Type) *spec.Schema {
 
 func (g *Generator) setSchemaForStruct(schema *spec.Schema, typ *api.Type) {
 	for _, field := range typ.Fields {
+		if !field.Anonymous && field.Name[0] >= 'a' && field.Name[0] <= 'z' {
+			// ignore unexported fields
+			continue
+		}
 		jsontag := strings.TrimSpace(field.Tag.Get("json"))
 		if jsontag == "-" {
 			continue
