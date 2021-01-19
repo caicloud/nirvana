@@ -17,7 +17,6 @@ limitations under the License.
 package api
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -35,10 +34,12 @@ type Parameter struct {
 	Description string
 	// Type is parameter object type.
 	Type TypeName
-	// Default is encoded default value.
-	Default []byte
+	// Default is the default value.
+	Default interface{}
 	// Optional used to set whether this parameter is optional or not.
 	Optional bool
+	// Example is the example value.
+	Example interface{}
 }
 
 // Result describes a function result.
@@ -49,16 +50,6 @@ type Result struct {
 	Description string
 	// Type is result object type.
 	Type TypeName
-}
-
-// Example is just an example.
-type Example struct {
-	// Description describes the example.
-	Description string
-	// Type is result object type.
-	Type TypeName
-	// Instance is encoded instance data.
-	Instance []byte
 }
 
 // Definition is complete version of def.Definition.
@@ -93,8 +84,8 @@ type Definition struct {
 	Parameters []Parameter
 	// Results describes function retrun values.
 	Results []Result
-	// Examples contains many examples for the API handler.
-	Examples []Example
+	// Example is the example value.
+	Example interface{}
 }
 
 // NewDefinition creates openapi.Definition from definition.Definition.
@@ -115,6 +106,7 @@ func NewDefinition(tc *TypeContainer, d *definition.Definition, apiStyle service
 		Produces:      d.Produces,
 		ErrorProduces: d.ErrorProduces,
 		Function:      tc.NameOfInstance(d.Function),
+		Example:       d.Example,
 	}
 	if d.Method == definition.Any {
 		cd.HTTPMethod = string(definition.Any)
@@ -134,13 +126,8 @@ func NewDefinition(tc *TypeContainer, d *definition.Definition, apiStyle service
 			Description: p.Description,
 			Type:        functionType.In[i].Type,
 			Optional:    p.Optional,
-		}
-		if p.Default != nil {
-			data, err := encode(p.Default)
-			if err != nil {
-				return nil, err
-			}
-			param.Default = data
+			Default:     p.Default,
+			Example:     p.Example,
 		}
 		if len(p.Operators) > 0 {
 			param.Type = tc.NameOf(p.Operators[0].In())
@@ -157,20 +144,6 @@ func NewDefinition(tc *TypeContainer, d *definition.Definition, apiStyle service
 			result.Type = tc.NameOf(r.Operators[len(r.Operators)-1].Out())
 		}
 		cd.Results = append(cd.Results, result)
-	}
-	for _, e := range d.Examples {
-		example := Example{
-			Description: e.Description,
-		}
-		if e.Instance != nil {
-			example.Type = tc.NameOfInstance(e.Instance)
-			data, err := encode(e.Instance)
-			if err != nil {
-				return nil, err
-			}
-			example.Instance = data
-		}
-		cd.Examples = append(cd.Examples, example)
 	}
 	return cd, nil
 }
@@ -200,9 +173,4 @@ func NewPathDefinitions(tc *TypeContainer, definitions map[string][]definition.D
 
 	}
 	return result, nil
-}
-
-// encode encodes instance to json format.
-func encode(ins interface{}) ([]byte, error) {
-	return json.Marshal(ins)
 }

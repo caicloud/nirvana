@@ -148,14 +148,6 @@ const (
 	Error Destination = "Error"
 )
 
-// Example is just an example.
-type Example struct {
-	// Description describes the example.
-	Description string
-	// Instance is a custom data.
-	Instance interface{}
-}
-
 // Parameter describes a function parameter.
 type Parameter struct {
 	// Source is the parameter value generated from.
@@ -194,6 +186,9 @@ type Parameter struct {
 	//    // do something else
 	// }
 	Optional bool
+	// Example defines the example value for a parameter, used in API docs generation.
+	// Swagger 2 does not support requestBody example, this value will be mapped to the example field of the corresponding structure definition.
+	Example interface{}
 }
 
 // Result describes how to handle a result from function results.
@@ -237,6 +232,6 @@ type Definition struct {
 	Summary string
 	// Description describes the API handler.
 	Description string
-	// Examples contains many examples for the API handler.
-	Examples []Example
+	// Example contains the example for the API handler.
+	Example interface{}
 }
