@@ -113,6 +113,8 @@ type Version struct {
 	Schemes []string `yaml:"schemes"`
 	// Hosts overrides the same field in config.
 	Hosts []string `yaml:"hosts"`
+	// BasePath is the URL prefix for all API paths.
+	BasePath string `yaml:"basePath"`
 	// Contacts overrides the same field in config.
 	Contacts []Contact `yaml:"contacts"`
 	// PathRules contains a list of regexp rules to match path.
@@ -143,6 +145,8 @@ type Config struct {
 	// Hosts contains the host address to access APIs.
 	// It's values can be "domain:port" or "ip:port".
 	Hosts []string `yaml:"hosts"`
+	// BasePath is the URL prefix for all API paths.
+	BasePath string `yaml:"basePath"`
 	// Contacts contains maintainers of this project.
 	Contacts []Contact `yaml:"contacts"`
 	// Versions describes API versions.

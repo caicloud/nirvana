@@ -114,10 +114,14 @@ func (g *Generator) Generate() (map[string]spec.Swagger, error) {
 		if len(contacts) <= 0 {
 			contacts = g.config.Contacts
 		}
+		basePath := version.BasePath
+		if basePath == "" {
+			basePath = g.config.BasePath
+		}
 
 		swagger := g.buildSwaggerInfo(
 			title, version.Name, description,
-			schemes, hosts, contacts,
+			schemes, hosts, basePath, contacts,
 			version.PathRules,
 		)
 		var filename string
@@ -132,7 +136,7 @@ func (g *Generator) Generate() (map[string]spec.Swagger, error) {
 	if len(swaggers) <= 0 {
 		swagger := g.buildSwaggerInfo(
 			g.config.Project, "unknown", g.config.Description,
-			g.config.Schemes, g.config.Hosts, g.config.Contacts,
+			g.config.Schemes, g.config.Hosts, g.config.BasePath, g.config.Contacts,
 			nil,
 		)
 		swaggers["unknown"] = *swagger
@@ -144,6 +148,7 @@ func (g *Generator) buildSwaggerInfo(
 	title, version, description string,
 	schemes []string,
 	hosts []string,
+	basePath string,
 	contacts []project.Contact,
 	rules []project.PathRule,
 ) *spec.Swagger {
@@ -153,6 +158,7 @@ func (g *Generator) buildSwaggerInfo(
 	if len(hosts) > 0 {
 		swagger.Host = hosts[0]
 	}
+	swagger.BasePath = basePath
 	swagger.Info = &spec.Info{}
 	swagger.Info.Title = title
 	swagger.Info.Version = version
