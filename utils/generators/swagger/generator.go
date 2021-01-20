@@ -254,7 +254,13 @@ func (g *Generator) setSchemaForStruct(schema *spec.Schema, typ *api.Type) {
 		if jsontag == "-" {
 			continue
 		}
-		if jsontag == ",inline" {
+		// type Test struct {
+		//     T0 `json:",inline"`  // inline
+		//     T1                   // inline
+		//     T2 T2                // not inline
+		//     T3 `json:"T3"`       // not inline
+		// }
+		if jsontag == ",inline" || (jsontag == "" && field.Anonymous) {
 			fieldType, ok := g.apis.Types[field.Type]
 			if !ok {
 				continue
