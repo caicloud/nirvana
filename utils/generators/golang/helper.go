@@ -490,6 +490,53 @@ type nameContainer struct {
 	namer *typeNamer
 }
 
+var builtInTypes = map[string]bool{
+	"bool":        true,
+	"true":        true,
+	"false":       true,
+	"uint8 ":      true,
+	"uint16 ":     true,
+	"uint32 ":     true,
+	"uint64":      true,
+	"int8":        true,
+	"int16":       true,
+	"int32":       true,
+	"int64":       true,
+	"float32":     true,
+	"float64":     true,
+	"complex64":   true,
+	"complex128":  true,
+	"string":      true,
+	"int":         true,
+	"uint":        true,
+	"uintptr":     true,
+	"byte":        true,
+	"rune":        true,
+	"iota":        true,
+	"nil":         true,
+	"Type":        true,
+	"Type1":       true,
+	"IntegerType": true,
+	"FloatType":   true,
+	"ComplexType": true,
+	"append":      true,
+	"copy":        true,
+	"delete":      true,
+	"len":         true,
+	"cap":         true,
+	"make":        true,
+	"new":         true,
+	"complex":     true,
+	"real":        true,
+	"imag":        true,
+	"close":       true,
+	"panic":       true,
+	"recover":     true,
+	"print":       true,
+	"println":     true,
+	"error":       true,
+}
+
 func (n *nameContainer) proposeName(name string, typ api.TypeName, targetTypes ...string) string {
 	if name == "" {
 		name = n.deconstruct(typ)
@@ -504,7 +551,7 @@ func (n *nameContainer) proposeName(name string, typ api.TypeName, targetTypes .
 		name = string(name[0]|0x20) + name[1:]
 	}
 	// name may be `type` `int` `string` etc.
-	if token.Lookup(name).IsKeyword() || token.Lookup(name).IsLiteral() {
+	if token.Lookup(name).IsKeyword() || builtInTypes[name] {
 		name += "_"
 	}
 
