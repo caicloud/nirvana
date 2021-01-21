@@ -54,7 +54,7 @@ func Build(paths ...string) (*project.Config, *api.Definitions, error) {
 			Project:     "Unknown Project",
 			Description: "This project does not have a project config.",
 			Schemes:     []string{"http"},
-			Hosts:       []string{"localhost"},
+			Host:        "localhost",
 			Versions: []project.Version{
 				{
 					Name: "unversioned",
