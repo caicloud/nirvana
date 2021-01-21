@@ -75,7 +75,7 @@ func (o *apiOptions) Validate(cmd *cobra.Command, args []string) error {
 
 func (o *apiOptions) Run(cmd *cobra.Command, args []string) error {
 	if len(args) <= 0 {
-		defaultAPIsPath := "pkg/apis"
+		defaultAPIsPath := "pkg"
 		args = append(args, defaultAPIsPath)
 		log.Infof("No packages are specified, defaults to %s", defaultAPIsPath)
 	}
