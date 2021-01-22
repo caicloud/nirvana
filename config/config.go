@@ -108,7 +108,8 @@ type NirvanaCommand interface {
 	// The key will be converted to flag and env (e.g. --nirvana-ip and NIRVANA_IP).
 	// If you want a short flag for the field, you can only set a one-char string.
 	// `desc` describes the field.
-	Add(pointer interface{}, key string, shortFlag string, desc string) NirvanaCommand
+	// `kind` records the kind of the filed type(is there a way to find the corresponding type of a pointer)
+	Add(pointer interface{}, key string, shortFlag string, desc string, kind reflect.Kind) NirvanaCommand
 	// Execute runs nirvana server.
 	Execute(descriptors ...interface{}) error
 	// ExecuteWithConfig runs nirvana server from a custom config.
@@ -159,6 +160,7 @@ type configField struct {
 	shortFlag   string
 	longFlag    string
 	description string
+	kind        reflect.Kind
 }
 
 type command struct {
@@ -209,14 +211,15 @@ func (s *command) AddOption(prefix string, options ...CustomOption) NirvanaComma
 		typ = val.Type()
 		walkthrough([]int{}, typ, func(index []int, field reflect.StructField) {
 			ptr := val.FieldByIndex(index).Addr().Interface()
-			s.Add(ptr, prefix+field.Name, "", field.Tag.Get("desc"))
+			s.Add(ptr, prefix+field.Name, "", field.Tag.Get("desc"), field.Type.Kind())
 		})
 	}
 	return s
 }
 
 // Add adds a field by key.
-func (s *command) Add(pointer interface{}, key string, shortFlag string, desc string) NirvanaCommand {
+func (s *command) Add(pointer interface{}, key string, shortFlag string,
+	desc string, kind reflect.Kind) NirvanaCommand {
 	if pointer == nil || reflect.ValueOf(pointer).IsNil() {
 		panic(errors.InternalServerError.Error("pointer of ${key} should not be nil", key))
 	}
@@ -226,6 +229,7 @@ func (s *command) Add(pointer interface{}, key string, shortFlag string, desc st
 		pointer:     pointer,
 		shortFlag:   shortFlag,
 		description: desc,
+		kind:        kind,
 	}
 	for i, parts := range keyParts {
 		if i > 0 {
@@ -486,8 +490,7 @@ func (s *command) registerFields(fs *pflag.FlagSet) {
 			fs.DurationVarP(v, f.longFlag, f.shortFlag, *v, f.description)
 
 		default:
-			// cannot found the appropriate flag type for cors function()
-			if strings.Contains(cast.ToString(f.key), ".cors.") && strings.HasSuffix(cast.ToString(f.key), "Func") {
+			if f.kind == reflect.Func {
 				continue
 			}
 			panic(errors.InternalServerError.Error("unrecognized type ${type} for ${key}", reflect.TypeOf(f.pointer).String(), f.key))
