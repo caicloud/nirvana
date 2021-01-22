@@ -61,9 +61,9 @@ func GenSwaggerPageData(root string, versions []string) ([]byte, error) {
   <head>
     <meta charset="UTF-8">
     <title>Swagger UI</title>
-    <link rel="stylesheet" type="text/css" href="https://unpkg.com/swagger-ui-dist@3.36.0/swagger-ui.css" >
-    <link rel="icon" type="image/png" href="https://unpkg.com/swagger-ui-dist@3.36.0/favicon-32x32.png" sizes="32x32" />
-    <link rel="icon" type="image/png" href="https://unpkg.com/swagger-ui-dist@3.36.0/favicon-16x16.png" sizes="16x16" />
+    <link rel="stylesheet" type="text/css" href="https://unpkg.com/swagger-ui-dist@3.40.0/swagger-ui.css" >
+    <link rel="icon" type="image/png" href="https://unpkg.com/swagger-ui-dist@3.40.0/favicon-32x32.png" sizes="32x32" />
+    <link rel="icon" type="image/png" href="https://unpkg.com/swagger-ui-dist@3.40.0/favicon-16x16.png" sizes="16x16" />
     <style>
       html
       {
@@ -86,8 +86,8 @@ func GenSwaggerPageData(root string, versions []string) ([]byte, error) {
   </head>
   <body>
     <div id="swagger-ui"></div>
-    <script src="https://unpkg.com/swagger-ui-dist@3.36.0/swagger-ui-bundle.js"> </script>
-    <script src="https://unpkg.com/swagger-ui-dist@3.36.0/swagger-ui-standalone-preset.js"> </script>
+    <script src="https://unpkg.com/swagger-ui-dist@3.40.0/swagger-ui-bundle.js"> </script>
+    <script src="https://unpkg.com/swagger-ui-dist@3.40.0/swagger-ui-standalone-preset.js"> </script>
     <script>
 	  // list of APIS
       var apis = [
