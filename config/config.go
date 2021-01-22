@@ -486,6 +486,10 @@ func (s *command) registerFields(fs *pflag.FlagSet) {
 			fs.DurationVarP(v, f.longFlag, f.shortFlag, *v, f.description)
 
 		default:
+			// cannot found the appropriate flag type for cors function()
+			if strings.Contains(cast.ToString(f.key), ".cors.") && strings.HasSuffix(cast.ToString(f.key), "Func") {
+				continue
+			}
 			panic(errors.InternalServerError.Error("unrecognized type ${type} for ${key}", reflect.TypeOf(f.pointer).String(), f.key))
 		}
 	}
