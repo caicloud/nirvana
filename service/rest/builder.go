@@ -134,6 +134,7 @@ func (b *builder) copyDefinition(d *definition.Definition, consumes []string, pr
 		Summary:     d.Summary,
 		Function:    d.Function,
 		Description: d.Description,
+		Example:     d.Example,
 	}
 	if len(d.Consumes) > 0 {
 		consumes = d.Consumes
@@ -173,8 +174,6 @@ func (b *builder) copyDefinition(d *definition.Definition, consumes []string, pr
 		copy(newResult.Operators, r.Operators)
 		newOne.Results[i] = newResult
 	}
-	newOne.Examples = make([]definition.Example, len(d.Examples))
-	copy(newOne.Examples, d.Examples)
 	return newOne
 }
 

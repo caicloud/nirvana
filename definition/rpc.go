@@ -69,6 +69,6 @@ type RPCAction struct {
 	Results []Result
 	// Description describes the API handler.
 	Description string
-	// Examples contains many examples for the API handler.
-	Examples []Example
+	// Example contains the example for the API handler.
+	Example interface{}
 }

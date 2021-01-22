@@ -252,7 +252,7 @@ func TestDefinitions(t *testing.T) {
 				Results:       desc1.Actions[0].Results,
 				Summary:       "summary",
 				Description:   "",
-				Examples:      nil,
+				Example:       nil,
 			},
 		},
 		"/?Version=2020-01-01&Action=GetEcho2": {
@@ -267,7 +267,7 @@ func TestDefinitions(t *testing.T) {
 				Results:       desc1.Actions[1].Results,
 				Summary:       "summary",
 				Description:   "",
-				Examples:      nil,
+				Example:       nil,
 			},
 		},
 		"/aaa?Version=2020-01-01&Action=GetEcho": {
@@ -282,7 +282,7 @@ func TestDefinitions(t *testing.T) {
 				Results:       desc2.Actions[0].Results,
 				Summary:       "summary",
 				Description:   "",
-				Examples:      nil,
+				Example:       nil,
 			},
 		},
 	}

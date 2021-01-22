@@ -146,7 +146,7 @@ func (b *builder) genDefinition(action definition.RPCAction, consumes []string, 
 		Results:       action.Results,
 		Summary:       action.Name,
 		Description:   action.Description,
-		Examples:      action.Examples,
+		Example:       action.Example,
 	}
 }
 

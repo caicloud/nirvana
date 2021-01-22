@@ -464,7 +464,7 @@ func (g *Generator) operationFor(def *api.Definition) *spec.Operation {
 	operation.Responses = &spec.Responses{
 		ResponsesProps: spec.ResponsesProps{
 			StatusCodeResponses: map[int]spec.Response{
-				def.HTTPCode: *g.generateResponse(def.Results, def.Examples),
+				def.HTTPCode: *g.generateResponse(def.Results, def.Example),
 			},
 		},
 	}
@@ -489,8 +489,8 @@ func (g *Generator) generateParameter(param *api.Parameter) []spec.Parameter {
 			Required:    !param.Optional,
 		},
 	}
-	if len(param.Default) > 0 {
-		parameter.Required = false
+	if param.Default != nil {
+		parameter.WithDefault(param.Default)
 	}
 	body := "body"
 	if parameter.In != body {
@@ -508,17 +508,16 @@ func (g *Generator) generateParameter(param *api.Parameter) []spec.Parameter {
 			parameter.Items.Format = schema.Items.Schema.Format
 		}
 		parameter.Schema = nil
+		parameter.SimpleSchema.Example = param.Example
 	} else {
 		// add parameter name for body, it required by swagger ui,
 		// cause api.Parameter.Name is always nil when In is body
 		parameter.Name = body
+		k := strings.Replace(string(param.Type), "/", "_", -1)
+		if v, ok := g.schemas[k]; ok {
+			v.WithExample(param.Example)
+		}
 	}
-
-	if len(param.Default) > 0 {
-		r := rawJSON(param.Default)
-		parameter.WithDefault(&r)
-	}
-
 	return []spec.Parameter{parameter}
 }
 
@@ -627,7 +626,7 @@ func parseDestination(d definition.Destination) definition.Destination {
 	}
 }
 
-func (g *Generator) generateResponse(results []api.Result, examples []api.Example) *spec.Response {
+func (g *Generator) generateResponse(results []api.Result, example interface{}) *spec.Response {
 	response := &spec.Response{}
 	for _, result := range results {
 		switch g.destinationMapping[parseDestination(result.Destination)] {
@@ -640,14 +639,7 @@ func (g *Generator) generateResponse(results []api.Result, examples []api.Exampl
 			response.Schema = schema
 		}
 	}
-	for _, example := range examples {
-		if len(example.Instance) > 0 {
-			// Only show the first example which has data.
-			r := rawJSON(example.Instance)
-			response.AddExample("application/json", &r)
-			break
-		}
-	}
+	response.AddExample("application/json", example)
 	if response.Schema == nil && response.Description == "" {
 		response.Description = "No Content"
 	}
@@ -656,15 +648,4 @@ func (g *Generator) generateResponse(results []api.Result, examples []api.Exampl
 
 func (g *Generator) escapeNewline(content string) string {
 	return strings.Replace(strings.TrimSpace(content), "\n", "<br/>", -1)
-}
-
-type rawJSON []byte
-
-func (r *rawJSON) UnmarshalJSON(data []byte) error {
-	*r = data
-	return nil
-}
-
-func (r *rawJSON) MarshalJSON() ([]byte, error) {
-	return *r, nil
 }
