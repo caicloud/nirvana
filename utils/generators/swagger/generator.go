@@ -498,7 +498,7 @@ func (g *Generator) generateParameter(param *api.Parameter) []spec.Parameter {
 		parameter.Format = schema.Format
 		if parameter.Type == "array" {
 			// Array is a special type. It needs additional configs.
-			// CollectionFormat has two valid valus: csv, multi.
+			// CollectionFormat has two valid values: csv, multi.
 			// But we don't known which one should be used. So unknown.
 			parameter.CollectionFormat = "unknown"
 			parameter.Items = &spec.Items{}
@@ -511,9 +511,17 @@ func (g *Generator) generateParameter(param *api.Parameter) []spec.Parameter {
 		// add parameter name for body, it required by swagger ui,
 		// cause api.Parameter.Name is always nil when In is body
 		parameter.Name = body
-		k := strings.Replace(string(param.Type), "/", "_", -1)
-		if v, ok := g.schemas[k]; ok {
-			v.WithExample(param.Example)
+		// handle the common case that the parameter is a struct, set the example on the schema of its ref
+		ref := schema.Ref.String()
+		if schema.Type == nil && ref != "" {
+			// "#/definitions/xxx" --> "xxx"
+			k := ref[len("#/definitions/"):]
+			if v, ok := g.schemas[k]; ok {
+				v.WithExample(param.Example)
+			}
+		} else {
+			// handle cases where the parameters are array or map etc, set the example directly on the current schema
+			schema.WithExample(param.Example)
 		}
 	}
 	return []spec.Parameter{parameter}
