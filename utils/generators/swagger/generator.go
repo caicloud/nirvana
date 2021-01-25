@@ -106,13 +106,13 @@ func (g *Generator) Generate() (map[string]spec.Swagger, error) {
 		if len(schemes) <= 0 {
 			schemes = g.config.Schemes
 		}
-		hosts := version.Hosts
-		if len(hosts) <= 0 {
-			hosts = g.config.Hosts
+		host := version.Host
+		if host == "" {
+			host = g.config.Host
 		}
-		contacts := version.Contacts
-		if len(contacts) <= 0 {
-			contacts = g.config.Contacts
+		contact := version.Contact
+		if contact == nil {
+			contact = g.config.Contact
 		}
 		basePath := version.BasePath
 		if basePath == "" {
@@ -121,7 +121,7 @@ func (g *Generator) Generate() (map[string]spec.Swagger, error) {
 
 		swagger := g.buildSwaggerInfo(
 			title, version.Name, description,
-			schemes, hosts, basePath, contacts,
+			schemes, host, basePath, contact,
 			version.PathRules,
 		)
 		var filename string
@@ -136,7 +136,7 @@ func (g *Generator) Generate() (map[string]spec.Swagger, error) {
 	if len(swaggers) <= 0 {
 		swagger := g.buildSwaggerInfo(
 			g.config.Project, "unknown", g.config.Description,
-			g.config.Schemes, g.config.Hosts, g.config.BasePath, g.config.Contacts,
+			g.config.Schemes, g.config.Host, g.config.BasePath, g.config.Contact,
 			nil,
 		)
 		swaggers["unknown"] = *swagger
@@ -147,27 +147,25 @@ func (g *Generator) Generate() (map[string]spec.Swagger, error) {
 func (g *Generator) buildSwaggerInfo(
 	title, version, description string,
 	schemes []string,
-	hosts []string,
+	host string,
 	basePath string,
-	contacts []project.Contact,
+	contact *project.Contact,
 	rules []project.PathRule,
 ) *spec.Swagger {
 	swagger := &spec.Swagger{}
 	swagger.Swagger = "2.0"
 	swagger.Schemes = schemes
-	if len(hosts) > 0 {
-		swagger.Host = hosts[0]
-	}
+	swagger.Host = host
 	swagger.BasePath = basePath
 	swagger.Info = &spec.Info{}
 	swagger.Info.Title = title
 	swagger.Info.Version = version
 	swagger.Info.Description = g.escapeNewline(description)
-	if len(contacts) > 0 {
+	if contact != nil {
 		swagger.Info.Contact = &spec.ContactInfo{
 			ContactInfoProps: spec.ContactInfoProps{
-				Name:  contacts[0].Name,
-				Email: contacts[0].Email,
+				Name:  contact.Name,
+				Email: contact.Email,
 			},
 		}
 	}
