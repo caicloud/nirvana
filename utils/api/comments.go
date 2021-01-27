@@ -30,10 +30,6 @@ const (
 	CommentsOptionDescriptors = "descriptors"
 	// CommentsOptionModifiers is the option name of modifiers.
 	CommentsOptionModifiers = "modifiers"
-	// CommentsOptionAlias is the option name of alias.
-	CommentsOptionAlias = "alias"
-	// CommentsOptionOrigin is the option name of original name.
-	CommentsOptionOrigin = "origin"
 )
 
 // Comments is parsed from go comments.
@@ -43,7 +39,7 @@ type Comments struct {
 }
 
 var optionsRegexp = regexp.MustCompile(`^[ \t]*\+nirvana:api[ \t]*=(.*)$`)
-var options = []string{CommentsOptionDescriptors, CommentsOptionModifiers, CommentsOptionAlias}
+var options = []string{CommentsOptionDescriptors, CommentsOptionModifiers}
 
 // ParseComments parses comments and extracts nirvana options.
 func ParseComments(comments string) *Comments {
@@ -124,40 +120,6 @@ func (c *Comments) LineComments() string {
 		}
 	}
 	return buf.String()
-}
-
-// Rename replaces the first word of this comments. If its first word is
-// not the same as origin, the method returns false.
-func (c *Comments) Rename(origin, target string) bool {
-	if len(c.lines) > 0 {
-		line := c.lines[0]
-		if strings.HasPrefix(line, origin) {
-			line = target + line[len(origin):]
-			c.lines[0] = line
-			return true
-		}
-	}
-	return false
-}
-
-// Options returns all options.
-func (c *Comments) Options() map[string][]string {
-	return c.options
-}
-
-// Option returns values of an option.
-func (c *Comments) Option(name string) []string {
-	return c.options[name]
-}
-
-// AddOption adds an option.
-func (c *Comments) AddOption(name, value string) {
-	c.options[name] = append(c.options[name], value)
-}
-
-// CleanOptions removes all options.
-func (c *Comments) CleanOptions() {
-	c.options = map[string][]string{}
 }
 
 // String returns comments.

@@ -18,7 +18,6 @@ package golang
 
 import (
 	"bytes"
-	"fmt"
 	"go/format"
 	"path"
 	"strings"
@@ -71,17 +70,11 @@ func (g *Generator) Generate() (map[string][]byte, error) {
 		}
 		// all lower case string
 		packageName := d.Version.Module + d.Version.Name
-		types, imports := helper.Types()
-		typeCodes, err := g.typeCodes(packageName, types, imports)
-		if err != nil {
-			return nil, err
-		}
 		functions, imports := helper.Functions()
 		functionCodes, err := g.functionCodes(packageName, functions, imports)
 		if err != nil {
 			return nil, err
 		}
-		codes[packageName+"/types"] = typeCodes
 		codes[packageName+"/client"] = functionCodes
 	}
 	client, err := g.aggregationClientCode(versions)
@@ -90,29 +83,6 @@ func (g *Generator) Generate() (map[string][]byte, error) {
 	}
 	codes["client"] = client
 	return codes, nil
-}
-
-func (g *Generator) typeCodes(version string, types []Type, imports []string) ([]byte, error) {
-	data := bytes.NewBufferString(fmt.Sprintf("package %s\n", version))
-	writeln := func(str string) {
-		_, err := fmt.Fprintln(data, str)
-		// Ignore this error.
-		_ = err
-	}
-
-	if len(imports) > 0 {
-		writeln("import (")
-		for _, pkg := range imports {
-			writeln(pkg)
-		}
-		writeln(")")
-	}
-
-	for _, typ := range types {
-		writeln("")
-		writeln(string(typ.Generate()))
-	}
-	return format.Source(data.Bytes())
 }
 
 func (g *Generator) functionCodes(version string, functions []function, imports []string) ([]byte, error) {
