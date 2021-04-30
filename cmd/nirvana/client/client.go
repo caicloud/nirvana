@@ -35,7 +35,7 @@ import (
 func newClientCommand() *cobra.Command {
 	options := &clientOptions{}
 	cmd := &cobra.Command{
-		Use:   "client /path/to/apis",
+		Use:   "client /path/to/apis /path/to/modifiers",
 		Short: "Create client for project",
 		Long:  options.Manuals(),
 		Run: func(cmd *cobra.Command, args []string) {
@@ -71,8 +71,10 @@ func (o *clientOptions) Validate(cmd *cobra.Command, args []string) error {
 func (o *clientOptions) Run(cmd *cobra.Command, args []string) error {
 	if len(args) <= 0 {
 		defaultAPIsPath := "pkg/apis"
+		defaultModifiersPath := "pkg/modifiers"
 		args = append(args, defaultAPIsPath)
-		log.Infof("No packages are specified, defaults to %s", defaultAPIsPath)
+		args = append(args, defaultModifiersPath)
+		log.Infof("No packages are specified, defaults to %s %s", defaultAPIsPath, defaultModifiersPath)
 	}
 
 	config, definitions, err := buildutils.Build(args...)
