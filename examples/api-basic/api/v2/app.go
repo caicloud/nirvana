@@ -36,7 +36,7 @@ var app = definition.Descriptor{
 			Consumes:    []string{definition.MIMEJSON},
 			Produces:    []string{definition.MIMEJSON},
 			Parameters: []definition.Parameter{
-				definition.BodyParameterFor("Application V2 json object", "description"),
+				definition.BodyParameterWithNameFor("Application V2 json object", "description"),
 			},
 			Results: definition.DataErrorResults("Application V2 json object"),
 		},
