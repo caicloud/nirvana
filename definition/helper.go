@@ -93,7 +93,12 @@ func FileParameterFor(name string, description string, operators ...Operator) Pa
 
 // BodyParameterFor creates a body parameter
 func BodyParameterFor(description string, operators ...Operator) Parameter {
-	return ParameterFor(Body, "", description, operators...)
+	return BodyParameterWithNameFor("", description, operators...)
+}
+
+// BodyParameterWithNameFor creates a body parameter with body name
+func BodyParameterWithNameFor(name string, description string, operators ...Operator) Parameter {
+	return ParameterFor(Body, name, description, operators...)
 }
 
 // PrefabParameterFor creates a prefab parameter

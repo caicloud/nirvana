@@ -42,7 +42,8 @@ func TestParameter(t *testing.T) {
 		{Source: Header, Name: "test", Description: "For test"},
 		{Source: Form, Name: "test", Description: "For test"},
 		{Source: File, Name: "test", Description: "For test"},
-		{Source: Body, Description: "For test"},
+		{Source: Body, Name: "", Description: "For test"},
+		{Source: Body, Name: "For test", Description: "For test"},
 		{Source: Auto, Description: "For test"},
 		{Source: Prefab, Name: "test", Description: "For test"},
 	}
@@ -53,6 +54,7 @@ func TestParameter(t *testing.T) {
 		FormParameterFor("test", "For test"),
 		FileParameterFor("test", "For test"),
 		BodyParameterFor("For test"),
+		BodyParameterWithNameFor("For test", "For test"),
 		AutoParameterFor("For test"),
 		PrefabParameterFor("test", "For test"),
 	}
