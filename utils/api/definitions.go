@@ -60,6 +60,8 @@ type Definition struct {
 	HTTPMethod string
 	// HTTPCode is http success code.
 	HTTPCode int
+	// OperationID is Unique string used to identify the operation. The OperationID MUST be unique among all operations described in the API.
+	OperationID string
 	// Summary is a brief of this definition.
 	Summary string
 	// Description describes the API handler.
@@ -99,6 +101,7 @@ func NewDefinition(tc *TypeContainer, d *definition.Definition, apiStyle service
 		Method:        d.Method,
 		HTTPMethod:    service.HTTPMethodFor(d.Method),
 		HTTPCode:      code,
+		OperationID:   d.OperationID,
 		Summary:       d.Summary,
 		Description:   d.Description,
 		Tags:          d.Tags,

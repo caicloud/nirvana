@@ -206,6 +206,8 @@ type Result struct {
 
 // Definition defines an API handler.
 type Definition struct {
+	// OperationID is Unique string used to identify the operation. The OperationID MUST be unique among all operations described in the API.
+	OperationID string
 	// Method is definition method.
 	Method Method
 	// Consumes indicates how many content types the handler can consume.
