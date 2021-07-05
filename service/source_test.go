@@ -90,11 +90,11 @@ func (f *file) Close() error {
 	return nil
 }
 
-func (v *vc) File(key string) (multipart.File, bool) {
+func (v *vc) File(key string) (multipart.File, *multipart.FileHeader, bool) {
 	if key == testKey {
-		return &file{[]byte("test file"), 0}, true
+		return &file{[]byte("test file"), 0}, &multipart.FileHeader{Filename: "test"}, true
 	}
-	return nil, false
+	return nil, nil, false
 }
 
 func (v *vc) Body() (reader io.ReadCloser, contentType string, ok bool) {

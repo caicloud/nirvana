@@ -77,7 +77,7 @@ type ValueContainer interface {
 	// or "multipart/form-data".
 	Form(key string) ([]string, bool)
 	// File returns a file reader when "Content-Type" is "multipart/form-data".
-	File(key string) (multipart.File, bool)
+	File(key string) (multipart.File, *multipart.FileHeader, bool)
 	// Body returns a reader to read data from request body.
 	// The reader only can read once.
 	Body() (reader io.ReadCloser, contentType string, ok bool)
@@ -152,9 +152,9 @@ func (c *container) removeEmpties(values []string) ([]string, bool) {
 }
 
 // File returns a file reader when "Content-Type" is "multipart/form-data".
-func (c *container) File(key string) (multipart.File, bool) {
-	file, _, err := c.request.FormFile(key)
-	return file, err == nil
+func (c *container) File(key string) (multipart.File, *multipart.FileHeader, bool) {
+	file, fileHeader, err := c.request.FormFile(key)
+	return file, fileHeader, err == nil
 }
 
 // Body returns a reader to read data from request body.
